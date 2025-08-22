@@ -27,38 +27,38 @@ export enum ActivityStatus {
 @Entity('user_activities')
 export class UserActivity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   @Column({ name: 'user_id', type: 'uuid' })
-  userId: string;
+  userId!: string;
 
   @Column({ type: 'enum', enum: ActivityType })
-  type: ActivityType;
+  type!: ActivityType;
 
-  @Column({ type: 'enum', enum: ActivityStatus, default: ActivityStatus.SUCCESS })
-  status: ActivityStatus;
+  @Column({ type: 'enum', enum: ActivityStatus })
+  status!: ActivityStatus;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  description: string;
+  @Column({ type: 'text' })
+  description!: string;
 
   @Column({ type: 'jsonb', nullable: true })
   metadata?: any;
 
-  @Column({ type: 'varchar', length: 45, nullable: true })
-  ipAddress: string;
+  @Column({ name: 'ip_address', nullable: true })
+  ipAddress!: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
-  userAgent: string;
+  @Column({ name: 'user_agent', nullable: true })
+  userAgent!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  location: string;
+  @Column({ nullable: true })
+  location!: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
 
   // Helper method to get activity summary
   getActivitySummary(): string {

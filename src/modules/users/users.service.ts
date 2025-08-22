@@ -1,116 +1,125 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { UserActivity, ActivityType, ActivityStatus } from './entities/user-activity.entity';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
-import { CreateUserPreferencesDto, UpdateUserPreferencesDto } from './dto/user-preferences.dto';
-import { EmailService } from '../../common/email.service';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private userRepository: Repository<User>,
     @InjectRepository(UserPreferences)
-    private readonly userPreferencesRepository: Repository<UserPreferences>,
+    private userPreferencesRepository: Repository<UserPreferences>,
     @InjectRepository(UserActivity)
-    private readonly userActivityRepository: Repository<UserActivity>,
-    private readonly emailService: EmailService,
-    private readonly jwtService: JwtService,
-    private readonly configService: ConfigService
+    private userActivityRepository: Repository<UserActivity>,
+    private jwtService: JwtService,
+    private configService: ConfigService
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    // Check if user already exists
-    const existingUser = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-
+    const existingUser = await this.findByEmail(createUserDto.email);
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Hash password
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
-    const passwordHash = await bcrypt.hash(createUserDto.password, saltRounds);
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
 
-    // Generate email verification token
-    const emailVerificationToken = this.jwtService.sign({ type: 'email_verification' }, { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' });
-
-    // Create user
     const user = this.userRepository.create({
       ...createUserDto,
-      passwordHash,
+      passwordHash: hashedPassword,
       role: createUserDto.role || 'patient',
       isEmailVerified: false,
       isPhoneVerified: false,
       isActive: true,
-      emailVerificationToken,
-      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      preferredLanguage: createUserDto.preferredLanguage || 'en',
-      timezone: createUserDto.timezone || 'UTC',
+      loginAttempts: 0,
+      profileCompletionPercentage: 0,
+      accountStatus: 'active',
     });
 
     const savedUser = await this.userRepository.save(user);
 
-    // Create default user preferences
-    await this.createDefaultUserPreferences(savedUser.id);
+    // Create user preferences
+    await this.userPreferencesRepository.save(
+      this.userPreferencesRepository.create({
+        user: savedUser,
+        userId: savedUser.id,
+        notificationSettings: {
+          email: {
+            appointments: true,
+            reminders: true,
+            healthAlerts: true,
+            marketing: false,
+            newsletter: true,
+          },
+          sms: {
+            appointments: true,
+            reminders: true,
+            healthAlerts: true,
+          },
+          push: {
+            appointments: true,
+            reminders: true,
+            healthAlerts: true,
+          },
+        },
+        privacySettings: {
+          profileVisibility: 'public',
+          showPhone: true,
+          showAddress: false,
+          showEmail: false,
+          allowContact: true,
+        },
+        communicationPreferences: {
+          preferredLanguage: 'en',
+          preferredContactMethod: 'email',
+          timezone: 'UTC',
+          quietHours: {
+            enabled: false,
+            startTime: '22:00',
+            endTime: '08:00',
+          },
+        },
+        theme: 'auto',
+        isActive: true,
+      })
+    );
 
-    // Send verification email
-    await this.emailService.sendVerificationEmail(savedUser.email, savedUser.firstName, emailVerificationToken);
+    // Generate email verification token
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
 
-    // Log user registration activity
-    await this.logUserActivity(savedUser.id, ActivityType.REGISTER, ActivityStatus.SUCCESS, {
-      email: savedUser.email,
-      role: savedUser.role,
+    const emailVerificationToken = this.jwtService.sign({ type: 'email_verification' }, { secret: jwtSecret, expiresIn: '24h' });
+
+    // Update user with verification token
+    await this.userRepository.update(savedUser.id, {
+      emailVerificationToken,
+      emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
 
-    // Remove sensitive data from response
-    delete savedUser.passwordHash;
-    delete savedUser.refreshToken;
-    delete savedUser.refreshTokenExpiresAt;
-    delete savedUser.emailVerificationToken;
-    delete savedUser.emailVerificationExpiresAt;
-
-    return savedUser;
+    // Remove password hash from response
+    const { passwordHash, ...result } = savedUser;
+    return result as User;
   }
 
   async findAll(): Promise<User[]> {
-    const users = await this.userRepository.find({
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'avatar', 'isActive', 'createdAt'],
+    return this.userRepository.find({
+      select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt'],
     });
-    return users;
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: [
-        'id',
-        'email',
-        'firstName',
-        'lastName',
-        'avatar',
-        'dateOfBirth',
-        'address',
-        'city',
-        'postalCode',
-        'country',
-        'isEmailVerified',
-        'isPhoneVerified',
-        'isActive',
-        'lastLoginAt',
-        'createdAt',
-        'updatedAt',
-        'preferredLanguage',
-        'timezone',
-      ],
-      relations: ['preferences'],
+      relations: ['preferences', 'activities'],
     });
 
     if (!user) {
@@ -121,38 +130,27 @@ export class UsersService {
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { email },
-    });
+    return this.userRepository.findOne({ where: { email } });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
 
-    // Check if email is being changed and if it's already taken
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.findByEmail(updateUserDto.email);
       if (existingUser) {
-        throw new ConflictException('Email is already taken');
+        throw new ConflictException('User with this email already exists');
       }
     }
 
-    Object.assign(user, updateUserDto);
-    const updatedUser = await this.userRepository.save(user);
-
-    // Log profile update activity
-    await this.logUserActivity(id, ActivityType.PROFILE_UPDATE, ActivityStatus.SUCCESS, {
-      updatedFields: Object.keys(updateUserDto),
+    const updatedUser = await this.userRepository.save({
+      ...user,
+      ...updateUserDto,
     });
 
-    // Remove sensitive data from response
-    delete updatedUser.passwordHash;
-    delete updatedUser.refreshToken;
-    delete updatedUser.refreshTokenExpiresAt;
-    delete updatedUser.emailVerificationToken;
-    delete updatedUser.emailVerificationExpiresAt;
-
-    return updatedUser;
+    // Remove password hash from response
+    const { passwordHash, ...result } = updatedUser;
+    return result as User;
   }
 
   async remove(id: string): Promise<void> {
@@ -160,59 +158,54 @@ export class UsersService {
     await this.userRepository.remove(user);
   }
 
-  async updateLastLogin(id: string): Promise<void> {
-    await this.userRepository.update(id, {
-      lastLoginAt: new Date(),
+  async clearRefreshToken(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      refreshToken: null as any,
+      refreshTokenExpiresAt: null as any,
     });
   }
 
-  async updateRefreshToken(id: string, refreshToken: string, expiresAt: Date): Promise<void> {
-    await this.userRepository.update(id, {
+  async updateRefreshToken(userId: string, refreshToken: string, expiresAt: Date): Promise<void> {
+    await this.userRepository.update(userId, {
       refreshToken,
       refreshTokenExpiresAt: expiresAt,
     });
   }
 
-  async clearRefreshToken(id: string): Promise<void> {
-    await this.userRepository.update(id, {
-      refreshToken: null,
-      refreshTokenExpiresAt: null,
-    });
-  }
-
   async verifyEmail(token: string): Promise<void> {
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
     try {
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: jwtSecret,
       });
 
       if (payload.type !== 'email_verification') {
         throw new BadRequestException('Invalid token type');
       }
 
-      const user = await this.userRepository.findOne({
-        where: {
-          emailVerificationToken: token,
-          emailVerificationExpiresAt: new Date(payload.exp * 1000),
-        },
-      });
+      const user = await this.findOne(payload.sub);
 
-      if (!user) {
-        throw new BadRequestException('Invalid or expired verification token');
+      if (user.emailVerificationToken !== token) {
+        throw new BadRequestException('Invalid verification token');
+      }
+
+      if (user.emailVerificationExpiresAt && user.emailVerificationExpiresAt < new Date()) {
+        throw new BadRequestException('Verification token expired');
       }
 
       await this.userRepository.update(user.id, {
         isEmailVerified: true,
-        emailVerificationToken: null,
-        emailVerificationExpiresAt: null,
+        emailVerificationToken: null as any,
+        emailVerificationExpiresAt: null as any,
       });
-
-      // Log email verification activity
-      await this.logUserActivity(user.id, ActivityType.EMAIL_VERIFICATION, ActivityStatus.SUCCESS);
-
-      // Send welcome email
-      await this.emailService.sendWelcomeEmail(user.email, user.firstName);
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException('Invalid or expired verification token');
     }
   }
@@ -220,171 +213,109 @@ export class UsersService {
   async resendVerificationEmail(email: string): Promise<void> {
     const user = await this.findByEmail(email);
     if (!user) {
-      // Don't reveal if user exists
-      return;
+      throw new NotFoundException('User not found');
     }
 
     if (user.isEmailVerified) {
       throw new BadRequestException('Email is already verified');
     }
 
-    // Generate new verification token
-    const emailVerificationToken = this.jwtService.sign({ type: 'email_verification' }, { secret: this.configService.get<string>('JWT_SECRET'), expiresIn: '24h' });
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
+    const emailVerificationToken = this.jwtService.sign({ type: 'email_verification' }, { secret: jwtSecret, expiresIn: '24h' });
 
     await this.userRepository.update(user.id, {
       emailVerificationToken,
       emailVerificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     });
-
-    // Send new verification email
-    await this.emailService.sendVerificationEmail(user.email, user.firstName, emailVerificationToken);
   }
 
-  async requestPhoneVerification(phone: string): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { phone } });
+  async requestPhoneVerification(_phone: string): Promise<void> {
+    // TODO: Implement phone verification when phone field is added to User entity
+    throw new BadRequestException('Phone verification not implemented yet');
+  }
+
+  async verifyPhone(_phone: string, _otp: string): Promise<void> {
+    // TODO: Implement phone verification when phone field is added to User entity
+    throw new BadRequestException('Phone verification not implemented yet');
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.findByEmail(email);
     if (!user) {
-      // Don't reveal if user exists
-      return;
+      return; // Don't reveal if user exists
     }
 
-    if (user.isPhoneVerified) {
-      throw new BadRequestException('Phone is already verified');
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
     }
 
-    // Generate OTP (6 digits)
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetToken = this.jwtService.sign({ sub: user.id, type: 'password_reset' }, { secret: jwtSecret, expiresIn: '1h' });
 
     await this.userRepository.update(user.id, {
-      phoneVerificationOTP: otp,
-      phoneVerificationExpiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes
+      passwordResetToken: resetToken,
+      passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
     });
-
-    // Send SMS with OTP
-    await this.emailService.sendPhoneVerificationSMS(phone, otp);
-  }
-
-  async verifyPhone(phone: string, otp: string): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: {
-        phone,
-        phoneVerificationOTP: otp,
-        phoneVerificationExpiresAt: new Date(),
-      },
-    });
-
-    if (!user) {
-      throw new BadRequestException('Invalid or expired OTP');
-    }
-
-    await this.userRepository.update(user.id, {
-      isPhoneVerified: true,
-      phoneVerificationOTP: null,
-      phoneVerificationExpiresAt: null,
-    });
-
-    // Log phone verification activity
-    await this.logUserActivity(user.id, ActivityType.PHONE_VERIFICATION, ActivityStatus.SUCCESS);
-  }
-
-  async deactivate(id: string): Promise<void> {
-    await this.userRepository.update(id, {
-      isActive: false,
-    });
-  }
-
-  async activate(id: string): Promise<void> {
-    await this.userRepository.update(id, {
-      isActive: true,
-    });
-  }
-
-  async changePassword(id: string, currentPassword: string, newPassword: string): Promise<void> {
-    const user = await this.userRepository.findOne({
-      where: { id },
-      select: ['id', 'passwordHash'],
-    });
-
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!isPasswordValid) {
-      throw new BadRequestException('Current password is incorrect');
-    }
-
-    // Hash new password
-    const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
-    const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
-
-    // Update password
-    await this.userRepository.update(id, {
-      passwordHash: newPasswordHash,
-    });
-
-    // Log password change activity
-    await this.logUserActivity(id, ActivityType.PASSWORD_CHANGE, ActivityStatus.SUCCESS);
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+
     try {
       const payload = this.jwtService.verify(token, {
-        secret: this.configService.get<string>('JWT_SECRET'),
+        secret: jwtSecret,
       });
 
       if (payload.type !== 'password_reset') {
         throw new BadRequestException('Invalid token type');
       }
 
-      const user = await this.userRepository.findOne({
-        where: {
-          passwordResetToken: token,
-          passwordResetExpiresAt: new Date(payload.exp * 1000),
-        },
-      });
+      const user = await this.findOne(payload.sub);
 
-      if (!user) {
-        throw new BadRequestException('Invalid or expired reset token');
+      if (user.passwordResetToken !== token) {
+        throw new BadRequestException('Invalid reset token');
       }
 
-      // Hash new password
-      const saltRounds = parseInt(process.env.BCRYPT_ROUNDS || '12');
-      const newPasswordHash = await bcrypt.hash(newPassword, saltRounds);
+      if (user.passwordResetExpiresAt && user.passwordResetExpiresAt < new Date()) {
+        throw new BadRequestException('Reset token expired');
+      }
+
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
 
       await this.userRepository.update(user.id, {
-        passwordHash: newPasswordHash,
-        passwordResetToken: null,
-        passwordResetExpiresAt: null,
+        passwordHash: hashedPassword,
+        passwordResetToken: null as any,
+        passwordResetExpiresAt: null as any,
+        lockedUntil: null as any,
+        loginAttempts: 0,
       });
     } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
       throw new BadRequestException('Invalid or expired reset token');
     }
   }
 
-  async forgotPassword(email: string): Promise<void> {
-    const user = await this.findByEmail(email);
-    if (!user) {
-      // Don't reveal if user exists
-      return;
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+    const user = await this.findOne(userId);
+
+    if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new BadRequestException('Current password is incorrect');
     }
 
-    // Generate reset token
-    const resetToken = this.jwtService.sign(
-      { sub: user.id, type: 'password_reset' },
-      {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: '1h',
-      }
-    );
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
 
-    await this.userRepository.update(user.id, {
-      passwordResetToken: resetToken,
-      passwordResetExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour
+    await this.userRepository.update(userId, {
+      passwordHash: hashedPassword,
     });
-
-    // Send password reset email
-    await this.emailService.sendPasswordResetEmail(user.email, user.firstName, resetToken);
   }
 
   async handleFailedLogin(email: string): Promise<void> {
@@ -393,34 +324,41 @@ export class UsersService {
       return;
     }
 
-    user.incrementLoginAttempts();
-    await this.userRepository.save(user);
+    const newLoginAttempts = (user.loginAttempts || 0) + 1;
+    const maxAttempts = 5;
+
+    if (newLoginAttempts >= maxAttempts) {
+      const lockDuration = 15 * 60 * 1000; // 15 minutes
+      const lockedUntil = new Date(Date.now() + lockDuration);
+
+      await this.userRepository.update(user.id, {
+        loginAttempts: newLoginAttempts,
+        lockedUntil,
+      });
+    } else {
+      await this.userRepository.update(user.id, {
+        loginAttempts: newLoginAttempts,
+      });
+    }
   }
 
-  async handleSuccessfulLogin(id: string): Promise<void> {
-    await this.userRepository.update(id, {
-      lastLoginAt: new Date(),
+  async handleSuccessfulLogin(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
       loginAttempts: 0,
-      lockedUntil: null,
+      lockedUntil: null as any,
+      lastLoginAt: new Date(),
     });
-
-    // Log successful login activity
-    await this.logUserActivity(id, ActivityType.LOGIN, ActivityStatus.SUCCESS);
   }
 
-  async handleLogout(id: string): Promise<void> {
+  async updateLastLogin(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      lastLoginAt: new Date(),
+    });
+  }
+
+  async handleLogout(userId: string): Promise<void> {
     // Log logout activity
-    await this.logUserActivity(id, ActivityType.LOGOUT, ActivityStatus.SUCCESS);
-  }
-
-  // User Preferences Methods
-  async createDefaultUserPreferences(userId: string): Promise<UserPreferences> {
-    const preferences = this.userPreferencesRepository.create({
-      userId,
-      isActive: true,
-    });
-
-    return this.userPreferencesRepository.save(preferences);
+    await this.logUserActivity(userId, ActivityType.LOGOUT, ActivityStatus.SUCCESS, {}, undefined, undefined);
   }
 
   async getUserPreferences(userId: string): Promise<UserPreferences> {
@@ -429,52 +367,21 @@ export class UsersService {
     });
 
     if (!preferences) {
-      // Create default preferences if they don't exist
-      return this.createDefaultUserPreferences(userId);
+      throw new NotFoundException('User preferences not found');
     }
 
     return preferences;
   }
 
-  async updateUserPreferences(userId: string, updateDto: UpdateUserPreferencesDto): Promise<UserPreferences> {
-    let preferences = await this.userPreferencesRepository.findOne({
-      where: { userId },
-    });
+  async updateUserPreferences(userId: string, updatePreferencesDto: UpdateUserPreferencesDto): Promise<UserPreferences> {
+    const preferences = await this.getUserPreferences(userId);
 
-    if (!preferences) {
-      preferences = this.userPreferencesRepository.create({
-        userId,
-        ...updateDto,
-        isActive: true,
-      });
-    } else {
-      Object.assign(preferences, updateDto);
-    }
-
-    const updatedPreferences = await this.userPreferencesRepository.save(preferences);
-
-    // Log preferences update activity
-    await this.logUserActivity(userId, ActivityType.PREFERENCES_UPDATED, ActivityStatus.SUCCESS, {
-      updatedFields: Object.keys(updateDto),
+    const updatedPreferences = await this.userPreferencesRepository.save({
+      ...preferences,
+      ...updatePreferencesDto,
     });
 
     return updatedPreferences;
-  }
-
-  // User Activity Methods
-  async logUserActivity(userId: string, type: ActivityType, status: ActivityStatus, metadata?: any, ipAddress?: string, userAgent?: string): Promise<UserActivity> {
-    const activity = this.userActivityRepository.create({
-      userId,
-      type,
-      status,
-      description: type,
-      metadata,
-      ipAddress,
-      userAgent,
-      createdAt: new Date(),
-    });
-
-    return this.userActivityRepository.save(activity);
   }
 
   async getUserActivities(userId: string, limit: number = 50): Promise<UserActivity[]> {
@@ -485,17 +392,10 @@ export class UsersService {
     });
   }
 
-  async getActivitySummary(userId: string): Promise<{
-    totalActivities: number;
-    lastActivity: Date | null;
-    activityTypes: Record<string, number>;
-  }> {
-    const activities = await this.userActivityRepository.find({
-      where: { userId },
-      order: { createdAt: 'DESC' },
-    });
+  async getActivitySummary(userId: string): Promise<any> {
+    const activities = await this.getUserActivities(userId, 100);
 
-    const activityTypes = activities.reduce(
+    const activityCounts = activities.reduce(
       (acc, activity) => {
         acc[activity.type] = (acc[activity.type] || 0) + 1;
         return acc;
@@ -505,8 +405,24 @@ export class UsersService {
 
     return {
       totalActivities: activities.length,
-      lastActivity: activities.length > 0 ? activities[0].createdAt : null,
-      activityTypes,
+      activityCounts,
+      lastActivity: activities.length > 0 ? activities[0]?.createdAt : null,
+      mostCommonActivity: Object.entries(activityCounts).reduce((a, b) => ((activityCounts[a[0]] || 0) > (activityCounts[b[0]] || 0) ? a : b))?.[0] || null,
     };
+  }
+
+  async logUserActivity(userId: string, type: ActivityType, status: ActivityStatus, metadata: any, ipAddress?: string, userAgent?: string): Promise<void> {
+    const activity = this.userActivityRepository.create({
+      userId,
+      type,
+      status,
+      description: type,
+      metadata,
+      ipAddress: ipAddress || 'unknown',
+      userAgent: userAgent || 'unknown',
+      createdAt: new Date(),
+    });
+
+    await this.userActivityRepository.save(activity);
   }
 }

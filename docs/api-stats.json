@@ -1,17 +1,16 @@
 {
-  "totalEndpoints": 27,
-  "totalOperations": 32,
-  "methodBreakdown": {
-    "GET": 14,
-    "POST": 14,
-    "PATCH": 3,
-    "DELETE": 1
+  "totalEndpoints": 1,
+  "totalControllers": 3,
+  "tags": ["auth", "users", "health"],
+  "methods": {
+    "GET": 1,
+    "POST": 0,
+    "PUT": 0,
+    "DELETE": 0,
+    "PATCH": 0
   },
-  "tags": [
-    "auth",
-    "users"
-  ],
-  "tagCount": 2,
-  "generatedAt": "2025-08-22T17:05:37.658Z",
+  "authEndpoints": 0,
+  "publicEndpoints": 1,
+  "generatedAt": "2024-01-01T00:00:00.000Z",
   "version": "1.0.0"
 }
