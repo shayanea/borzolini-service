@@ -1,4 +1,5 @@
 import * as compression from 'compression';
+import * as cookieParser from 'cookie-parser';
 
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -13,6 +14,9 @@ async function bootstrap() {
   // Security middleware
   app.use(helmet());
   app.use(compression());
+
+  // Cookie parser middleware
+  app.use(cookieParser());
 
   // Enable CORS for frontend integration
   app.enableCors({
@@ -38,7 +42,8 @@ async function bootstrap() {
   // Swagger documentation setup
   const config = new DocumentBuilder()
     .setTitle('🐾 Borzolini Clinic API')
-    .setDescription(`
+    .setDescription(
+      `
       ## AI-Powered Pet Clinic Management Platform
 
       **Borzolini Clinic** is a comprehensive telemedicine and clinic management platform designed specifically for veterinary practices. Our platform combines traditional veterinary care with cutting-edge AI technology to provide superior pet healthcare services.
@@ -80,7 +85,8 @@ async function bootstrap() {
       **Version**: 1.0.0  
       **Environment**: ${process.env.NODE_ENV || 'development'}  
       **Base URL**: \`/api/v1\`
-    `)
+    `
+    )
     .setVersion('1.0.0')
     .setContact('Borzolini Clinic Team', 'https://borzolini.com', 'support@borzolini.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')

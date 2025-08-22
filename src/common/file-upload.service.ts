@@ -8,31 +8,18 @@ export class FileUploadService {
   /**
    * Upload file to Supabase storage
    */
-  async uploadFile(
-    bucket: string,
-    path: string,
-    file: Buffer,
-    contentType: string,
-  ): Promise<string> {
+  async uploadFile(bucket: string, path: string, file: Buffer, contentType: string): Promise<string> {
     try {
-      const { data, error } = await this.supabaseService
-        .getClient()
-        .storage
-        .from(bucket)
-        .upload(path, file, {
-          contentType,
-          upsert: true,
-        });
+      const { error } = await this.supabaseService.getClient().storage.from(bucket).upload(path, file, {
+        contentType,
+        upsert: true,
+      });
 
       if (error) {
         throw new Error(`File upload failed: ${error.message}`);
       }
 
-      const { data: urlData } = this.supabaseService
-        .getClient()
-        .storage
-        .from(bucket)
-        .getPublicUrl(path);
+      const { data: urlData } = this.supabaseService.getClient().storage.from(bucket).getPublicUrl(path);
 
       return urlData.publicUrl;
     } catch (error) {
@@ -46,11 +33,7 @@ export class FileUploadService {
    */
   async deleteFile(bucket: string, path: string): Promise<boolean> {
     try {
-      const { error } = await this.supabaseService
-        .getClient()
-        .storage
-        .from(bucket)
-        .remove([path]);
+      const { error } = await this.supabaseService.getClient().storage.from(bucket).remove([path]);
 
       if (error) {
         throw new Error(`File deletion failed: ${error.message}`);
@@ -67,11 +50,7 @@ export class FileUploadService {
    * Get file URL from Supabase storage
    */
   getFileUrl(bucket: string, path: string): string {
-    const { data } = this.supabaseService
-      .getClient()
-      .storage
-      .from(bucket)
-      .getPublicUrl(path);
+    const { data } = this.supabaseService.getClient().storage.from(bucket).getPublicUrl(path);
 
     return data.publicUrl;
   }
@@ -83,15 +62,14 @@ export class FileUploadService {
     try {
       const { data, error } = await this.supabaseService
         .getClient()
-        .storage
-        .from(bucket)
+        .storage.from(bucket)
         .list(path || '');
 
       if (error) {
         throw new Error(`File listing failed: ${error.message}`);
       }
 
-      return data.map(file => file.name);
+      return data.map((file) => file.name);
     } catch (error) {
       console.error('File listing error:', error);
       return [];

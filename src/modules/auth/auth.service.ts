@@ -1,11 +1,11 @@
 import * as bcrypt from 'bcryptjs';
 
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { LoginDto, RefreshTokenDto, RegisterDto } from './dto/auth.dto';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { LoginDto, RegisterDto } from './dto/auth.dto';
+import { Request, Response } from 'express';
 
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class AuthService {
     return null;
   }
 
-  async login(loginDto: LoginDto, req?: Request): Promise<any> {
+  async login(loginDto: LoginDto, req?: Request, res?: Response): Promise<any> {
     try {
       const user = await this.validateUser(loginDto.email, loginDto.password);
 
@@ -66,6 +66,11 @@ export class AuthService {
         new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
       );
 
+      // Set cookies if response object is provided
+      if (res) {
+        this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      }
+
       return {
         user: {
           id: user.id,
@@ -79,21 +84,22 @@ export class AuthService {
           profileCompletionPercentage: user.profileCompletionPercentage,
           accountStatus: user.accountStatus,
         },
-        ...tokens,
+        message: 'Login successful',
       };
     } catch (error) {
       // Log failed login attempt
       if (req) {
         const user = await this.usersService.findByEmail(loginDto.email);
         if (user) {
-          await this.usersService.logUserActivity(user.id, 'login' as any, 'failed' as any, { reason: error.message }, req.ip, req.get('User-Agent'));
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          await this.usersService.logUserActivity(user.id, 'login' as any, 'failed' as any, { reason: errorMessage }, req.ip, req.get('User-Agent'));
         }
       }
       throw error;
     }
   }
 
-  async register(registerDto: RegisterDto, req?: Request): Promise<any> {
+  async register(registerDto: RegisterDto, req?: Request, res?: Response): Promise<any> {
     // Create user (this will also send verification email)
     const user = await this.usersService.create(registerDto);
 
@@ -106,6 +112,11 @@ export class AuthService {
       tokens.refreshToken,
       new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
     );
+
+    // Set cookies if response object is provided
+    if (res) {
+      this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+    }
 
     // Log registration activity with request info
     if (req) {
@@ -125,24 +136,34 @@ export class AuthService {
         profileCompletionPercentage: user.profileCompletionPercentage,
         accountStatus: user.accountStatus,
       },
-      ...tokens,
       message: 'Registration successful. Please check your email to verify your account.',
     };
   }
 
-  async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<any> {
+  async refreshToken(req: Request, res?: Response): Promise<any> {
     try {
-      const payload = this.jwtService.verify(refreshTokenDto.refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
+      const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+      if (!refreshToken) {
+        throw new UnauthorizedException('Refresh token not found');
+      }
+
+      const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      if (!jwtRefreshSecret) {
+        throw new UnauthorizedException('JWT refresh secret not configured');
+      }
+
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: jwtRefreshSecret,
       });
 
       const user = await this.usersService.findOne(payload.sub);
 
-      if (!user || user.refreshToken !== refreshTokenDto.refreshToken) {
+      if (!user || user.refreshToken !== refreshToken) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      if (user.refreshTokenExpiresAt < new Date()) {
+      if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
         throw new UnauthorizedException('Refresh token expired');
       }
 
@@ -156,19 +177,37 @@ export class AuthService {
         new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
       );
 
-      return tokens;
+      // Set new cookies if response object is provided
+      if (res) {
+        this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      }
+
+      return {
+        message: 'Token refreshed successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        },
+      };
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
 
-  async logout(userId: string, req?: Request): Promise<any> {
+  async logout(userId: string, req?: Request, res?: Response): Promise<any> {
     // Log logout activity
     if (req) {
       await this.usersService.handleLogout(userId);
     }
 
     await this.usersService.clearRefreshToken(userId);
+
+    // Clear cookies if response object is provided
+    if (res) {
+      this.clearAuthCookies(res);
+    }
+
     return { message: 'Logged out successfully' };
   }
 
@@ -179,14 +218,23 @@ export class AuthService {
       role: user.role,
     };
 
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
+    const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+    const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '15m';
+    const jwtRefreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
+
+    if (!jwtSecret || !jwtRefreshSecret) {
+      throw new Error('JWT secrets not configured');
+    }
+
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
+        secret: jwtSecret,
+        expiresIn: jwtExpiresIn,
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
-        expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
+        secret: jwtRefreshSecret,
+        expiresIn: jwtRefreshExpiresIn,
       }),
     ]);
 
@@ -194,6 +242,51 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
+    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
+    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+
+    // Access token cookie (short-lived, httpOnly, secure in production)
+    res.cookie('accessToken', accessToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      domain: domain || undefined,
+      maxAge: 15 * 60 * 1000, // 15 minutes
+      path: '/',
+    });
+
+    // Refresh token cookie (longer-lived, httpOnly, secure in production)
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      domain: domain || undefined,
+      maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days
+      path: '/',
+    });
+  }
+
+  private clearAuthCookies(res: Response): void {
+    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+
+    res.clearCookie('accessToken', {
+      httpOnly: true,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
+      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      domain: domain || undefined,
+      path: '/',
+    });
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: this.configService.get<string>('NODE_ENV') === 'production',
+      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      domain: domain || undefined,
+      path: '/',
+    });
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<any> {

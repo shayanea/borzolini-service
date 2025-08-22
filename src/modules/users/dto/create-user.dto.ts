@@ -1,43 +1,33 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsDateString, IsEmail, IsEnum, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsDateString, IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({ description: 'User email address' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ description: 'User password', minLength: 8 })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 
   @ApiProperty({ description: 'User first name' })
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ description: 'User last name' })
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @ApiPropertyOptional({ description: 'User phone number' })
   @IsOptional()
   @IsString()
   phone?: string;
 
-  @ApiPropertyOptional({ description: 'User role', enum: ['admin', 'veterinarian', 'staff', 'patient'] })
-  @IsOptional()
-  @IsEnum(['admin', 'veterinarian', 'staff', 'patient'])
-  role?: 'admin' | 'veterinarian' | 'staff' | 'patient';
-
-  @ApiPropertyOptional({ description: 'User avatar URL' })
+  @ApiPropertyOptional({ description: 'User role', enum: ['patient', 'veterinarian', 'staff', 'admin'] })
   @IsOptional()
   @IsString()
-  avatar?: string;
-
-  @ApiPropertyOptional({ description: 'User date of birth' })
-  @IsOptional()
-  @IsDateString()
-  dateOfBirth?: string;
+  role?: 'patient' | 'veterinarian' | 'staff' | 'admin';
 
   @ApiPropertyOptional({ description: 'User address' })
   @IsOptional()
@@ -49,25 +39,80 @@ export class CreateUserDto {
   @IsString()
   city?: string;
 
-  @ApiPropertyOptional({ description: 'User postal code' })
-  @IsOptional()
-  @IsString()
-  postalCode?: string;
-
   @ApiPropertyOptional({ description: 'User country' })
   @IsOptional()
   @IsString()
   country?: string;
 
-  @ApiPropertyOptional({ description: 'User preferred language' })
+  @ApiPropertyOptional({ description: 'User postal code' })
   @IsOptional()
   @IsString()
-  preferredLanguage?: string;
+  postalCode?: string;
 
-  @ApiPropertyOptional({ description: 'User timezone' })
+  @ApiPropertyOptional({ description: 'User date of birth' })
   @IsOptional()
   @IsString()
-  timezone?: string;
+  dateOfBirth?: string;
+
+  @ApiPropertyOptional({ description: 'User gender' })
+  @IsOptional()
+  @IsString()
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+
+  @ApiPropertyOptional({ description: 'User emergency contact name' })
+  @IsOptional()
+  @IsString()
+  emergencyContactName?: string;
+
+  @ApiPropertyOptional({ description: 'User emergency contact phone' })
+  @IsOptional()
+  @IsString()
+  emergencyContactPhone?: string;
+
+  @ApiPropertyOptional({ description: 'User emergency contact relationship' })
+  @IsOptional()
+  @IsString()
+  emergencyContactRelationship?: string;
+
+  @ApiPropertyOptional({ description: 'User medical history' })
+  @IsOptional()
+  @IsString()
+  medicalHistory?: string;
+
+  @ApiPropertyOptional({ description: 'User allergies' })
+  @IsOptional()
+  @IsString()
+  allergies?: string;
+
+  @ApiPropertyOptional({ description: 'User medications' })
+  @IsOptional()
+  @IsString()
+  medications?: string;
+
+  @ApiPropertyOptional({ description: 'User insurance provider' })
+  @IsOptional()
+  @IsString()
+  insuranceProvider?: string;
+
+  @ApiPropertyOptional({ description: 'User insurance policy number' })
+  @IsOptional()
+  @IsString()
+  insurancePolicyNumber?: string;
+
+  @ApiPropertyOptional({ description: 'User insurance group number' })
+  @IsOptional()
+  @IsString()
+  insuranceGroupNumber?: string;
+
+  @ApiPropertyOptional({ description: 'User insurance expiry date' })
+  @IsOptional()
+  @IsString()
+  insuranceExpiryDate?: string;
+
+  @ApiPropertyOptional({ description: 'User notes' })
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }
 
 export class UpdateUserDto {

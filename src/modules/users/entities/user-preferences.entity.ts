@@ -44,14 +44,14 @@ export interface CommunicationPreferences {
 @Entity('user_preferences')
 export class UserPreferences {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   @Column({ name: 'user_id', type: 'uuid' })
-  userId: string;
+  userId!: string;
 
   @Column({
     type: 'jsonb',
@@ -75,7 +75,7 @@ export class UserPreferences {
       },
     } as NotificationSettings,
   })
-  notificationSettings: NotificationSettings;
+  notificationSettings!: NotificationSettings;
 
   @Column({
     type: 'jsonb',
@@ -87,7 +87,7 @@ export class UserPreferences {
       allowContact: true,
     } as PrivacySettings,
   })
-  privacySettings: PrivacySettings;
+  privacySettings!: PrivacySettings;
 
   @Column({
     type: 'jsonb',
@@ -102,17 +102,17 @@ export class UserPreferences {
       },
     } as CommunicationPreferences,
   })
-  communicationPreferences: CommunicationPreferences;
+  communicationPreferences!: CommunicationPreferences;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  theme: 'light' | 'dark' | 'auto';
+  theme!: 'light' | 'dark' | 'auto';
 
   @Column({ type: 'boolean', default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }

@@ -1,8 +1,23 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus, Param, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiParam } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { LoginDto, RegisterDto, RefreshTokenDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Response, Request as ExpressRequest } from 'express';
+
+// Define the user type from JWT payload
+interface JwtUser {
+  id: string;
+  email: string;
+  role: string;
+  firstName: string;
+  lastName: string;
+}
+
+// Extend Express Request to include user
+interface AuthenticatedRequest extends ExpressRequest {
+  user: JwtUser;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -49,7 +64,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 201,
-    description: 'User registered successfully. Email verification sent.',
+    description: 'User registered successfully. Email verification sent. Authentication cookies set.',
     schema: {
       example: {
         user: {
@@ -63,8 +78,6 @@ export class AuthController {
           profileCompletionPercentage: 45,
           accountStatus: 'active',
         },
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
         message: 'Registration successful. Please check your email to verify your account.',
       },
     },
@@ -91,15 +104,15 @@ export class AuthController {
       },
     },
   })
-  async register(@Body() registerDto: RegisterDto, @Request() req) {
-    return this.authService.register(registerDto, req);
+  async register(@Body() registerDto: RegisterDto, @Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+    return this.authService.register(registerDto, req, res);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login authentication',
-    description: 'Authenticate user with email and password. Returns JWT tokens for accessing protected endpoints. Includes account security features like login attempt tracking and account locking.',
+    description: 'Authenticate user with email and password. Sets authentication cookies for accessing protected endpoints. Includes account security features like login attempt tracking and account locking.',
   })
   @ApiBody({
     description: 'User login credentials',
@@ -129,7 +142,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Login successful - returns user data and tokens',
+    description: 'Login successful - returns user data and sets authentication cookies',
     schema: {
       example: {
         user: {
@@ -143,8 +156,7 @@ export class AuthController {
           profileCompletionPercentage: 75,
           accountStatus: 'active',
         },
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwic3ViIjoidXVpZC1zdHJpbmciLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTY0MDk5NTIwMCwiZXhwIjoxNjQwOTk2MTAwfQ...',
-        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwic3ViIjoidXVpZC1zdHJpbmciLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTY0MDk5NTIwMCwiZXhwIjoxNjQxNjAwMDAwfQ...',
+        message: 'Login successful',
       },
     },
   })
@@ -170,28 +182,34 @@ export class AuthController {
       },
     },
   })
-  async login(@Body() loginDto: LoginDto, @Request() req) {
-    return this.authService.login(loginDto, req);
+  async login(@Body() loginDto: LoginDto, @Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+    return this.authService.login(loginDto, req, res);
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description: 'Refresh the access token using the refresh token from cookies. Sets new authentication cookies.',
+  })
   @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized - invalid refresh token' })
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
-    return this.authService.refreshToken(refreshTokenDto);
+  async refresh(@Request() req: ExpressRequest, @Res({ passthrough: true }) res: Response) {
+    return this.authService.refreshToken(req, res);
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'User logout' })
+  @ApiOperation({
+    summary: 'User logout',
+    description: 'Logout user and clear authentication cookies',
+  })
   @ApiResponse({ status: 200, description: 'Logout successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Request() req) {
-    return this.authService.logout(req.user.id, req);
+  async logout(@Request() req: AuthenticatedRequest, @Res({ passthrough: true }) res: Response) {
+    return this.authService.logout(req.user.id, req, res);
   }
 
   @Get('profile')
@@ -200,7 +218,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile retrieved' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getProfile(@Request() req) {
+  async getProfile(@Request() req: AuthenticatedRequest) {
     return this.authService.getProfile(req.user.id);
   }
 
@@ -212,7 +230,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Password changed successfully' })
   @ApiResponse({ status: 400, description: 'Bad request - invalid current password' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async changePassword(@Request() req, @Body() changePasswordDto: ChangePasswordDto) {
+  async changePassword(@Request() req: AuthenticatedRequest, @Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(req.user.id, changePasswordDto.currentPassword, changePasswordDto.newPassword);
   }
 
@@ -300,7 +318,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user information' })
   @ApiResponse({ status: 200, description: 'User information retrieved' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getCurrentUser(@Request() req) {
+  async getCurrentUser(@Request() req: AuthenticatedRequest) {
     return this.authService.getProfile(req.user.id);
   }
 
@@ -310,7 +328,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Get user authentication status' })
   @ApiResponse({ status: 200, description: 'Authentication status retrieved' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getAuthStatus(@Request() req) {
+  async getAuthStatus(@Request() req: AuthenticatedRequest) {
     const user = await this.authService.getProfile(req.user.id);
     return {
       isAuthenticated: true,

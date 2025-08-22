@@ -1,154 +1,137 @@
-import { Column, CreateDateColumn, Entity, Index, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-import { Exclude } from 'class-transformer';
 import { UserActivity } from './user-activity.entity';
 import { UserPreferences } from './user-preferences.entity';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
-  @Column({ type: 'varchar', length: 100 })
-  @Index()
-  email: string;
+  @Column({ unique: true })
+  email!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  @Index()
-  phone?: string;
+  @Column({ name: 'first_name' })
+  firstName!: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  firstName: string;
+  @Column({ name: 'last_name' })
+  lastName!: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  lastName: string;
+  @Column({ name: 'password_hash' })
+  passwordHash!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  @Exclude()
-  passwordHash: string;
+  @Column({
+    type: 'enum',
+    enum: ['admin', 'veterinarian', 'staff', 'patient'],
+    default: 'patient',
+  })
+  role!: 'admin' | 'veterinarian' | 'staff' | 'patient';
 
-  @Column({ type: 'varchar', length: 20, default: 'patient' })
-  role: 'admin' | 'veterinarian' | 'staff' | 'patient';
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ nullable: true })
   avatar?: string;
 
-  @Column({ type: 'date', nullable: true })
-  dateOfBirth?: Date;
+  @Column({ name: 'date_of_birth', nullable: true })
+  dateOfBirth?: string;
 
-  @Column({ type: 'varchar', length: 200, nullable: true })
+  @Column({ nullable: true })
   address?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ nullable: true })
   city?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ name: 'postal_code', nullable: true })
   postalCode?: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ nullable: true })
   country?: string;
 
-  @Column({ type: 'boolean', default: false })
-  isEmailVerified: boolean;
-
-  @Column({ type: 'boolean', default: false })
-  isPhoneVerified: boolean;
-
-  @Column({ type: 'boolean', default: true })
-  isActive: boolean;
-
-  @Column({ type: 'timestamp', nullable: true })
-  lastLoginAt?: Date;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  refreshToken?: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  refreshTokenExpiresAt?: Date;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  emailVerificationToken?: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  emailVerificationExpiresAt?: Date;
-
-  @Column({ type: 'varchar', length: 10, nullable: true })
-  phoneVerificationOTP?: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  phoneVerificationExpiresAt?: Date;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  passwordResetToken?: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  passwordResetExpiresAt?: Date;
-
-  @Column({ type: 'integer', default: 0 })
-  loginAttempts: number;
-
-  @Column({ type: 'timestamp', nullable: true })
-  lockedUntil?: Date;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'preferred_language', default: 'en' })
   preferredLanguage?: string;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
+  @Column({ default: 'UTC' })
   timezone?: string;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified!: boolean;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @Column({ name: 'is_phone_verified', default: false })
+  isPhoneVerified!: boolean;
 
-  // Relationships
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
+
+  @Column({ name: 'refresh_token', nullable: true })
+  refreshToken?: string;
+
+  @Column({ name: 'refresh_token_expires_at', nullable: true })
+  refreshTokenExpiresAt?: Date;
+
+  @Column({ name: 'email_verification_token', nullable: true })
+  emailVerificationToken?: string;
+
+  @Column({ name: 'email_verification_expires_at', nullable: true })
+  emailVerificationExpiresAt?: Date;
+
+  @Column({ name: 'phone_verification_otp', nullable: true })
+  phoneVerificationOTP?: string;
+
+  @Column({ name: 'phone_verification_expires_at', nullable: true })
+  phoneVerificationExpiresAt?: Date;
+
+  @Column({ name: 'password_reset_token', nullable: true })
+  passwordResetToken?: string;
+
+  @Column({ name: 'password_reset_expires_at', nullable: true })
+  passwordResetExpiresAt?: Date;
+
+  @Column({ name: 'login_attempts', default: 0 })
+  loginAttempts!: number;
+
+  @Column({ name: 'locked_until', nullable: true })
+  lockedUntil?: Date | null;
+
+  @Column({ name: 'last_login_at', nullable: true })
+  lastLoginAt?: Date;
+
+  @Column({ name: 'profile_completion_percentage', default: 0 })
+  profileCompletionPercentage!: number;
+
+  @Column({ name: 'account_status', default: 'active' })
+  accountStatus!: string;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+
   @OneToOne(() => UserPreferences, (preferences) => preferences.user, { cascade: true })
-  preferences: UserPreferences;
+  @JoinColumn({ name: 'preferences_id' })
+  preferences!: UserPreferences;
 
   @OneToMany(() => UserActivity, (activity) => activity.user, { cascade: true })
-  activities: UserActivity[];
+  activities!: UserActivity[];
 
-  // Virtual property for full name
-  get fullName(): string {
-    return `${this.firstName} ${this.lastName}`;
-  }
-
-  // Virtual property for display name
-  get displayName(): string {
-    return this.fullName;
-  }
-
-  // Virtual property for profile completion percentage
-  get profileCompletionPercentage(): number {
-    const fields = [this.firstName, this.lastName, this.phone, this.address, this.city, this.postalCode, this.country, this.dateOfBirth, this.avatar, this.isEmailVerified, this.isPhoneVerified];
-
-    const completedFields = fields.filter((field) => field !== null && field !== undefined && field !== '').length;
-
-    return Math.round((completedFields / fields.length) * 100);
-  }
-
-  // Virtual property for account status
-  get accountStatus(): 'active' | 'locked' | 'inactive' {
-    if (!this.isActive) return 'inactive';
-    if (this.lockedUntil && this.lockedUntil > new Date()) return 'locked';
-    return 'active';
-  }
-
-  // Method to check if user can login
   canLogin(): boolean {
-    return this.isActive && this.isEmailVerified && (!this.lockedUntil || this.lockedUntil <= new Date());
+    return this.isActive && this.isEmailVerified;
   }
 
-  // Method to increment login attempts
   incrementLoginAttempts(): void {
-    this.loginAttempts += 1;
-    if (this.loginAttempts >= 5) {
-      this.lockedUntil = new Date(Date.now() + 30 * 60 * 1000); // Lock for 30 minutes
-    }
+    this.loginAttempts = (this.loginAttempts || 0) + 1;
   }
 
-  // Method to reset login attempts
+  lockAccount(): void {
+    this.lockedUntil = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  }
+
+  unlockAccount(): void {
+    this.lockedUntil = null;
+  }
+
+  isLocked(): boolean {
+    return this.lockedUntil ? this.lockedUntil > new Date() : false;
+  }
+
   resetLoginAttempts(): void {
     this.loginAttempts = 0;
     this.lockedUntil = null;

@@ -4,30 +4,30 @@ import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator';
 export class LoginDto {
   @ApiProperty({ description: 'User email address' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ description: 'User password' })
   @IsString()
-  password: string;
+  password!: string;
 }
 
 export class RegisterDto {
   @ApiProperty({ description: 'User email address' })
   @IsEmail()
-  email: string;
+  email!: string;
 
   @ApiProperty({ description: 'User password', minLength: 8 })
   @IsString()
   @MinLength(8)
-  password: string;
+  password!: string;
 
   @ApiProperty({ description: 'User first name' })
   @IsString()
-  firstName: string;
+  firstName!: string;
 
   @ApiProperty({ description: 'User last name' })
   @IsString()
-  lastName: string;
+  lastName!: string;
 
   @ApiPropertyOptional({ description: 'User phone number' })
   @IsOptional()
@@ -43,33 +43,33 @@ export class RegisterDto {
 export class RefreshTokenDto {
   @ApiProperty({ description: 'Refresh token' })
   @IsString()
-  refreshToken: string;
+  refreshToken!: string;
 }
 
 export class ChangePasswordDto {
   @ApiProperty({ description: 'Current password' })
   @IsString()
-  currentPassword: string;
+  currentPassword!: string;
 
   @ApiProperty({ description: 'New password', minLength: 8 })
   @IsString()
   @MinLength(8)
-  newPassword: string;
+  newPassword!: string;
 }
 
 export class ForgotPasswordDto {
   @ApiProperty({ description: 'User email address' })
   @IsEmail()
-  email: string;
+  email!: string;
 }
 
 export class ResetPasswordDto {
   @ApiProperty({ description: 'Reset token' })
   @IsString()
-  token: string;
+  token!: string;
 
   @ApiProperty({ description: 'New password', minLength: 8 })
   @IsString()
   @MinLength(8)
-  newPassword: string;
+  newPassword!: string;
 }
