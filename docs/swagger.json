@@ -1,0 +1,1491 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/health/database": {
+      "get": {
+        "operationId": "getDatabaseInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/health/ping": {
+      "get": {
+        "operationId": "ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "summary": "Register a new user account",
+        "description": "Create a new user account with email verification. Supports multiple user roles including patient, veterinarian, staff, and admin.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "User registration data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "patient": {
+                  "summary": "Patient Registration",
+                  "description": "Register as a patient",
+                  "value": {
+                    "email": "patient@example.com",
+                    "password": "SecurePass123!",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "phone": "+1234567890",
+                    "role": "patient"
+                  }
+                },
+                "veterinarian": {
+                  "summary": "Veterinarian Registration",
+                  "description": "Register as a veterinarian",
+                  "value": {
+                    "email": "dr.smith@clinic.com",
+                    "password": "VetPass123!",
+                    "firstName": "Dr. Sarah",
+                    "lastName": "Smith",
+                    "phone": "+1234567891",
+                    "role": "veterinarian",
+                    "address": "123 Vet Street",
+                    "city": "Medical City",
+                    "country": "USA"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully. Email verification sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "uuid-string",
+                      "email": "patient@example.com",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "role": "patient",
+                      "isEmailVerified": false,
+                      "isPhoneVerified": false,
+                      "profileCompletionPercentage": 45,
+                      "accountStatus": "active"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                    "message": "Registration successful. Please check your email to verify your account."
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "email must be a valid email",
+                      "password must be longer than or equal to 8 characters"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - user already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "message": "User with this email already exists",
+                    "error": "Conflict"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "User login authentication",
+        "description": "Authenticate user with email and password. Returns JWT tokens for accessing protected endpoints. Includes account security features like login attempt tracking and account locking.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "User login credentials",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "patient": {
+                  "summary": "Patient Login",
+                  "value": {
+                    "email": "john.doe@example.com",
+                    "password": "Password123!"
+                  }
+                },
+                "veterinarian": {
+                  "summary": "Veterinarian Login",
+                  "value": {
+                    "email": "dr.smith@borzolini.com",
+                    "password": "Password123!"
+                  }
+                },
+                "admin": {
+                  "summary": "Admin Login",
+                  "value": {
+                    "email": "admin@borzolini.com",
+                    "password": "Password123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful - returns user data and tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "uuid-string",
+                      "email": "john.doe@example.com",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "role": "patient",
+                      "isEmailVerified": true,
+                      "isPhoneVerified": false,
+                      "profileCompletionPercentage": 75,
+                      "accountStatus": "active"
+                    },
+                    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwic3ViIjoidXVpZC1zdHJpbmciLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTY0MDk5NTIwMCwiZXhwIjoxNjQwOTk2MTAwfQ...",
+                    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvaG4uZG9lQGV4YW1wbGUuY29tIiwic3ViIjoidXVpZC1zdHJpbmciLCJyb2xlIjoicGF0aWVudCIsImlhdCI6MTY0MDk5NTIwMCwiZXhwIjoxNjQxNjAwMDAwfQ..."
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid credentials or unverified account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": "Invalid credentials",
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked - account is temporarily locked due to failed attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 423,
+                    "message": "Account is locked until 2024-01-01T12:30:00Z",
+                    "error": "Locked"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "summary": "Refresh access token",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully"
+          },
+          "401": {
+            "description": "Unauthorized - invalid refresh token"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "User logout",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Get current user profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/change-password": {
+      "post": {
+        "operationId": "changePassword",
+        "summary": "Change user password",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid current password"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "forgotPassword",
+        "summary": "Request password reset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset email sent"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "resetPassword",
+        "summary": "Reset password with token",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid or expired token"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-email/{token}": {
+      "post": {
+        "operationId": "verifyEmail",
+        "summary": "Verify email address",
+        "description": "Verify user email address using the token sent via email during registration. This activates the user account for login.",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Email verification token received via email",
+            "schema": {
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully - account is now active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": "Invalid or expired verification token",
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/resend-verification": {
+      "post": {
+        "operationId": "resendVerification",
+        "summary": "Resend email verification",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Verification email sent successfully"
+          },
+          "400": {
+            "description": "Bad request - email already verified"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/request-phone-verification": {
+      "post": {
+        "operationId": "requestPhoneVerification",
+        "summary": "Request phone verification OTP",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Phone verification OTP sent successfully"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/verify-phone": {
+      "post": {
+        "operationId": "verifyPhone",
+        "summary": "Verify phone number with OTP",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Phone verified successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid or expired OTP"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "summary": "Get current user information",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User information retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/status": {
+      "get": {
+        "operationId": "getAuthStatus",
+        "summary": "Get user authentication status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authentication status retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users": {
+      "post": {
+        "operationId": "create",
+        "summary": "Create a new user (Admin only)",
+        "description": "Administrative endpoint to create new users. Only accessible by admin users. Automatically sends verification email to new user.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "User creation data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "veterinarian": {
+                  "summary": "Create Veterinarian",
+                  "value": {
+                    "email": "new.vet@clinic.com",
+                    "password": "SecurePass123!",
+                    "firstName": "Dr. Jane",
+                    "lastName": "Wilson",
+                    "phone": "+1234567890",
+                    "role": "veterinarian",
+                    "address": "456 Medical Plaza",
+                    "city": "Healthcare City",
+                    "country": "USA"
+                  }
+                },
+                "staff": {
+                  "summary": "Create Staff Member",
+                  "value": {
+                    "email": "staff@clinic.com",
+                    "password": "SecurePass123!",
+                    "firstName": "Alice",
+                    "lastName": "Johnson",
+                    "phone": "+1234567891",
+                    "role": "staff"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "id": "uuid-string",
+                    "email": "new.vet@clinic.com",
+                    "firstName": "Dr. Jane",
+                    "lastName": "Wilson",
+                    "role": "veterinarian",
+                    "isEmailVerified": false,
+                    "isPhoneVerified": false,
+                    "isActive": true,
+                    "profileCompletionPercentage": 65,
+                    "accountStatus": "active",
+                    "createdAt": "2024-01-01T12:00:00Z"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "email must be a valid email"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 403,
+                    "message": "Forbidden resource",
+                    "error": "Forbidden"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "findAll",
+        "summary": "Get all users (Admin only)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Get current user profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateProfile",
+        "summary": "Update current user profile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User profile updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile/completion": {
+      "get": {
+        "operationId": "getProfileCompletion",
+        "summary": "Get current user profile completion percentage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile completion percentage retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}": {
+      "get": {
+        "operationId": "findOne",
+        "summary": "Get user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "update",
+        "summary": "Update user by ID (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "remove",
+        "summary": "Delete user by ID (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile/preferences": {
+      "get": {
+        "operationId": "getUserPreferences",
+        "summary": "Get current user preferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User preferences retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "updateUserPreferences",
+        "summary": "Update current user preferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserPreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User preferences updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile/activities": {
+      "get": {
+        "operationId": "getUserActivities",
+        "summary": "Get current user activities",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of activities to retrieve (default: 50)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User activities retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/profile/activities/summary": {
+      "get": {
+        "operationId": "getActivitySummary",
+        "summary": "Get current user activity summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User activity summary retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}/activate": {
+      "post": {
+        "operationId": "activateUser",
+        "summary": "Activate user account (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User activated successfully"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}/deactivate": {
+      "post": {
+        "operationId": "deactivateUser",
+        "summary": "Deactivate user account (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deactivated successfully"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/{id}/activities": {
+      "get": {
+        "operationId": "getUserActivitiesById",
+        "summary": "Get user activities by ID (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of activities to retrieve (default: 50)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User activities retrieved"
+          },
+          "403": {
+            "description": "Forbidden - insufficient permissions"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "JWT-auth": []
+          }
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "🐾 Borzolini Clinic API",
+    "description": "\n      ## AI-Powered Pet Clinic Management Platform\n\n      **Borzolini Clinic** is a comprehensive telemedicine and clinic management platform designed specifically for veterinary practices. Our platform combines traditional veterinary care with cutting-edge AI technology to provide superior pet healthcare services.\n\n      ### 🚀 Key Features\n      - **🔐 Advanced Authentication System** - Secure user management with role-based access control\n      - **👥 Multi-Role Support** - Admin, Veterinarian, Staff, and Patient roles\n      - **📧 Email & Phone Verification** - Comprehensive verification system\n      - **📊 User Activity Tracking** - Complete audit trail and analytics\n      - **⚙️ User Preferences Management** - Customizable notification and privacy settings\n      - **🏥 Clinic Management** - Complete clinic profile and service management\n      - **🐕 Pet Health Monitoring** - AI-powered health insights and monitoring\n      - **📅 Appointment System** - Advanced booking and scheduling system\n      - **🎥 Telemedicine** - Video consultation capabilities\n      - **🤖 AI Health Insights** - Machine learning-powered health recommendations\n\n      ### 🔒 Security Features\n      - JWT-based authentication with refresh tokens\n      - Account locking after failed login attempts\n      - Comprehensive activity logging\n      - Role-based access control (RBAC)\n      - Email and phone verification\n      - Password reset functionality\n\n      ### 🏗️ Architecture\n      - **Backend**: NestJS with TypeScript\n      - **Database**: PostgreSQL with TypeORM\n      - **Authentication**: JWT with refresh tokens\n      - **Email**: SMTP with HTML templates\n      - **Documentation**: OpenAPI 3.0 (Swagger)\n\n      ### 📱 Mobile & Web Ready\n      Our API is designed to support both web and mobile applications with comprehensive REST endpoints.\n\n      ### 🌍 Multi-Language Support\n      The platform supports multiple languages and timezones for international use.\n\n      ### 🧪 Sample Users (Development)\n      | Email | Password | Role | Status |\n      |-------|----------|------|---------|\n      | admin@borzolini.com | Password123! | Admin | Verified |\n      | dr.smith@borzolini.com | Password123! | Veterinarian | Verified |\n      | john.doe@example.com | Password123! | Patient | Verified |\n\n      ---\n      **Version**: 1.0.0  \n      **Environment**: development  \n      **Base URL**: `/api/v1`\n    ",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Borzolini Clinic Team",
+      "url": "https://borzolini.com",
+      "email": "support@borzolini.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "tags": [
+    {
+      "name": "auth",
+      "description": "🔐 Authentication & Security"
+    },
+    {
+      "name": "users",
+      "description": "👥 User Management"
+    },
+    {
+      "name": "clinics",
+      "description": "🏥 Clinic Management"
+    },
+    {
+      "name": "pets",
+      "description": "🐕 Pet Health Monitoring"
+    },
+    {
+      "name": "appointments",
+      "description": "📅 Appointment System"
+    },
+    {
+      "name": "ai-health",
+      "description": "🤖 AI Health Insights"
+    },
+    {
+      "name": "telemedicine",
+      "description": "🎥 Telemedicine & Consultations"
+    },
+    {
+      "name": "health",
+      "description": "💊 Health Monitoring"
+    }
+  ],
+  "servers": [
+    {
+      "url": "http://localhost:3001/api/v1",
+      "description": "Development Server"
+    },
+    {
+      "url": "https://api.borzolini.com/api/v1",
+      "description": "Production Server"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "JWT-auth": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http",
+        "name": "JWT",
+        "description": "Enter JWT token",
+        "in": "header"
+      }
+    },
+    "schemas": {
+      "RefreshTokenDto": {
+        "type": "object",
+        "properties": {
+          "refreshToken": {
+            "type": "string",
+            "description": "Refresh token"
+          }
+        },
+        "required": [
+          "refreshToken"
+        ]
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "Current password"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Reset token"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "User first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User last name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User phone number"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "User avatar URL"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "User date of birth"
+          },
+          "address": {
+            "type": "string",
+            "description": "User address"
+          },
+          "city": {
+            "type": "string",
+            "description": "User city"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "User postal code"
+          },
+          "country": {
+            "type": "string",
+            "description": "User country"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "User active status"
+          }
+        }
+      },
+      "EmailNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via email"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via email"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via email"
+          },
+          "marketing": {
+            "type": "boolean",
+            "description": "Marketing notifications via email"
+          },
+          "newsletter": {
+            "type": "boolean",
+            "description": "Newsletter subscriptions via email"
+          }
+        }
+      },
+      "SmsNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via SMS"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via SMS"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via SMS"
+          }
+        }
+      },
+      "PushNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via push"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via push"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via push"
+          }
+        }
+      },
+      "NotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "description": "Email notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailNotificationSettingsDto"
+              }
+            ]
+          },
+          "sms": {
+            "description": "SMS notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsNotificationSettingsDto"
+              }
+            ]
+          },
+          "push": {
+            "description": "Push notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PushNotificationSettingsDto"
+              }
+            ]
+          }
+        }
+      },
+      "PrivacySettingsDto": {
+        "type": "object",
+        "properties": {
+          "profileVisibility": {
+            "type": "string",
+            "description": "Profile visibility level",
+            "enum": [
+              "public",
+              "private",
+              "friends"
+            ]
+          },
+          "showPhone": {
+            "type": "boolean",
+            "description": "Show phone number to others"
+          },
+          "showAddress": {
+            "type": "boolean",
+            "description": "Show address to others"
+          },
+          "showEmail": {
+            "type": "boolean",
+            "description": "Show email to others"
+          },
+          "allowContact": {
+            "type": "boolean",
+            "description": "Allow others to contact"
+          }
+        }
+      },
+      "QuietHoursDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable quiet hours"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "Quiet hours start time (HH:mm)"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "Quiet hours end time (HH:mm)"
+          }
+        }
+      },
+      "CommunicationPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "preferredLanguage": {
+            "type": "string",
+            "description": "Preferred language"
+          },
+          "preferredContactMethod": {
+            "type": "string",
+            "description": "Preferred contact method",
+            "enum": [
+              "email",
+              "sms",
+              "phone"
+            ]
+          },
+          "timezone": {
+            "type": "string",
+            "description": "User timezone"
+          },
+          "quietHours": {
+            "description": "Quiet hours settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuietHoursDto"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateUserPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "notificationSettings": {
+            "description": "Notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            ]
+          },
+          "privacySettings": {
+            "description": "Privacy settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PrivacySettingsDto"
+              }
+            ]
+          },
+          "communicationPreferences": {
+            "description": "Communication preferences",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunicationPreferencesDto"
+              }
+            ]
+          },
+          "theme": {
+            "type": "string",
+            "description": "UI theme preference",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Active status"
+          }
+        }
+      }
+    }
+  }
+}

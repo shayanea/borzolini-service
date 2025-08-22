@@ -1,0 +1,17 @@
+{
+  "totalEndpoints": 27,
+  "totalOperations": 32,
+  "methodBreakdown": {
+    "GET": 14,
+    "POST": 14,
+    "PATCH": 3,
+    "DELETE": 1
+  },
+  "tags": [
+    "auth",
+    "users"
+  ],
+  "tagCount": 2,
+  "generatedAt": "2025-08-22T17:05:37.658Z",
+  "version": "1.0.0"
+}
