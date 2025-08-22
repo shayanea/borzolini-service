@@ -1,3 +1,5 @@
+// Feature modules
+import { AuthModule } from './modules/auth/auth.module';
 // Common modules
 import { CommonModule } from './common/common.module';
 import { ConfigModule } from '@nestjs/config';
@@ -6,6 +8,7 @@ import { HealthModule } from './modules/health/health.module';
 import { Module } from '@nestjs/common';
 import { SupabaseModule } from './common/supabase.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -35,9 +38,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     // Health check module
     HealthModule,
 
-    // Feature modules (to be implemented)
-    // AuthModule,
-    // UsersModule,
+    // Feature modules
+    AuthModule,
+    UsersModule,
     // ClinicsModule,
     // PetsModule,
     // AppointmentsModule,
