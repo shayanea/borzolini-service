@@ -17,6 +17,12 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node src/seed.ts",
+    "migrate": "ts-node src/scripts/run-migrations.ts",
+    "migrate:generate": "typeorm migration:generate -d src/config/typeorm.config.ts",
+    "migrate:create": "typeorm migration:create",
+    "migrate:revert": "typeorm migration:revert -d src/config/typeorm.config.ts",
+    "migrate:run": "typeorm migration:run -d src/config/typeorm.config.ts",
+    "migrate:show": "typeorm migration:show -d src/config/typeorm.config.ts",
     "docs:generate": "ts-node src/scripts/generate-swagger.ts",
     "docs:serve": "nest start --watch & sleep 3 && open http://localhost:3001/api/docs"
   },

@@ -1,4 +1,5 @@
 import { AppModule } from './app.module';
+import { ClinicsSeeder } from './modules/clinics/clinics.seeder';
 import { NestFactory } from '@nestjs/core';
 import { UsersSeeder } from './modules/users/users.seeder';
 
@@ -8,8 +9,10 @@ async function seed() {
   try {
     const app = await NestFactory.createApplicationContext(AppModule);
     const usersSeeder = app.get(UsersSeeder);
+    const clinicsSeeder = app.get(ClinicsSeeder);
 
     await usersSeeder.seed();
+    await clinicsSeeder.seed();
 
     console.log('✅ Database seeding completed successfully!');
     console.log('🔑 Default password for all users: Password123!');

@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, OnModuleInit, Logger } from '@nestjs/common';
 import { LoginDto, RegisterDto } from './dto/auth.dto';
 import { Request, Response } from 'express';
 
@@ -9,14 +9,79 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+  private isInitialized = false;
+
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private configService: ConfigService
   ) {}
 
+  async onModuleInit() {
+    this.logger.log('Initializing Auth service...');
+    
+    try {
+      await this.validateDependencies();
+      await this.validateConfiguration();
+      
+      this.isInitialized = true;
+      this.logger.log('Auth service initialized successfully');
+    } catch (error) {
+      this.logger.error('Failed to initialize Auth service:', error);
+      throw error;
+    }
+  }
+
+  private async validateDependencies(): Promise<void> {
+    // Check if required services are ready
+    if (!this.usersService) {
+      throw new Error('UsersService not available');
+    }
+
+    if (!this.jwtService) {
+      throw new Error('JwtService not available');
+    }
+
+    this.logger.log('Auth service dependencies validated successfully');
+  }
+
+  private async validateConfiguration(): Promise<void> {
+    const requiredVars = ['JWT_SECRET', 'JWT_EXPIRES_IN', 'JWT_REFRESH_SECRET', 'JWT_REFRESH_EXPIRES_IN'];
+    const missingVars: string[] = [];
+
+    for (const varName of requiredVars) {
+      const value = this.configService.get(varName);
+      if (!value) {
+        missingVars.push(varName);
+      }
+    }
+
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+    }
+
+    // Validate JWT secret
+    const jwtSecret = this.configService.get<string>('JWT_SECRET')!;
+    if (jwtSecret.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters long');
+    }
+
+    // Validate JWT refresh secret
+    const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET')!;
+    if (jwtRefreshSecret.length < 32) {
+      throw new Error('JWT_REFRESH_SECRET must be at least 32 characters long');
+    }
+
+    this.logger.log('Auth service configuration validated successfully');
+  }
+
   async validateUser(email: string, password: string): Promise<any> {
+    if (!this.isInitialized) {
+      throw new Error('Auth service not initialized');
+    }
+
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
