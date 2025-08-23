@@ -1,27 +1,30 @@
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { CommonService } from './common.service';
+import { DatabaseInitInterceptor } from './database-init.interceptor';
 import { DatabaseService } from './database.service';
 import { EmailService } from './email.service';
 import { FileUploadService } from './file-upload.service';
 import { Module } from '@nestjs/common';
 import { NotificationService } from './notification.service';
-import { SupabaseService } from './supabase.service';
+import { ServiceHealthService } from './service-health.service';
+import { SmsService } from './sms.service';
+import { SupabaseModule } from './supabase.module';
 
 @Module({
+  imports: [SupabaseModule],
   providers: [
     CommonService,
     DatabaseService,
     EmailService,
     FileUploadService,
     NotificationService,
-    SupabaseService,
+    SmsService,
+    ServiceHealthService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: DatabaseInitInterceptor,
+    },
   ],
-  exports: [
-    CommonService,
-    DatabaseService,
-    EmailService,
-    FileUploadService,
-    NotificationService,
-    SupabaseService,
-  ],
+  exports: [CommonService, DatabaseService, EmailService, FileUploadService, NotificationService, SmsService, ServiceHealthService],
 })
 export class CommonModule {}

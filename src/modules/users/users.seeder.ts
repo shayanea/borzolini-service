@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { UserActivity, ActivityType, ActivityStatus } from './entities/user-activity.entity';
 
@@ -51,6 +51,10 @@ export class UsersSeeder {
         preferredLanguage: 'en',
         timezone: 'America/New_York',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        gender: 'male' as const,
+        emergencyContactName: 'Emergency Contact',
+        emergencyContactPhone: '+1234567890',
+        emergencyContactRelationship: 'Spouse',
       },
       {
         email: 'dr.smith@borzolini.com',
@@ -70,6 +74,13 @@ export class UsersSeeder {
         timezone: 'America/Chicago',
         avatar: 'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1985-03-15',
+        gender: 'female' as const,
+        emergencyContactName: 'Dr. John Smith',
+        emergencyContactPhone: '+1234567891',
+        emergencyContactRelationship: 'Spouse',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
       },
       {
         email: 'dr.johnson@borzolini.com',
@@ -89,6 +100,13 @@ export class UsersSeeder {
         timezone: 'America/Denver',
         avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1988-07-22',
+        gender: 'male' as const,
+        emergencyContactName: 'Lisa Johnson',
+        emergencyContactPhone: '+1234567892',
+        emergencyContactRelationship: 'Spouse',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
       },
       {
         email: 'nurse.wilson@borzolini.com',
@@ -108,6 +126,13 @@ export class UsersSeeder {
         timezone: 'America/Los_Angeles',
         avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1992-11-08',
+        gender: 'female' as const,
+        emergencyContactName: 'Robert Wilson',
+        emergencyContactPhone: '+1234567893',
+        emergencyContactRelationship: 'Father',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
       },
       {
         email: 'john.doe@example.com',
@@ -127,6 +152,17 @@ export class UsersSeeder {
         timezone: 'America/New_York',
         avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1990-05-12',
+        gender: 'male' as const,
+        emergencyContactName: 'Jane Doe',
+        emergencyContactPhone: '+1234567894',
+        emergencyContactRelationship: 'Spouse',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
+        insuranceProvider: 'Blue Cross Blue Shield',
+        insurancePolicyNumber: 'BCBS123456',
+        insuranceGroupNumber: 'GRP789',
+        insuranceExpiryDate: '2025-12-31',
       },
       {
         email: 'jane.smith@example.com',
@@ -146,6 +182,17 @@ export class UsersSeeder {
         timezone: 'America/Chicago',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1988-09-25',
+        gender: 'female' as const,
+        emergencyContactName: 'John Smith',
+        emergencyContactPhone: '+1234567895',
+        emergencyContactRelationship: 'Spouse',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
+        insuranceProvider: 'Aetna',
+        insurancePolicyNumber: 'AET789012',
+        insuranceGroupNumber: 'GRP456',
+        insuranceExpiryDate: '2025-12-31',
       },
       {
         email: 'mike.brown@example.com',
@@ -165,6 +212,13 @@ export class UsersSeeder {
         timezone: 'America/Denver',
         avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1995-12-03',
+        gender: 'male' as const,
+        emergencyContactName: 'Sarah Brown',
+        emergencyContactPhone: '+1234567896',
+        emergencyContactRelationship: 'Sister',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
       },
       {
         email: 'sarah.wilson@example.com',
@@ -184,6 +238,17 @@ export class UsersSeeder {
         timezone: 'America/Los_Angeles',
         avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1991-04-18',
+        gender: 'female' as const,
+        emergencyContactName: 'Mike Wilson',
+        emergencyContactPhone: '+1234567897',
+        emergencyContactRelationship: 'Brother',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
+        insuranceProvider: 'Cigna',
+        insurancePolicyNumber: 'CIG345678',
+        insuranceGroupNumber: 'GRP123',
+        insuranceExpiryDate: '2025-12-31',
       },
       {
         email: 'dr.garcia@borzolini.com',
@@ -203,6 +268,13 @@ export class UsersSeeder {
         timezone: 'America/Phoenix',
         avatar: 'https://images.unsplash.com/photo-1582750433449-648ed127bb54?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1987-01-30',
+        gender: 'female' as const,
+        emergencyContactName: 'Carlos Garcia',
+        emergencyContactPhone: '+1234567898',
+        emergencyContactRelationship: 'Spouse',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
       },
       {
         email: 'alex.chen@example.com',
@@ -222,12 +294,24 @@ export class UsersSeeder {
         timezone: 'America/Seattle',
         avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face',
         dateOfBirth: '1993-08-14',
+        gender: 'prefer-not-to-say' as const,
+        emergencyContactName: 'Jennifer Chen',
+        emergencyContactPhone: '+1234567899',
+        emergencyContactRelationship: 'Roommate',
+        medicalHistory: 'No significant medical history',
+        allergies: 'None known',
+        medications: 'None',
+        insuranceProvider: 'UnitedHealth',
+        insurancePolicyNumber: 'UHC901234',
+        insuranceGroupNumber: 'GRP567',
+        insuranceExpiryDate: '2025-12-31',
       },
     ];
 
     try {
       for (const userData of users) {
-        const user = this.userRepository.create(userData);
+        const user = new User();
+        Object.assign(user, userData);
         const savedUser = await this.userRepository.save(user);
 
         // Create user preferences
@@ -236,7 +320,11 @@ export class UsersSeeder {
         // Create sample activities
         await this.createSampleActivities(savedUser);
 
-        this.logger.log(`Created user: ${user.email} (${user.role})`);
+        // Calculate and update profile completion percentage
+        const profileCompletionPercentage = await this.calculateProfileCompletion(savedUser);
+        await this.userRepository.update(savedUser.id, { profileCompletionPercentage });
+
+        this.logger.log(`Created user: ${savedUser.email} (${savedUser.role}) - Profile completion: ${profileCompletionPercentage}%`);
       }
 
       this.logger.log(`Successfully seeded ${users.length} users`);
@@ -268,7 +356,7 @@ export class UsersSeeder {
           appointments: true,
           reminders: true,
           healthAlerts: true,
-          marketing: user.role === 'patient',
+          marketing: user.role === UserRole.PATIENT,
           newsletter: true,
         },
         sms: {
@@ -283,10 +371,10 @@ export class UsersSeeder {
         },
       },
       privacySettings: {
-        profileVisibility: user.role === 'veterinarian' ? 'public' : 'public',
-        showPhone: user.role === 'veterinarian' || user.role === 'staff',
-        showAddress: user.role === 'veterinarian' || user.role === 'staff',
-        showEmail: user.role === 'veterinarian' || user.role === 'staff',
+        profileVisibility: user.role === UserRole.VETERINARIAN ? 'public' : 'public',
+        showPhone: user.role === UserRole.VETERINARIAN || user.role === UserRole.STAFF,
+        showAddress: user.role === UserRole.VETERINARIAN || user.role === UserRole.STAFF,
+        showEmail: user.role === UserRole.VETERINARIAN || user.role === UserRole.STAFF,
         allowContact: true,
       },
       communicationPreferences: {
@@ -327,7 +415,7 @@ export class UsersSeeder {
     ];
 
     // Add role-specific activities
-    if (user.role === 'veterinarian' || user.role === 'staff') {
+    if (user.role === UserRole.VETERINARIAN || user.role === UserRole.STAFF) {
       activities.push({
         type: ActivityType.PROFILE_UPDATE,
         status: ActivityStatus.SUCCESS,
@@ -339,7 +427,7 @@ export class UsersSeeder {
       });
     }
 
-    if (user.role === 'patient') {
+    if (user.role === UserRole.PATIENT) {
       activities.push({
         type: ActivityType.PREFERENCES_UPDATED,
         status: ActivityStatus.SUCCESS,
@@ -359,6 +447,67 @@ export class UsersSeeder {
       });
       await this.userActivityRepository.save(activity);
     }
+  }
+
+  private async calculateProfileCompletion(user: User): Promise<number> {
+    // Define field weights and categories (same logic as in service)
+    const requiredFields = [
+      { field: 'firstName' as keyof User, weight: 10 },
+      { field: 'lastName' as keyof User, weight: 10 },
+      { field: 'email' as keyof User, weight: 15 },
+      { field: 'phone' as keyof User, weight: 10 },
+      { field: 'dateOfBirth' as keyof User, weight: 8 },
+      { field: 'address' as keyof User, weight: 8 },
+      { field: 'city' as keyof User, weight: 5 },
+      { field: 'country' as keyof User, weight: 5 },
+    ];
+
+    const importantFields = [
+      { field: 'gender' as keyof User, weight: 5 },
+      { field: 'emergencyContactName' as keyof User, weight: 8 },
+      { field: 'emergencyContactPhone' as keyof User, weight: 8 },
+      { field: 'emergencyContactRelationship' as keyof User, weight: 3 },
+      { field: 'avatar' as keyof User, weight: 3 },
+    ];
+
+    const medicalFields = [
+      { field: 'medicalHistory' as keyof User, weight: 3 },
+      { field: 'allergies' as keyof User, weight: 3 },
+      { field: 'medications' as keyof User, weight: 3 },
+    ];
+
+    const insuranceFields = [
+      { field: 'insuranceProvider' as keyof User, weight: 2 },
+      { field: 'insurancePolicyNumber' as keyof User, weight: 2 },
+      { field: 'insuranceGroupNumber' as keyof User, weight: 2 },
+      { field: 'insuranceExpiryDate' as keyof User, weight: 2 },
+    ];
+
+    const allFields = [...requiredFields, ...importantFields, ...medicalFields, ...insuranceFields];
+    let totalScore = 0;
+    let maxPossibleScore = 0;
+
+    // Calculate scores for each field category
+    for (const fieldInfo of allFields) {
+      const { field, weight } = fieldInfo;
+      maxPossibleScore += weight;
+
+      const value = user[field];
+      if (value) {
+        // Check if the field has meaningful content
+        if (typeof value === 'string' && value.trim().length > 0) {
+          totalScore += weight;
+        } else if (typeof value === 'object' && value !== null) {
+          totalScore += weight;
+        } else if (typeof value === 'boolean' || typeof value === 'number') {
+          totalScore += weight;
+        }
+      }
+    }
+
+    // Calculate percentage and ensure it's between 0 and 100
+    const percentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
+    return Math.min(Math.max(percentage, 0), 100);
   }
 
   async clear() {

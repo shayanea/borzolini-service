@@ -1,0 +1,383 @@
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Request, HttpStatus, HttpCode } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { ClinicsService, ClinicFilters, ClinicSearchOptions } from './clinics.service';
+import { CreateClinicDto } from './dto/create-clinic.dto';
+import { UpdateClinicDto } from './dto/update-clinic.dto';
+import { CreateClinicStaffDto } from './dto/create-clinic-staff.dto';
+import { CreateClinicServiceDto } from './dto/create-clinic-service.dto';
+import { Clinic } from './entities/clinic.entity';
+import { ClinicStaff } from './entities/clinic-staff.entity';
+import { ClinicService } from './entities/clinic-service.entity';
+import { ClinicReview } from './entities/clinic-review.entity';
+import { ClinicPhoto } from './entities/clinic-photo.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/entities/user.entity';
+
+@ApiTags('clinics')
+@Controller('clinics')
+export class ClinicsController {
+  constructor(private readonly clinicsService: ClinicsService) {}
+
+  @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new clinic' })
+  @ApiResponse({
+    status: 201,
+    description: 'Clinic created successfully',
+    type: Clinic,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 409, description: 'Conflict - Clinic already exists' })
+  async create(@Body() createClinicDto: CreateClinicDto): Promise<Clinic> {
+    return await this.clinicsService.create(createClinicDto);
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get all clinics with filtering and pagination' })
+  @ApiQuery({ name: 'name', required: false, description: 'Filter by clinic name' })
+  @ApiQuery({ name: 'city', required: false, description: 'Filter by city' })
+  @ApiQuery({ name: 'state', required: false, description: 'Filter by state' })
+  @ApiQuery({ name: 'is_verified', required: false, description: 'Filter by verification status' })
+  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'services', required: false, description: 'Filter by services offered' })
+  @ApiQuery({ name: 'specializations', required: false, description: 'Filter by specializations' })
+  @ApiQuery({ name: 'rating_min', required: false, description: 'Minimum rating filter' })
+  @ApiQuery({ name: 'rating_max', required: false, description: 'Maximum rating filter' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'sort_by', required: false, description: 'Sort field', example: 'rating' })
+  @ApiQuery({ name: 'sort_order', required: false, description: 'Sort order', example: 'DESC' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        clinics: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Clinic' },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async findAll(
+    @Query('name') name?: string,
+    @Query('city') city?: string,
+    @Query('state') state?: string,
+    @Query('is_verified') isVerified?: boolean,
+    @Query('is_active') isActive?: boolean,
+    @Query('services') services?: string,
+    @Query('specializations') specializations?: string,
+    @Query('rating_min') ratingMin?: number,
+    @Query('rating_max') ratingMax?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sort_by') sortBy?: string,
+    @Query('sort_order') sortOrder?: 'ASC' | 'DESC'
+  ) {
+    const filters: ClinicFilters = {
+      ...(name && { name }),
+      ...(city && { city }),
+      ...(state && { state }),
+      ...(isVerified !== undefined && { is_verified: isVerified }),
+      ...(isActive !== undefined && { is_active: isActive }),
+      ...(services && { services: services.split(',') }),
+      ...(specializations && { specializations: specializations.split(',') }),
+      ...(ratingMin !== undefined && { rating_min: ratingMin }),
+      ...(ratingMax !== undefined && { rating_max: ratingMax }),
+    };
+
+    const options: ClinicSearchOptions = {
+      ...(page && { page }),
+      ...(limit && { limit }),
+      ...(sortBy && { sort_by: sortBy }),
+      ...(sortOrder && { sort_order: sortOrder }),
+    };
+
+    return await this.clinicsService.findAll(filters, options);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: 'Search clinics by query string' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search query' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'sort_by', required: false, description: 'Sort field', example: 'rating' })
+  @ApiQuery({ name: 'sort_order', required: false, description: 'Sort order', example: 'DESC' })
+  @ApiResponse({
+    status: 200,
+    description: 'Search results retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        clinics: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Clinic' },
+        },
+        total: { type: 'number' },
+      },
+    },
+  })
+  async search(@Query('q') query: string, @Query('page') page?: number, @Query('limit') limit?: number, @Query('sort_by') sortBy?: string, @Query('sort_order') sortOrder?: 'ASC' | 'DESC') {
+    const options: ClinicSearchOptions = {
+      ...(page && { page }),
+      ...(limit && { limit }),
+      ...(sortBy && { sort_by: sortBy }),
+      ...(sortOrder && { sort_order: sortOrder }),
+    };
+
+    return await this.clinicsService.searchClinics(query, options);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a clinic by ID' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinic retrieved successfully',
+    type: Clinic,
+  })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  async findOne(@Param('id') id: string): Promise<Clinic> {
+    return await this.clinicsService.findOne(id);
+  }
+
+  @Get('name/:name')
+  @ApiOperation({ summary: 'Get clinics by name' })
+  @ApiParam({ name: 'name', description: 'Clinic name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinics retrieved successfully',
+    type: [Clinic],
+  })
+  async findByName(@Param('name') name: string): Promise<Clinic[]> {
+    return await this.clinicsService.findByName(name);
+  }
+
+  @Get('city/:city')
+  @ApiOperation({ summary: 'Get clinics by city' })
+  @ApiParam({ name: 'city', description: 'City name' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinics retrieved successfully',
+    type: [Clinic],
+  })
+  async findByCity(@Param('city') city: string): Promise<Clinic[]> {
+    return await this.clinicsService.findByCity(city);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinic updated successfully',
+    type: Clinic,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - Clinic name already exists' })
+  async update(@Param('id') id: string, @Body() updateClinicDto: UpdateClinicDto): Promise<Clinic> {
+    return await this.clinicsService.update(id, updateClinicDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 204, description: 'Clinic deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string): Promise<void> {
+    await this.clinicsService.remove(id);
+  }
+
+  // Staff Management
+  @Post(':id/staff')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add staff member to clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Staff member added successfully',
+    type: ClinicStaff,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - User already staff member' })
+  async addStaff(@Param('id') clinicId: string, @Body() createClinicStaffDto: CreateClinicStaffDto): Promise<ClinicStaff> {
+    createClinicStaffDto.clinic_id = clinicId;
+    return await this.clinicsService.addStaff(createClinicStaffDto);
+  }
+
+  @Delete(':clinicId/staff/:userId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove staff member from clinic' })
+  @ApiParam({ name: 'clinicId', description: 'Clinic ID' })
+  @ApiParam({ name: 'userId', description: 'User ID' })
+  @ApiResponse({ status: 204, description: 'Staff member removed successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Staff member not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeStaff(@Param('clinicId') clinicId: string, @Param('userId') userId: string): Promise<void> {
+    await this.clinicsService.removeStaff(clinicId, userId);
+  }
+
+  // Service Management
+  @Post(':id/services')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add service to clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Service added successfully',
+    type: ClinicService,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - Service already exists' })
+  async addService(@Param('id') clinicId: string, @Body() createClinicServiceDto: CreateClinicServiceDto): Promise<ClinicService> {
+    createClinicServiceDto.clinic_id = clinicId;
+    return await this.clinicsService.addService(createClinicServiceDto);
+  }
+
+  @Patch('services/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update clinic service' })
+  @ApiParam({ name: 'id', description: 'Service ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service updated successfully',
+    type: ClinicService,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Service not found' })
+  async updateService(@Param('id') id: string, @Body() updateServiceDto: Partial<CreateClinicServiceDto>): Promise<ClinicService> {
+    return await this.clinicsService.updateService(id, updateServiceDto);
+  }
+
+  @Delete('services/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete clinic service' })
+  @ApiParam({ name: 'id', description: 'Service ID' })
+  @ApiResponse({ status: 204, description: 'Service deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Service not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeService(@Param('id') id: string): Promise<void> {
+    await this.clinicsService.removeService(id);
+  }
+
+  // Review Management
+  @Post(':id/reviews')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add review to clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Review added successfully',
+    type: ClinicReview,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @ApiResponse({ status: 409, description: 'Conflict - User already reviewed this clinic' })
+  async addReview(@Param('id') clinicId: string, @Request() req: any, @Body() reviewData: { rating: number; title?: string; comment?: string }): Promise<ClinicReview> {
+    const { rating, title, comment } = reviewData;
+    return await this.clinicsService.addReview(clinicId, req.user.id, rating, title, comment);
+  }
+
+  // Photo Management
+  @Post(':id/photos')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add photo to clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 201,
+    description: 'Photo added successfully',
+    type: ClinicPhoto,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  async addPhoto(@Param('id') clinicId: string, @Body() photoData: { photo_url: string; caption?: string; category?: string; is_primary?: boolean }): Promise<ClinicPhoto> {
+    const { photo_url, caption, category, is_primary } = photoData;
+    return await this.clinicsService.addPhoto(clinicId, photo_url, caption, category, is_primary);
+  }
+
+  @Delete('photos/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete clinic photo' })
+  @ApiParam({ name: 'id', description: 'Photo ID' })
+  @ApiResponse({ status: 204, description: 'Photo deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Photo not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removePhoto(@Param('id') id: string): Promise<void> {
+    await this.clinicsService.removePhoto(id);
+  }
+
+  // Statistics
+  @Get(':id/stats')
+  @ApiOperation({ summary: 'Get clinic statistics' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Statistics retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        totalStaff: { type: 'number' },
+        totalServices: { type: 'number' },
+        totalReviews: { type: 'number' },
+        averageRating: { type: 'number' },
+        totalAppointments: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  async getClinicStats(@Param('id') id: string) {
+    return await this.clinicsService.getClinicStats(id);
+  }
+}

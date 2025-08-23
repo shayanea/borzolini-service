@@ -1,7 +1,17 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
+import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
+// Clinic relationships (forward declarations to avoid circular dependencies)
+import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserPreferences } from './user-preferences.entity';
+
+export enum UserRole {
+  ADMIN = 'admin',
+  VETERINARIAN = 'veterinarian',
+  STAFF = 'staff',
+  PATIENT = 'patient',
+}
 
 @Entity('users')
 export class User {
@@ -10,6 +20,9 @@ export class User {
 
   @Column({ unique: true })
   email!: string;
+
+  @Column({ nullable: true })
+  phone?: string;
 
   @Column({ name: 'first_name' })
   firstName!: string;
@@ -22,10 +35,10 @@ export class User {
 
   @Column({
     type: 'enum',
-    enum: ['admin', 'veterinarian', 'staff', 'patient'],
-    default: 'patient',
+    enum: UserRole,
+    default: UserRole.PATIENT,
   })
-  role!: 'admin' | 'veterinarian' | 'staff' | 'patient';
+  role!: UserRole;
 
   @Column({ nullable: true })
   avatar?: string;
@@ -50,6 +63,42 @@ export class User {
 
   @Column({ default: 'UTC' })
   timezone?: string;
+
+  @Column({ nullable: true })
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+
+  @Column({ name: 'emergency_contact_name', nullable: true })
+  emergencyContactName?: string;
+
+  @Column({ name: 'emergency_contact_phone', nullable: true })
+  emergencyContactPhone?: string;
+
+  @Column({ name: 'emergency_contact_relationship', nullable: true })
+  emergencyContactRelationship?: string;
+
+  @Column({ name: 'medical_history', nullable: true })
+  medicalHistory?: string;
+
+  @Column({ nullable: true })
+  allergies?: string;
+
+  @Column({ nullable: true })
+  medications?: string;
+
+  @Column({ name: 'insurance_provider', nullable: true })
+  insuranceProvider?: string;
+
+  @Column({ name: 'insurance_policy_number', nullable: true })
+  insurancePolicyNumber?: string;
+
+  @Column({ name: 'insurance_group_number', nullable: true })
+  insuranceGroupNumber?: string;
+
+  @Column({ name: 'insurance_expiry_date', nullable: true })
+  insuranceExpiryDate?: string;
+
+  @Column({ nullable: true })
+  notes?: string;
 
   @Column({ name: 'is_email_verified', default: false })
   isEmailVerified!: boolean;
@@ -87,8 +136,8 @@ export class User {
   @Column({ name: 'login_attempts', default: 0 })
   loginAttempts!: number;
 
-  @Column({ name: 'locked_until', nullable: true })
-  lockedUntil?: Date | null;
+  @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
+  lockedUntil?: Date;
 
   @Column({ name: 'last_login_at', nullable: true })
   lastLoginAt?: Date;
@@ -112,6 +161,13 @@ export class User {
   @OneToMany(() => UserActivity, (activity) => activity.user, { cascade: true })
   activities!: UserActivity[];
 
+  // Clinic relationships
+  @OneToMany(() => ClinicStaff, (staff) => staff.user)
+  clinic_staff!: ClinicStaff[];
+
+  @OneToMany(() => ClinicReview, (review) => review.user)
+  clinic_reviews!: ClinicReview[];
+
   canLogin(): boolean {
     return this.isActive && this.isEmailVerified;
   }
@@ -125,7 +181,8 @@ export class User {
   }
 
   unlockAccount(): void {
-    this.lockedUntil = null;
+    // TypeORM will handle this as NULL in the database
+    (this as any).lockedUntil = null;
   }
 
   isLocked(): boolean {
@@ -134,6 +191,7 @@ export class User {
 
   resetLoginAttempts(): void {
     this.loginAttempts = 0;
-    this.lockedUntil = null;
+    // TypeORM will handle this as NULL in the database
+    (this as any).lockedUntil = null;
   }
 }
