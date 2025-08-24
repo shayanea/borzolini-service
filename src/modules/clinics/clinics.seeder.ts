@@ -11,6 +11,7 @@ import { ServiceCategory } from './entities/clinic-service.entity';
 import { PhotoCategory } from './entities/clinic-photo.entity';
 import { DayOfWeek } from './entities/clinic-operating-hours.entity';
 import { User, UserRole } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
 
 interface ClinicData {
   name: string;
@@ -62,8 +63,7 @@ export class ClinicsSeeder {
     private readonly clinicPhotoRepository: Repository<ClinicPhoto>,
     @InjectRepository(ClinicOperatingHours)
     private readonly clinicOperatingHoursRepository: Repository<ClinicOperatingHours>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>
+    private readonly usersService: UsersService
   ) {}
 
   async seed(): Promise<void> {
@@ -92,7 +92,7 @@ export class ClinicsSeeder {
       // Create sample staff, services, photos, and operating hours for each clinic
       for (const clinic of clinics) {
         this.logger.log(`Setting up clinic: ${clinic.name}`);
-        
+
         await this.createSampleStaff(clinic.id, requiredUsers);
         await this.createSampleServices(clinic.id);
         await this.createSamplePhotos(clinic.id);
@@ -117,18 +117,11 @@ export class ClinicsSeeder {
 
   private async validateRequiredUsers(): Promise<{ admin: User; veterinarian: User; staff?: User } | null> {
     try {
-      // Find users with appropriate roles for clinic staff
-      const adminUsers = await this.userRepository.find({
-        where: { role: UserRole.ADMIN, isActive: true }
-      });
-
-      const veterinarianUsers = await this.userRepository.find({
-        where: { role: UserRole.VETERINARIAN, isActive: true }
-      });
-
-      const staffUsers = await this.userRepository.find({
-        where: { role: UserRole.STAFF, isActive: true }
-      });
+      // Get all users and filter by role
+      const allUsers = await this.usersService.findAll();
+      const adminUsers = allUsers.filter((user) => user.role === UserRole.ADMIN && user.isActive);
+      const veterinarianUsers = allUsers.filter((user) => user.role === UserRole.VETERINARIAN && user.isActive);
+      const staffUsers = allUsers.filter((user) => user.role === UserRole.STAFF && user.isActive);
 
       if (adminUsers.length === 0 || veterinarianUsers.length === 0) {
         this.logger.warn('Insufficient users for clinic staff creation');
@@ -141,7 +134,7 @@ export class ClinicsSeeder {
         admin: adminUsers[0]!,
         veterinarian: veterinarianUsers[0]!,
       };
-      
+
       // Add staff if available
       if (staffUsers[0]) {
         result.staff = staffUsers[0];
@@ -150,7 +143,7 @@ export class ClinicsSeeder {
       } else if (adminUsers[1]) {
         result.staff = adminUsers[1];
       }
-      
+
       return result;
     } catch (error) {
       this.logger.error('Error validating required users:', error instanceof Error ? error.message : String(error));
@@ -419,6 +412,8 @@ export class ClinicsSeeder {
           hours = {
             clinic_id: clinicId,
             day_of_week: day,
+            open_time: '00:00',
+            close_time: '00:00',
             is_closed: true,
           };
         } else if (day === DayOfWeek.SATURDAY) {
