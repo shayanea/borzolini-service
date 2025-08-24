@@ -3,6 +3,8 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGenerat
 import { Clinic } from './clinic.entity';
 import { ClinicService } from './clinic-service.entity';
 import { ClinicStaff } from './clinic-staff.entity';
+// Pet relationship (forward declaration to avoid circular dependencies)
+import { Pet } from '../../pets/entities/pet.entity';
 
 export enum AppointmentType {
   CONSULTATION = 'consultation',
@@ -89,4 +91,8 @@ export class ClinicAppointment {
   @ManyToOne(() => ClinicService, (service) => service.appointments)
   @JoinColumn({ name: 'service_id' })
   service!: ClinicService;
+
+  @ManyToOne(() => Pet, (pet) => pet.appointments)
+  @JoinColumn({ name: 'pet_id' })
+  pet!: Pet;
 }

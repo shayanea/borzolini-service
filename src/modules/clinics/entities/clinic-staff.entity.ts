@@ -1,7 +1,8 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { Clinic } from './clinic.entity';
 import { User } from '../../users/entities/user.entity';
+import { Appointment } from '../../appointments/entities/appointment.entity';
 
 export enum StaffRole {
   ADMIN = 'admin',
@@ -69,4 +70,7 @@ export class ClinicStaff {
   @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'user_id' })
   user!: User;
+
+  @OneToMany(() => Appointment, (appointment) => appointment.staff)
+  appointments!: Appointment[];
 }

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { Clinic } from './clinic.entity';
-import { ClinicAppointment } from './clinic-appointment.entity';
+import { Appointment } from '../../appointments/entities/appointment.entity';
 
 export enum ServiceCategory {
   PREVENTIVE = 'preventive',
@@ -58,6 +58,6 @@ export class ClinicService {
   @JoinColumn({ name: 'clinic_id' })
   clinic!: Clinic;
 
-  @OneToMany(() => ClinicAppointment, (appointment) => appointment.service)
-  appointments!: ClinicAppointment[];
+  @OneToMany(() => Appointment, (appointment) => appointment.service)
+  appointments!: Appointment[];
 }

@@ -5,6 +5,10 @@ import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
 import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserPreferences } from './user-preferences.entity';
+// Pet relationship (forward declaration to avoid circular dependencies)
+import { Pet } from '../../pets/entities/pet.entity';
+// Appointment relationship (forward declaration to avoid circular dependencies)
+import { Appointment } from '../../appointments/entities/appointment.entity';
 
 export enum UserRole {
   ADMIN = 'admin',
@@ -167,6 +171,14 @@ export class User {
 
   @OneToMany(() => ClinicReview, (review) => review.user)
   clinic_reviews!: ClinicReview[];
+
+  // Pet relationships
+  @OneToMany(() => Pet, (pet) => pet.owner)
+  pets!: Pet[];
+
+  // Appointment relationships
+  @OneToMany(() => Appointment, (appointment) => appointment.owner)
+  appointments!: Appointment[];
 
   canLogin(): boolean {
     return this.isActive && this.isEmailVerified;
