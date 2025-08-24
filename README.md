@@ -5,23 +5,27 @@ A professional NestJS backend for managing pet clinics, telemedicine consultatio
 ## 🚀 Features
 
 ### Core Platform
+
 - **Multi-role Clinic Management** - Admin, Doctor, Assistant dashboards
 - **Pet Health Profiles** - Comprehensive health tracking and history
 - **Appointment Management** - Booking, scheduling, and reminders
 - **User Authentication** - JWT-based secure authentication system
 
 ### AI Health Monitoring
+
 - **Proactive Health Alerts** - AI-powered symptom analysis
 - **Breed-Specific Insights** - Persian cat specialization (Fariborz!)
 - **Health Pattern Recognition** - Predictive health modeling
 - **Personalized Recommendations** - AI-driven care suggestions
 
 ### Telemedicine
+
 - **Video Consultations** - Integration with Daily.co for video calls
 - **Consultation Records** - Detailed consultation documentation
 - **Follow-up Management** - Seamless consultation-to-visit conversion
 
 ### Social Media Integration
+
 - **Instagram API Integration** - Clinic showcase automation
 - **Content Management** - Social media content scheduling
 - **Brand Building** - Visual trust and authenticity
@@ -68,41 +72,46 @@ src/
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/shayanea/borzolini-service.git
    cd borzolini-service
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Environment Setup**
+
    ```bash
    # For local development (recommended)
    cp config.env.local.template config.env.local
    # Edit config.env.local with your configuration
-   
+
    # Or use the example file
    cp config.env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Database Setup**
+
    ```bash
    # Start local PostgreSQL with Docker
    docker compose up -d postgres
-   
+
    # Or create PostgreSQL database manually
    createdb borzolini_clinic
    ```
 
 5. **Run the application**
+
    ```bash
    # Development mode
    pnpm run start:dev
-   
+
    # Production build
    pnpm run build
    pnpm run start:prod
@@ -150,6 +159,7 @@ Key configuration options in `.env`:
 ### Database Schema
 
 The application uses TypeORM entities for:
+
 - Users (clinic staff, pet owners)
 - Clinics and clinic details
 - Pets and health records
@@ -159,8 +169,15 @@ The application uses TypeORM entities for:
 ## 📚 API Documentation
 
 Once running, access the interactive API documentation at:
+
 - **Swagger UI**: `http://localhost:3001/api/docs`
 - **API Base URL**: `http://localhost:3001/api/v1`
+
+## 🔧 Development Scripts
+
+For development and testing utilities, see:
+
+- **Scripts Documentation**: [docs/SCRIPTS.md](docs/SCRIPTS.md) - Token generation, migrations, and other utilities
 
 ## 🧪 Testing
 
