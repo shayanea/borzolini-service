@@ -4,22 +4,25 @@
 This is the API documentation for the AI-Powered Pet Clinic Management Platform Backend.
 
 ## API Statistics
-- **Total Endpoints**: 1
-- **Total Controllers**: 3
-- **Authentication Required**: 0
-- **Public Endpoints**: 1
+- **Total Endpoints**: 89
+- **Total Controllers**: 6
+- **Authentication Required**: 67
+- **Public Endpoints**: 22
 
 ## HTTP Methods
-- GET: 1
-- POST: 0
-- PUT: 0
-- DELETE: 0
-- PATCH: 0
+- GET: 43
+- POST: 28
+- PUT: 4
+- DELETE: 8
+- PATCH: 6
 
 ## API Controllers
+- ai-health
+- appointments
 - auth
+- clinics
+- pets
 - users
-- health
 
 ## Authentication
 Most endpoints require JWT authentication. Include the JWT token in the Authorization header:
@@ -51,10 +54,3 @@ Access the interactive Swagger UI at: http://localhost:3001/api/docs
 - IDs are UUIDs
 - Error responses follow standard HTTP status codes
 - Request/response examples are provided in the Swagger UI
-
-## Features
-- **Cookie-based Authentication**: Secure JWT tokens stored in HTTP-only cookies
-- **Role-based Access Control**: Admin, Veterinarian, Staff, and Patient roles
-- **User Management**: Complete user lifecycle management
-- **Health Monitoring**: System health checks and monitoring
-- **TypeScript**: Full TypeScript support with strict type checking

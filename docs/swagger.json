@@ -1,16 +1,3888 @@
 {
   "openapi": "3.0.0",
+  "paths": {
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/health/database": {
+      "get": {
+        "operationId": "getDatabaseInfo",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/health/ping": {
+      "get": {
+        "operationId": "ping",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "register",
+        "summary": "Register a new user account",
+        "description": "Create a new user account with email verification. Supports multiple user roles including patient, veterinarian, staff, and admin.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "User registration data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "patient": {
+                  "summary": "Patient Registration",
+                  "description": "Register as a patient",
+                  "value": {
+                    "email": "patient@example.com",
+                    "password": "SecurePass123!",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "phone": "+1234567890",
+                    "role": "patient"
+                  }
+                },
+                "veterinarian": {
+                  "summary": "Veterinarian Registration",
+                  "description": "Register as a veterinarian",
+                  "value": {
+                    "email": "dr.smith@clinic.com",
+                    "password": "VetPass123!",
+                    "firstName": "Dr. Sarah",
+                    "lastName": "Smith",
+                    "phone": "+1234567891",
+                    "role": "veterinarian",
+                    "address": "123 Vet Street",
+                    "city": "Medical City",
+                    "country": "USA"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User registered successfully. Email verification sent. Authentication cookies set.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "uuid-string",
+                      "email": "patient@example.com",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "role": "patient",
+                      "isEmailVerified": false,
+                      "isPhoneVerified": false,
+                      "profileCompletionPercentage": 45,
+                      "accountStatus": "active"
+                    },
+                    "message": "Registration successful. Please check your email to verify your account."
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": [
+                      "email must be a valid email",
+                      "password must be longer than or equal to 8 characters"
+                    ],
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict - user already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 409,
+                    "message": "User with this email already exists",
+                    "error": "Conflict"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "summary": "User login authentication",
+        "description": "Authenticate user with email and password. Sets authentication cookies for accessing protected endpoints. Includes account security features like login attempt tracking and account locking.",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "description": "User login credentials",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              },
+              "examples": {
+                "patient": {
+                  "summary": "Patient Login",
+                  "value": {
+                    "email": "john.doe@example.com",
+                    "password": "Password123!"
+                  }
+                },
+                "veterinarian": {
+                  "summary": "Veterinarian Login",
+                  "value": {
+                    "email": "dr.smith@borzolini.com",
+                    "password": "Password123!"
+                  }
+                },
+                "admin": {
+                  "summary": "Admin Login",
+                  "value": {
+                    "email": "admin@borzolini.com",
+                    "password": "Password123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful - returns user data and sets authentication cookies",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "user": {
+                      "id": "uuid-string",
+                      "email": "john.doe@example.com",
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "role": "patient",
+                      "isEmailVerified": true,
+                      "isPhoneVerified": false,
+                      "profileCompletionPercentage": 75,
+                      "accountStatus": "active"
+                    },
+                    "message": "Login successful"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - invalid credentials or unverified account",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 401,
+                    "message": "Invalid credentials",
+                    "error": "Unauthorized"
+                  }
+                }
+              }
+            }
+          },
+          "423": {
+            "description": "Locked - account is temporarily locked due to failed attempts",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 423,
+                    "message": "Account is locked until 2024-01-01T12:30:00Z",
+                    "error": "Locked"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/refresh": {
+      "post": {
+        "operationId": "refresh",
+        "summary": "Refresh access token",
+        "description": "Refresh the access token using the refresh token from cookies. Sets new authentication cookies.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Token refreshed successfully"
+          },
+          "401": {
+            "description": "Unauthorized - invalid refresh token"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "summary": "User logout",
+        "description": "Logout user and clear authentication cookies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Logout successful"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Get current user profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User profile retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/change-password": {
+      "post": {
+        "operationId": "changePassword",
+        "summary": "Change user password",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid current password"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "operationId": "forgotPassword",
+        "summary": "Request password reset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ForgotPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset email sent"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "operationId": "resetPassword",
+        "summary": "Reset password with token",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid or expired token"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-email/{token}": {
+      "post": {
+        "operationId": "verifyEmail",
+        "summary": "Verify email address",
+        "description": "Verify user email address using the token sent via email during registration. This activates the user account for login.",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "path",
+            "description": "Email verification token received via email",
+            "schema": {
+              "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email verified successfully - account is now active",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "message": "Email verified successfully"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid or expired token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "example": {
+                    "statusCode": 400,
+                    "message": "Invalid or expired verification token",
+                    "error": "Bad Request"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/resend-verification": {
+      "post": {
+        "operationId": "resendVerification",
+        "summary": "Resend email verification",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Verification email sent successfully"
+          },
+          "400": {
+            "description": "Bad request - email already verified"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/request-phone-verification": {
+      "post": {
+        "operationId": "requestPhoneVerification",
+        "summary": "Request phone verification OTP",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Phone verification OTP sent successfully"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/verify-phone": {
+      "post": {
+        "operationId": "verifyPhone",
+        "summary": "Verify phone number with OTP",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Phone verified successfully"
+          },
+          "400": {
+            "description": "Bad request - invalid or expired OTP"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "summary": "Get current user information",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User information retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/auth/status": {
+      "get": {
+        "operationId": "getAuthStatus",
+        "summary": "Get user authentication status",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Authentication status retrieved"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "auth"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users": {
+      "post": {
+        "operationId": "create",
+        "summary": "Create a new user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "findAll",
+        "summary": "Get all users",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Users retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "operationId": "findOne",
+        "summary": "Get user by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "update",
+        "summary": "Update user",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "remove",
+        "summary": "Delete user",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/search/email": {
+      "get": {
+        "operationId": "findByEmail",
+        "summary": "Search user by email",
+        "parameters": [
+          {
+            "name": "email",
+            "required": true,
+            "in": "query",
+            "description": "Email to search for",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User found"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/profile/me": {
+      "get": {
+        "operationId": "getProfile",
+        "summary": "Get current user profile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateProfile",
+        "summary": "Update current user profile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Profile updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/profile/completion": {
+      "get": {
+        "operationId": "getProfileCompletion",
+        "summary": "Get current user profile completion percentage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile completion retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/preferences/me": {
+      "get": {
+        "operationId": "getUserPreferences",
+        "summary": "Get current user preferences",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Preferences retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "updateUserPreferences",
+        "summary": "Update current user preferences",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserPreferencesDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Preferences updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/activities/me": {
+      "get": {
+        "operationId": "getUserActivities",
+        "summary": "Get current user activities",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of activities to retrieve",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activities retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/activities/summary": {
+      "get": {
+        "operationId": "getActivitySummary",
+        "summary": "Get current user activity summary",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Activity summary retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/profile/completion/recalculate": {
+      "post": {
+        "operationId": "recalculateProfileCompletion",
+        "summary": "Recalculate current user profile completion percentage",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Profile completion recalculated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/profile/completion/recalculate/{id}": {
+      "post": {
+        "operationId": "recalculateUserProfileCompletion",
+        "summary": "Recalculate profile completion percentage for a specific user (Admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile completion recalculated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/profile/completion/recalculate-all": {
+      "post": {
+        "operationId": "recalculateAllProfileCompletions",
+        "summary": "Recalculate profile completion for all users (Admin only)",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "All profile completions recalculated successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/phone/verification/request": {
+      "post": {
+        "operationId": "requestPhoneVerification",
+        "summary": "Request phone verification OTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPhoneVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP sent successfully"
+          },
+          "400": {
+            "description": "Bad request or phone already verified"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/phone/verification/verify": {
+      "post": {
+        "operationId": "verifyPhone",
+        "summary": "Verify phone with OTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPhoneDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Phone verified successfully"
+          },
+          "400": {
+            "description": "Invalid or expired OTP"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/phone/verification/resend": {
+      "post": {
+        "operationId": "resendPhoneVerification",
+        "summary": "Resend phone verification OTP",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResendPhoneVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP resent successfully"
+          },
+          "400": {
+            "description": "Bad request or too frequent requests"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/phone/verification/status": {
+      "get": {
+        "operationId": "checkPhoneVerificationStatus",
+        "summary": "Check phone verification OTP status",
+        "parameters": [
+          {
+            "name": "phone",
+            "required": true,
+            "in": "query",
+            "description": "Phone number to check",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneVerificationStatusDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/clinics": {
+      "post": {
+        "operationId": "create",
+        "summary": "Create a new clinic",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClinicDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Clinic created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "409": {
+            "description": "Conflict - Clinic already exists"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "findAll",
+        "summary": "Get all clinics with filtering and pagination",
+        "parameters": [
+          {
+            "name": "name",
+            "required": false,
+            "in": "query",
+            "description": "Filter by clinic name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "city",
+            "required": false,
+            "in": "query",
+            "description": "Filter by city",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": false,
+            "in": "query",
+            "description": "Filter by state",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_verified",
+            "required": false,
+            "in": "query",
+            "description": "Filter by verification status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_active",
+            "required": false,
+            "in": "query",
+            "description": "Filter by active status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "services",
+            "required": false,
+            "in": "query",
+            "description": "Filter by services offered",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "specializations",
+            "required": false,
+            "in": "query",
+            "description": "Filter by specializations",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rating_min",
+            "required": false,
+            "in": "query",
+            "description": "Minimum rating filter",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "rating_max",
+            "required": false,
+            "in": "query",
+            "description": "Maximum rating filter",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort_by",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "example": "rating",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_order",
+            "required": false,
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "example": "DESC",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clinics": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Clinic"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/clinics/search": {
+      "get": {
+        "operationId": "search",
+        "summary": "Search clinics by query string",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number",
+            "schema": {
+              "example": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page",
+            "schema": {
+              "example": 10,
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort_by",
+            "required": false,
+            "in": "query",
+            "description": "Sort field",
+            "schema": {
+              "example": "rating",
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort_order",
+            "required": false,
+            "in": "query",
+            "description": "Sort order",
+            "schema": {
+              "example": "DESC",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "clinics": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Clinic"
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/clinics/{id}": {
+      "get": {
+        "operationId": "findOne",
+        "summary": "Get a clinic by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinic retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clinic not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      },
+      "patch": {
+        "operationId": "update",
+        "summary": "Update a clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateClinicDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Clinic updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Conflict - Clinic name already exists"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "remove",
+        "summary": "Delete a clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Clinic deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/name/{name}": {
+      "get": {
+        "operationId": "findByName",
+        "summary": "Get clinics by name",
+        "parameters": [
+          {
+            "name": "name",
+            "required": true,
+            "in": "path",
+            "description": "Clinic name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Clinic"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/clinics/city/{city}": {
+      "get": {
+        "operationId": "findByCity",
+        "summary": "Get clinics by city",
+        "parameters": [
+          {
+            "name": "city",
+            "required": true,
+            "in": "path",
+            "description": "City name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Clinic"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/clinics/{id}/staff": {
+      "post": {
+        "operationId": "addStaff",
+        "summary": "Add staff member to clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClinicStaffDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Staff member added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicStaff"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Conflict - User already staff member"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{clinicId}/staff/{userId}": {
+      "delete": {
+        "operationId": "removeStaff",
+        "summary": "Remove staff member from clinic",
+        "parameters": [
+          {
+            "name": "clinicId",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "description": "User ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Staff member removed successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Staff member not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/services": {
+      "post": {
+        "operationId": "addService",
+        "summary": "Add service to clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateClinicServiceDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Service added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicService"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Conflict - Service already exists"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/services/{id}": {
+      "patch": {
+        "operationId": "updateService",
+        "summary": "Update clinic service",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicService"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Service not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "removeService",
+        "summary": "Delete clinic service",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Service deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Service not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/reviews": {
+      "post": {
+        "operationId": "addReview",
+        "summary": "Add review to clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Review added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicReview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Conflict - User already reviewed this clinic"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/photos": {
+      "post": {
+        "operationId": "addPhoto",
+        "summary": "Add photo to clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Photo added successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/photos/{id}": {
+      "delete": {
+        "operationId": "removePhoto",
+        "summary": "Delete clinic photo",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Photo ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Photo deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Photo not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/stats": {
+      "get": {
+        "operationId": "getClinicStats",
+        "summary": "Get clinic statistics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "totalStaff": {
+                      "type": "number"
+                    },
+                    "totalServices": {
+                      "type": "number"
+                    },
+                    "totalReviews": {
+                      "type": "number"
+                    },
+                    "averageRating": {
+                      "type": "number"
+                    },
+                    "totalAppointments": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clinic not found"
+          }
+        },
+        "tags": [
+          "clinics"
+        ]
+      }
+    },
+    "/pets": {
+      "post": {
+        "operationId": "create",
+        "summary": "Create a new pet",
+        "description": "Create a new pet for the authenticated user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Pet created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid pet data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "findAll",
+        "summary": "Get all pets",
+        "description": "Retrieve all pets with optional filtering and pagination",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "species",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pet species",
+            "schema": {
+              "enum": [
+                "dog",
+                "cat",
+                "bird",
+                "rabbit",
+                "hamster",
+                "fish",
+                "reptile",
+                "horse",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "gender",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pet gender",
+            "schema": {
+              "enum": [
+                "male",
+                "female",
+                "unknown"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "size",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pet size",
+            "schema": {
+              "enum": [
+                "tiny",
+                "small",
+                "medium",
+                "large",
+                "giant"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_spayed_neutered",
+            "required": false,
+            "in": "query",
+            "description": "Filter by spayed/neutered status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_vaccinated",
+            "required": false,
+            "in": "query",
+            "description": "Filter by vaccination status",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in name, breed, or color",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "owner_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by owner ID (admin only)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pets retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/my-pets": {
+      "get": {
+        "operationId": "findMyPets",
+        "summary": "Get current user pets",
+        "description": "Retrieve all pets owned by the authenticated user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User pets retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/stats": {
+      "get": {
+        "operationId": "getPetStats",
+        "summary": "Get pet statistics",
+        "description": "Retrieve comprehensive statistics about all pets",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Pet statistics retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/species/{species}": {
+      "get": {
+        "operationId": "getPetsBySpecies",
+        "summary": "Get pets by species",
+        "description": "Retrieve all pets of a specific species",
+        "parameters": [
+          {
+            "name": "species",
+            "required": true,
+            "in": "path",
+            "description": "Pet species to filter by",
+            "schema": {
+              "enum": [
+                "dog",
+                "cat",
+                "bird",
+                "rabbit",
+                "hamster",
+                "fish",
+                "reptile",
+                "horse",
+                "other"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pets by species retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/needing-vaccination": {
+      "get": {
+        "operationId": "getPetsNeedingVaccination",
+        "summary": "Get pets needing vaccination",
+        "description": "Retrieve all pets that need vaccination",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Pets needing vaccination retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/needing-spay-neuter": {
+      "get": {
+        "operationId": "getPetsNeedingSpayNeuter",
+        "summary": "Get pets needing spay/neuter",
+        "description": "Retrieve all pets that need spay/neuter surgery",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Pets needing spay/neuter retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/{id}": {
+      "get": {
+        "operationId": "findOne",
+        "summary": "Get pet by ID",
+        "description": "Retrieve a specific pet by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Pet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "update",
+        "summary": "Update pet",
+        "description": "Update a specific pet by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Pet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pet updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pet"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid update data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "remove",
+        "summary": "Delete pet",
+        "description": "Soft delete a specific pet by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Pet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/{id}/hard": {
+      "delete": {
+        "operationId": "hardRemove",
+        "summary": "Hard delete pet",
+        "description": "Permanently delete a specific pet by its ID (admin only)",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Pet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet permanently deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - admin access required"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/pets/validate": {
+      "post": {
+        "operationId": "validatePetData",
+        "summary": "Validate pet data",
+        "description": "Validate pet data without creating the pet",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Pet data validation completed"
+          },
+          "400": {
+            "description": "Bad request - invalid pet data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "pets"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments": {
+      "post": {
+        "operationId": "create",
+        "summary": "Create a new appointment",
+        "description": "Create a new appointment for the authenticated user",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Appointment created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid appointment data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet, clinic, or user not found"
+          },
+          "409": {
+            "description": "Appointment scheduling conflict"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "findAll",
+        "summary": "Get all appointments",
+        "description": "Retrieve all appointments with optional filtering and pagination",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "description": "Page number (default: 1)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Items per page (default: 10)",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "description": "Filter by appointment status",
+            "schema": {
+              "enum": [
+                "pending",
+                "confirmed",
+                "in_progress",
+                "completed",
+                "cancelled",
+                "no_show",
+                "rescheduled",
+                "waiting"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "description": "Filter by appointment type",
+            "schema": {
+              "enum": [
+                "consultation",
+                "vaccination",
+                "surgery",
+                "follow_up",
+                "emergency",
+                "wellness_exam",
+                "dental_cleaning",
+                "laboratory_test",
+                "imaging",
+                "therapy",
+                "grooming",
+                "behavioral_training",
+                "nutrition_consultation",
+                "physical_therapy",
+                "specialist_consultation"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "priority",
+            "required": false,
+            "in": "query",
+            "description": "Filter by appointment priority",
+            "schema": {
+              "enum": [
+                "low",
+                "normal",
+                "high",
+                "urgent",
+                "emergency"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "name": "clinic_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "staff_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by staff ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pet_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by pet ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "owner_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by owner ID (admin only)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_from",
+            "required": false,
+            "in": "query",
+            "description": "Filter by start date (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date_to",
+            "required": false,
+            "in": "query",
+            "description": "Filter by end date (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "is_telemedicine",
+            "required": false,
+            "in": "query",
+            "description": "Filter by telemedicine appointments",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "is_home_visit",
+            "required": false,
+            "in": "query",
+            "description": "Filter by home visit appointments",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "search",
+            "required": false,
+            "in": "query",
+            "description": "Search in pet name, owner name, or notes",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/my-appointments": {
+      "get": {
+        "operationId": "findMyAppointments",
+        "summary": "Get current user appointments",
+        "description": "Retrieve all appointments owned by the authenticated user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "User appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/pet/{petId}": {
+      "get": {
+        "operationId": "findByPet",
+        "summary": "Get appointments by pet",
+        "description": "Retrieve all appointments for a specific pet",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "Pet ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/clinic/{clinicId}": {
+      "get": {
+        "operationId": "findByClinic",
+        "summary": "Get appointments by clinic",
+        "description": "Retrieve all appointments for a specific clinic",
+        "parameters": [
+          {
+            "name": "clinicId",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Filter by specific date (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinic appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/staff/{staffId}": {
+      "get": {
+        "operationId": "findByStaff",
+        "summary": "Get appointments by staff member",
+        "description": "Retrieve all appointments for a specific staff member",
+        "parameters": [
+          {
+            "name": "staffId",
+            "required": true,
+            "in": "path",
+            "description": "Staff ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": false,
+            "in": "query",
+            "description": "Filter by specific date (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Staff appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/stats": {
+      "get": {
+        "operationId": "getAppointmentStats",
+        "summary": "Get appointment statistics",
+        "description": "Retrieve comprehensive statistics about all appointments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Appointment statistics retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/available-slots/{clinicId}": {
+      "get": {
+        "operationId": "getAvailableTimeSlots",
+        "summary": "Get available time slots",
+        "description": "Get available time slots for a specific clinic and date",
+        "parameters": [
+          {
+            "name": "clinicId",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "date",
+            "required": true,
+            "in": "query",
+            "description": "Date to check (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "duration",
+            "required": false,
+            "in": "query",
+            "description": "Duration in minutes (default: 30)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Available time slots retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/{id}": {
+      "get": {
+        "operationId": "findOne",
+        "summary": "Get appointment by ID",
+        "description": "Retrieve a specific appointment by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Appointment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Appointment not found"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "patch": {
+        "operationId": "update",
+        "summary": "Update appointment",
+        "description": "Update a specific appointment by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Appointment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAppointmentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Appointment updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid update data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Appointment not found"
+          },
+          "409": {
+            "description": "Appointment scheduling conflict"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "remove",
+        "summary": "Cancel appointment",
+        "description": "Cancel a specific appointment by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Appointment ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment cancelled successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Appointment not found"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/{id}/status": {
+      "patch": {
+        "operationId": "updateStatus",
+        "summary": "Update appointment status",
+        "description": "Update the status of a specific appointment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Appointment ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "description": "New appointment status",
+            "schema": {
+              "enum": [
+                "pending",
+                "confirmed",
+                "in_progress",
+                "completed",
+                "cancelled",
+                "no_show",
+                "rescheduled",
+                "waiting"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid status"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Appointment not found"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/{id}/reschedule": {
+      "patch": {
+        "operationId": "rescheduleAppointment",
+        "summary": "Reschedule appointment",
+        "description": "Reschedule a specific appointment to a new date/time",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Appointment ID",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "new_date",
+            "required": true,
+            "in": "query",
+            "description": "New appointment date (ISO string)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Appointment rescheduled successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Appointment"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid new date"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Appointment not found"
+          },
+          "409": {
+            "description": "New time conflicts with existing appointment"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/today": {
+      "get": {
+        "operationId": "getTodayAppointments",
+        "summary": "Get today appointments",
+        "description": "Get all appointments scheduled for today",
+        "parameters": [
+          {
+            "name": "clinic_id",
+            "required": false,
+            "in": "query",
+            "description": "Filter by clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Today appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/appointments/upcoming": {
+      "get": {
+        "operationId": "getUpcomingAppointments",
+        "summary": "Get upcoming appointments",
+        "description": "Get all upcoming appointments",
+        "parameters": [
+          {
+            "name": "days",
+            "required": false,
+            "in": "query",
+            "description": "Number of days ahead to look (default: 7)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Upcoming appointments retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "appointments"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/recommendations": {
+      "post": {
+        "operationId": "generateRecommendations",
+        "summary": "Generate AI-powered recommendations for a pet",
+        "description": "Generate personalized, AI-powered health and care recommendations based on pet profile, health history, and specific needs",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GenerateRecommendationsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "AI recommendations generated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthInsight"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/pets/{petId}/insights": {
+      "get": {
+        "operationId": "getPetInsights",
+        "summary": "Get all AI insights for a specific pet",
+        "description": "Retrieve all AI-generated insights, recommendations, and alerts for a pet",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeDismissed",
+            "required": false,
+            "in": "query",
+            "description": "Include dismissed insights",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pet insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthInsight"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/pets/{petId}/insights/category/{category}": {
+      "get": {
+        "operationId": "getInsightsByCategory",
+        "summary": "Get insights by category for a pet",
+        "description": "Retrieve AI insights filtered by specific category (health, nutrition, behavior, etc.)",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "Category of insights to retrieve",
+            "schema": {
+              "enum": [
+                "health",
+                "nutrition",
+                "behavior",
+                "preventive_care",
+                "emergency",
+                "lifestyle",
+                "training",
+                "grooming"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthInsight"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet or category not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/pets/{petId}/insights/urgent": {
+      "get": {
+        "operationId": "getUrgentInsights",
+        "summary": "Get urgent insights for a pet",
+        "description": "Retrieve only urgent AI insights that require immediate attention",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Urgent insights retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthInsight"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/pets/{petId}/insights/summary": {
+      "get": {
+        "operationId": "getInsightsSummary",
+        "summary": "Get insights summary for dashboard",
+        "description": "Get a summary of AI insights including counts and recent insights for dashboard display",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Insights summary retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {
+                      "type": "number"
+                    },
+                    "urgent": {
+                      "type": "number"
+                    },
+                    "recommendations": {
+                      "type": "number"
+                    },
+                    "alerts": {
+                      "type": "number"
+                    },
+                    "recent": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AiHealthInsight"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/insights/{insightId}": {
+      "put": {
+        "operationId": "updateInsight",
+        "summary": "Update AI insight with owner feedback",
+        "description": "Allow pet owners to provide feedback, dismiss insights, or mark them as acted upon",
+        "parameters": [
+          {
+            "name": "insightId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the AI insight",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateInsightDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Insight updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiHealthInsight"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Insight not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/pets/{petId}/insights/refresh": {
+      "post": {
+        "operationId": "refreshInsights",
+        "summary": "Refresh AI insights for a pet",
+        "description": "Regenerate AI recommendations based on updated pet data and health history",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "AI insights refreshed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AiHealthInsight"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - invalid data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/ai-health/dashboard/{petId}": {
+      "get": {
+        "operationId": "getAiHealthDashboard",
+        "summary": "Get comprehensive AI health dashboard",
+        "description": "Get a complete AI health dashboard including insights summary, recent recommendations, and health trends",
+        "parameters": [
+          {
+            "name": "petId",
+            "required": true,
+            "in": "path",
+            "description": "ID of the pet",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AI health dashboard retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "insightsSummary": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "number"
+                        },
+                        "urgent": {
+                          "type": "number"
+                        },
+                        "recommendations": {
+                          "type": "number"
+                        },
+                        "alerts": {
+                          "type": "number"
+                        },
+                        "recent": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/AiHealthInsight"
+                          }
+                        }
+                      }
+                    },
+                    "urgentInsights": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AiHealthInsight"
+                      }
+                    },
+                    "recentRecommendations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/AiHealthInsight"
+                      }
+                    },
+                    "healthScore": {
+                      "type": "number"
+                    },
+                    "nextActions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Pet not found"
+          }
+        },
+        "tags": [
+          "ai-health"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    }
+  },
   "info": {
     "title": "Clinic Management API",
     "description": "AI-Powered Pet Clinic Management Platform Backend API",
-    "version": "1.0.0"
+    "version": "1.0.0",
+    "contact": {}
   },
-  "servers": [
-    {
-      "url": "http://localhost:3001",
-      "description": "Development server"
-    }
-  ],
   "tags": [
     {
       "name": "auth",
@@ -21,29 +3893,2163 @@
       "description": "User management endpoints"
     },
     {
+      "name": "clinics",
+      "description": "Clinic management endpoints"
+    },
+    {
+      "name": "appointments",
+      "description": "Appointment management endpoints"
+    },
+    {
+      "name": "pets",
+      "description": "Pet management endpoints"
+    },
+    {
+      "name": "payments",
+      "description": "Payment processing endpoints"
+    },
+    {
+      "name": "telemedicine",
+      "description": "Telemedicine endpoints"
+    },
+    {
+      "name": "ai-health",
+      "description": "AI health monitoring endpoints"
+    },
+    {
+      "name": "social-media",
+      "description": "Social media integration endpoints"
+    },
+    {
       "name": "health",
       "description": "Health check endpoints"
     }
   ],
-  "paths": {
-    "/health": {
-      "get": {
-        "tags": ["health"],
-        "summary": "Health check",
-        "responses": {
-          "200": {
-            "description": "Health check successful"
-          }
-        }
-      }
-    }
-  },
+  "servers": [],
   "components": {
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
+      "bearer": {
         "scheme": "bearer",
-        "bearerFormat": "JWT"
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "description": "Current password"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
+      "ForgotPasswordDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "Reset token"
+          },
+          "newPassword": {
+            "type": "string",
+            "description": "New password",
+            "minLength": 8
+          }
+        },
+        "required": [
+          "token",
+          "newPassword"
+        ]
+      },
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
+          "password": {
+            "type": "string",
+            "description": "User password",
+            "minLength": 8
+          },
+          "firstName": {
+            "type": "string",
+            "description": "User first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User last name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User phone number"
+          },
+          "role": {
+            "type": "string",
+            "description": "User role",
+            "enum": [
+              "patient",
+              "veterinarian",
+              "staff",
+              "admin"
+            ]
+          },
+          "address": {
+            "type": "string",
+            "description": "User address"
+          },
+          "city": {
+            "type": "string",
+            "description": "User city"
+          },
+          "country": {
+            "type": "string",
+            "description": "User country"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "User postal code"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "User date of birth"
+          },
+          "gender": {
+            "type": "string",
+            "description": "User gender"
+          },
+          "emergencyContactName": {
+            "type": "string",
+            "description": "User emergency contact name"
+          },
+          "emergencyContactPhone": {
+            "type": "string",
+            "description": "User emergency contact phone"
+          },
+          "emergencyContactRelationship": {
+            "type": "string",
+            "description": "User emergency contact relationship"
+          },
+          "medicalHistory": {
+            "type": "string",
+            "description": "User medical history"
+          },
+          "allergies": {
+            "type": "string",
+            "description": "User allergies"
+          },
+          "medications": {
+            "type": "string",
+            "description": "User medications"
+          },
+          "insuranceProvider": {
+            "type": "string",
+            "description": "User insurance provider"
+          },
+          "insurancePolicyNumber": {
+            "type": "string",
+            "description": "User insurance policy number"
+          },
+          "insuranceGroupNumber": {
+            "type": "string",
+            "description": "User insurance group number"
+          },
+          "insuranceExpiryDate": {
+            "type": "string",
+            "description": "User insurance expiry date"
+          },
+          "notes": {
+            "type": "string",
+            "description": "User notes"
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "firstName",
+          "lastName"
+        ]
+      },
+      "UpdateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "User email address"
+          },
+          "firstName": {
+            "type": "string",
+            "description": "User first name"
+          },
+          "lastName": {
+            "type": "string",
+            "description": "User last name"
+          },
+          "phone": {
+            "type": "string",
+            "description": "User phone number"
+          },
+          "avatar": {
+            "type": "string",
+            "description": "User avatar URL"
+          },
+          "dateOfBirth": {
+            "type": "string",
+            "description": "User date of birth"
+          },
+          "address": {
+            "type": "string",
+            "description": "User address"
+          },
+          "city": {
+            "type": "string",
+            "description": "User city"
+          },
+          "postalCode": {
+            "type": "string",
+            "description": "User postal code"
+          },
+          "country": {
+            "type": "string",
+            "description": "User country"
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "User active status"
+          }
+        }
+      },
+      "EmailNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via email"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via email"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via email"
+          },
+          "marketing": {
+            "type": "boolean",
+            "description": "Marketing notifications via email"
+          },
+          "newsletter": {
+            "type": "boolean",
+            "description": "Newsletter subscriptions via email"
+          }
+        }
+      },
+      "SmsNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via SMS"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via SMS"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via SMS"
+          }
+        }
+      },
+      "PushNotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "appointments": {
+            "type": "boolean",
+            "description": "Appointment notifications via push"
+          },
+          "reminders": {
+            "type": "boolean",
+            "description": "Reminder notifications via push"
+          },
+          "healthAlerts": {
+            "type": "boolean",
+            "description": "Health alert notifications via push"
+          }
+        }
+      },
+      "NotificationSettingsDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "description": "Email notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/EmailNotificationSettingsDto"
+              }
+            ]
+          },
+          "sms": {
+            "description": "SMS notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/SmsNotificationSettingsDto"
+              }
+            ]
+          },
+          "push": {
+            "description": "Push notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PushNotificationSettingsDto"
+              }
+            ]
+          }
+        }
+      },
+      "PrivacySettingsDto": {
+        "type": "object",
+        "properties": {
+          "profileVisibility": {
+            "type": "string",
+            "description": "Profile visibility level",
+            "enum": [
+              "public",
+              "private",
+              "friends"
+            ]
+          },
+          "showPhone": {
+            "type": "boolean",
+            "description": "Show phone number to others"
+          },
+          "showAddress": {
+            "type": "boolean",
+            "description": "Show address to others"
+          },
+          "showEmail": {
+            "type": "boolean",
+            "description": "Show email to others"
+          },
+          "allowContact": {
+            "type": "boolean",
+            "description": "Allow others to contact"
+          }
+        }
+      },
+      "QuietHoursDto": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enable quiet hours"
+          },
+          "startTime": {
+            "type": "string",
+            "description": "Quiet hours start time (HH:mm)"
+          },
+          "endTime": {
+            "type": "string",
+            "description": "Quiet hours end time (HH:mm)"
+          }
+        }
+      },
+      "CommunicationPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "preferredLanguage": {
+            "type": "string",
+            "description": "Preferred language"
+          },
+          "preferredContactMethod": {
+            "type": "string",
+            "description": "Preferred contact method",
+            "enum": [
+              "email",
+              "sms",
+              "phone"
+            ]
+          },
+          "timezone": {
+            "type": "string",
+            "description": "User timezone"
+          },
+          "quietHours": {
+            "description": "Quiet hours settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/QuietHoursDto"
+              }
+            ]
+          }
+        }
+      },
+      "UpdateUserPreferencesDto": {
+        "type": "object",
+        "properties": {
+          "notificationSettings": {
+            "description": "Notification settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/NotificationSettingsDto"
+              }
+            ]
+          },
+          "privacySettings": {
+            "description": "Privacy settings",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PrivacySettingsDto"
+              }
+            ]
+          },
+          "communicationPreferences": {
+            "description": "Communication preferences",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CommunicationPreferencesDto"
+              }
+            ]
+          },
+          "theme": {
+            "type": "string",
+            "description": "UI theme preference",
+            "enum": [
+              "light",
+              "dark",
+              "auto"
+            ]
+          },
+          "isActive": {
+            "type": "boolean",
+            "description": "Active status"
+          }
+        }
+      },
+      "RequestPhoneVerificationDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Phone number to send verification OTP to",
+            "example": "+1234567890",
+            "pattern": "^\\+[1-9]\\d{1,14}$"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "VerifyPhoneDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Phone number to verify",
+            "example": "+1234567890",
+            "pattern": "^\\+[1-9]\\d{1,14}$"
+          },
+          "otp": {
+            "type": "string",
+            "description": "6-digit verification OTP",
+            "example": "123456",
+            "minLength": 6,
+            "maxLength": 6
+          }
+        },
+        "required": [
+          "phone",
+          "otp"
+        ]
+      },
+      "ResendPhoneVerificationDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Phone number to resend verification OTP to",
+            "example": "+1234567890",
+            "pattern": "^\\+[1-9]\\d{1,14}$"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "PhoneVerificationStatusDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string",
+            "description": "Phone number checked",
+            "example": "+1234567890"
+          },
+          "isValid": {
+            "type": "boolean",
+            "description": "Whether the OTP is still valid",
+            "example": true
+          },
+          "expiresAt": {
+            "type": "object",
+            "description": "When the OTP expires (if valid)",
+            "example": "2024-01-01T12:00:00.000Z",
+            "nullable": true
+          }
+        },
+        "required": [
+          "phone",
+          "isValid",
+          "expiresAt"
+        ]
+      },
+      "CreateClinicDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Borzolini Pet Clinic",
+            "description": "Name of the clinic"
+          },
+          "description": {
+            "type": "string",
+            "example": "Leading veterinary clinic providing comprehensive pet care",
+            "description": "Description of the clinic"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Pet Care Avenue",
+            "description": "Address of the clinic"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York",
+            "description": "City where the clinic is located"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY",
+            "description": "State/province where the clinic is located"
+          },
+          "postal_code": {
+            "type": "string",
+            "example": "10001",
+            "description": "Postal/ZIP code"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA",
+            "description": "Country where the clinic is located",
+            "default": "USA"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+1-555-0123",
+            "description": "Phone number of the clinic"
+          },
+          "email": {
+            "type": "string",
+            "example": "info@borzolini.com",
+            "description": "Email address of the clinic"
+          },
+          "website": {
+            "type": "string",
+            "example": "https://borzolini.com",
+            "description": "Website URL of the clinic"
+          },
+          "logo_url": {
+            "type": "string",
+            "example": "https://example.com/logo.png",
+            "description": "URL to the clinic logo"
+          },
+          "banner_url": {
+            "type": "string",
+            "example": "https://example.com/banner.png",
+            "description": "URL to the clinic banner"
+          },
+          "emergency_contact": {
+            "type": "string",
+            "example": "Dr. Smith",
+            "description": "Emergency contact person"
+          },
+          "emergency_phone": {
+            "type": "string",
+            "example": "+1-555-9999",
+            "description": "Emergency phone number"
+          },
+          "services": {
+            "example": [
+              "vaccinations",
+              "surgery",
+              "dental_care"
+            ],
+            "description": "List of services offered by the clinic",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specializations": {
+            "example": [
+              "feline_medicine",
+              "canine_medicine"
+            ],
+            "description": "List of specializations of the clinic",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "payment_methods": {
+            "example": [
+              "cash",
+              "credit_card",
+              "insurance"
+            ],
+            "description": "Accepted payment methods",
+            "default": [
+              "cash",
+              "credit_card",
+              "insurance"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "insurance_providers": {
+            "example": [
+              "PetCare Insurance",
+              "VetHealth Plus"
+            ],
+            "description": "Accepted insurance providers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "operating_hours": {
+            "type": "object",
+            "example": {
+              "monday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "tuesday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "wednesday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "thursday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "friday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "saturday": {
+                "open": "10:00",
+                "close": "15:00",
+                "closed": false
+              },
+              "sunday": {
+                "open": "00:00",
+                "close": "00:00",
+                "closed": true
+              }
+            },
+            "description": "Operating hours for each day of the week"
+          }
+        },
+        "required": [
+          "name",
+          "address",
+          "city"
+        ]
+      },
+      "Clinic": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateClinicDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Borzolini Pet Clinic",
+            "description": "Name of the clinic"
+          },
+          "description": {
+            "type": "string",
+            "example": "Leading veterinary clinic providing comprehensive pet care",
+            "description": "Description of the clinic"
+          },
+          "address": {
+            "type": "string",
+            "example": "123 Pet Care Avenue",
+            "description": "Address of the clinic"
+          },
+          "city": {
+            "type": "string",
+            "example": "New York",
+            "description": "City where the clinic is located"
+          },
+          "state": {
+            "type": "string",
+            "example": "NY",
+            "description": "State/province where the clinic is located"
+          },
+          "postal_code": {
+            "type": "string",
+            "example": "10001",
+            "description": "Postal/ZIP code"
+          },
+          "country": {
+            "type": "string",
+            "example": "USA",
+            "description": "Country where the clinic is located",
+            "default": "USA"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+1-555-0123",
+            "description": "Phone number of the clinic"
+          },
+          "email": {
+            "type": "string",
+            "example": "info@borzolini.com",
+            "description": "Email address of the clinic"
+          },
+          "website": {
+            "type": "string",
+            "example": "https://borzolini.com",
+            "description": "Website URL of the clinic"
+          },
+          "logo_url": {
+            "type": "string",
+            "example": "https://example.com/logo.png",
+            "description": "URL to the clinic logo"
+          },
+          "banner_url": {
+            "type": "string",
+            "example": "https://example.com/banner.png",
+            "description": "URL to the clinic banner"
+          },
+          "emergency_contact": {
+            "type": "string",
+            "example": "Dr. Smith",
+            "description": "Emergency contact person"
+          },
+          "emergency_phone": {
+            "type": "string",
+            "example": "+1-555-9999",
+            "description": "Emergency phone number"
+          },
+          "services": {
+            "example": [
+              "vaccinations",
+              "surgery",
+              "dental_care"
+            ],
+            "description": "List of services offered by the clinic",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "specializations": {
+            "example": [
+              "feline_medicine",
+              "canine_medicine"
+            ],
+            "description": "List of specializations of the clinic",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "payment_methods": {
+            "example": [
+              "cash",
+              "credit_card",
+              "insurance"
+            ],
+            "description": "Accepted payment methods",
+            "default": [
+              "cash",
+              "credit_card",
+              "insurance"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "insurance_providers": {
+            "example": [
+              "PetCare Insurance",
+              "VetHealth Plus"
+            ],
+            "description": "Accepted insurance providers",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "operating_hours": {
+            "type": "object",
+            "example": {
+              "monday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "tuesday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "wednesday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "thursday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "friday": {
+                "open": "09:00",
+                "close": "17:00",
+                "closed": false
+              },
+              "saturday": {
+                "open": "10:00",
+                "close": "15:00",
+                "closed": false
+              },
+              "sunday": {
+                "open": "00:00",
+                "close": "00:00",
+                "closed": true
+              }
+            },
+            "description": "Operating hours for each day of the week"
+          }
+        }
+      },
+      "CreateClinicStaffDto": {
+        "type": "object",
+        "properties": {
+          "clinic_id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "ID of the clinic"
+          },
+          "user_id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440001",
+            "description": "ID of the user to add as staff"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "doctor",
+              "assistant",
+              "receptionist",
+              "technician"
+            ],
+            "example": "doctor",
+            "description": "Role of the staff member in the clinic"
+          },
+          "specialization": {
+            "type": "string",
+            "example": "Veterinary Surgery",
+            "description": "Specialization of the staff member"
+          },
+          "license_number": {
+            "type": "string",
+            "example": "VET-12345",
+            "description": "Professional license number"
+          },
+          "experience_years": {
+            "type": "number",
+            "example": 5,
+            "description": "Years of experience",
+            "minimum": 0,
+            "maximum": 50
+          },
+          "education": {
+            "example": [
+              "Doctor of Veterinary Medicine",
+              "Surgery Certification"
+            ],
+            "description": "Educational background",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "certifications": {
+            "example": [
+              "Board Certified Surgeon",
+              "Emergency Medicine Specialist"
+            ],
+            "description": "Professional certifications",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "bio": {
+            "type": "string",
+            "example": "Experienced veterinarian with expertise in surgical procedures and emergency care.",
+            "description": "Biography of the staff member"
+          },
+          "profile_photo_url": {
+            "type": "string",
+            "example": "https://example.com/profile.jpg",
+            "description": "URL to profile photo"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the staff member is active",
+            "default": true
+          },
+          "hire_date": {
+            "type": "string",
+            "example": "2023-01-01",
+            "description": "Date when the staff member was hired"
+          }
+        },
+        "required": [
+          "clinic_id",
+          "user_id",
+          "role",
+          "hire_date"
+        ]
+      },
+      "ClinicStaff": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateClinicServiceDto": {
+        "type": "object",
+        "properties": {
+          "clinic_id": {
+            "type": "string",
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "description": "ID of the clinic"
+          },
+          "name": {
+            "type": "string",
+            "example": "Wellness Exam",
+            "description": "Name of the service"
+          },
+          "description": {
+            "type": "string",
+            "example": "Comprehensive health checkup including physical examination and vaccinations",
+            "description": "Description of the service"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "preventive",
+              "diagnostic",
+              "surgical",
+              "emergency",
+              "wellness",
+              "dental",
+              "laboratory",
+              "imaging",
+              "therapy"
+            ],
+            "example": "preventive",
+            "description": "Category of the service"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "example": 45,
+            "description": "Duration of the service in minutes",
+            "default": 30,
+            "minimum": 15,
+            "maximum": 480
+          },
+          "price": {
+            "type": "number",
+            "example": 75,
+            "description": "Price of the service",
+            "minimum": 0
+          },
+          "currency": {
+            "type": "string",
+            "example": "USD",
+            "description": "Currency for the price",
+            "default": "USD"
+          },
+          "is_active": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the service is active",
+            "default": true
+          },
+          "requires_appointment": {
+            "type": "boolean",
+            "example": true,
+            "description": "Whether the service requires an appointment",
+            "default": true
+          }
+        },
+        "required": [
+          "clinic_id",
+          "name",
+          "category"
+        ]
+      },
+      "ClinicService": {
+        "type": "object",
+        "properties": {}
+      },
+      "ClinicReview": {
+        "type": "object",
+        "properties": {}
+      },
+      "ClinicPhoto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreatePetDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the pet",
+            "example": "Buddy"
+          },
+          "species": {
+            "type": "string",
+            "description": "Species of the pet",
+            "enum": [
+              "dog",
+              "cat",
+              "bird",
+              "rabbit",
+              "hamster",
+              "fish",
+              "reptile",
+              "horse",
+              "other"
+            ],
+            "example": "dog"
+          },
+          "breed": {
+            "type": "string",
+            "description": "Breed of the pet",
+            "example": "Golden Retriever"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender of the pet",
+            "enum": [
+              "male",
+              "female",
+              "unknown"
+            ],
+            "example": "male"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Date of birth of the pet",
+            "example": "2020-03-15"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Weight of the pet in pounds",
+            "example": 45.5
+          },
+          "size": {
+            "type": "string",
+            "description": "Size category of the pet",
+            "enum": [
+              "tiny",
+              "small",
+              "medium",
+              "large",
+              "giant"
+            ],
+            "example": "medium"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color/markings of the pet",
+            "example": "Golden"
+          },
+          "microchip_number": {
+            "type": "string",
+            "description": "Microchip number if available",
+            "example": "123456789012345"
+          },
+          "is_spayed_neutered": {
+            "type": "boolean",
+            "description": "Whether the pet is spayed/neutered",
+            "example": true
+          },
+          "is_vaccinated": {
+            "type": "boolean",
+            "description": "Whether the pet is vaccinated",
+            "example": true
+          },
+          "medical_history": {
+            "type": "string",
+            "description": "Medical history and notes",
+            "example": "No known health issues"
+          },
+          "behavioral_notes": {
+            "type": "string",
+            "description": "Behavioral notes",
+            "example": "Friendly with other dogs"
+          },
+          "dietary_requirements": {
+            "type": "string",
+            "description": "Special dietary requirements",
+            "example": "Grain-free diet"
+          },
+          "allergies": {
+            "description": "Allergies and sensitivities",
+            "example": [
+              "Peanuts",
+              "Dairy"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medications": {
+            "description": "Current medications",
+            "example": [
+              "Heartgard",
+              "Flea treatment"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "emergency_contact": {
+            "type": "string",
+            "description": "Emergency contact information",
+            "example": "John Doe"
+          },
+          "emergency_phone": {
+            "type": "string",
+            "description": "Emergency phone number",
+            "example": "+1234567890"
+          },
+          "photo_url": {
+            "type": "string",
+            "description": "Profile photo URL",
+            "example": "https://example.com/pet-photo.jpg"
+          }
+        },
+        "required": [
+          "name",
+          "species"
+        ]
+      },
+      "Pet": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the pet"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the pet"
+          },
+          "species": {
+            "type": "string",
+            "description": "Species of the pet",
+            "enum": [
+              "dog",
+              "cat",
+              "bird",
+              "rabbit",
+              "hamster",
+              "fish",
+              "reptile",
+              "horse",
+              "other"
+            ]
+          },
+          "breed": {
+            "type": "string",
+            "description": "Breed of the pet"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender of the pet",
+            "enum": [
+              "male",
+              "female",
+              "unknown"
+            ]
+          },
+          "date_of_birth": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date of birth of the pet"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Weight of the pet in pounds"
+          },
+          "size": {
+            "type": "string",
+            "description": "Size category of the pet",
+            "enum": [
+              "tiny",
+              "small",
+              "medium",
+              "large",
+              "giant"
+            ]
+          },
+          "color": {
+            "type": "string",
+            "description": "Color/markings of the pet"
+          },
+          "microchip_number": {
+            "type": "string",
+            "description": "Microchip number if available"
+          },
+          "is_spayed_neutered": {
+            "type": "boolean",
+            "description": "Whether the pet is spayed/neutered"
+          },
+          "is_vaccinated": {
+            "type": "boolean",
+            "description": "Whether the pet is vaccinated"
+          },
+          "medical_history": {
+            "type": "string",
+            "description": "Medical history and notes"
+          },
+          "behavioral_notes": {
+            "type": "string",
+            "description": "Behavioral notes"
+          },
+          "dietary_requirements": {
+            "type": "string",
+            "description": "Special dietary requirements"
+          },
+          "allergies": {
+            "description": "Allergies and sensitivities",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medications": {
+            "description": "Current medications",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "emergency_contact": {
+            "type": "string",
+            "description": "Emergency contact information"
+          },
+          "emergency_phone": {
+            "type": "string",
+            "description": "Emergency phone number"
+          },
+          "photo_url": {
+            "type": "string",
+            "description": "Profile photo URL"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the pet is active"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the pet was created"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the pet was last updated"
+          },
+          "owner_id": {
+            "type": "string",
+            "description": "ID of the pet owner"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "species",
+          "breed",
+          "gender",
+          "date_of_birth",
+          "weight",
+          "size",
+          "color",
+          "microchip_number",
+          "is_spayed_neutered",
+          "is_vaccinated",
+          "medical_history",
+          "behavioral_notes",
+          "dietary_requirements",
+          "allergies",
+          "medications",
+          "emergency_contact",
+          "emergency_phone",
+          "photo_url",
+          "is_active",
+          "created_at",
+          "updated_at",
+          "owner_id"
+        ]
+      },
+      "UpdatePetDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the pet",
+            "example": "Buddy"
+          },
+          "species": {
+            "type": "string",
+            "description": "Species of the pet",
+            "enum": [
+              "dog",
+              "cat",
+              "bird",
+              "rabbit",
+              "hamster",
+              "fish",
+              "reptile",
+              "horse",
+              "other"
+            ],
+            "example": "dog"
+          },
+          "breed": {
+            "type": "string",
+            "description": "Breed of the pet",
+            "example": "Golden Retriever"
+          },
+          "gender": {
+            "type": "string",
+            "description": "Gender of the pet",
+            "enum": [
+              "male",
+              "female",
+              "unknown"
+            ],
+            "example": "male"
+          },
+          "date_of_birth": {
+            "type": "string",
+            "description": "Date of birth of the pet",
+            "example": "2020-03-15"
+          },
+          "weight": {
+            "type": "number",
+            "description": "Weight of the pet in pounds",
+            "example": 45.5
+          },
+          "size": {
+            "type": "string",
+            "description": "Size category of the pet",
+            "enum": [
+              "tiny",
+              "small",
+              "medium",
+              "large",
+              "giant"
+            ],
+            "example": "medium"
+          },
+          "color": {
+            "type": "string",
+            "description": "Color/markings of the pet",
+            "example": "Golden"
+          },
+          "microchip_number": {
+            "type": "string",
+            "description": "Microchip number if available",
+            "example": "123456789012345"
+          },
+          "is_spayed_neutered": {
+            "type": "boolean",
+            "description": "Whether the pet is spayed/neutered",
+            "example": true
+          },
+          "is_vaccinated": {
+            "type": "boolean",
+            "description": "Whether the pet is vaccinated",
+            "example": true
+          },
+          "medical_history": {
+            "type": "string",
+            "description": "Medical history and notes",
+            "example": "No known health issues"
+          },
+          "behavioral_notes": {
+            "type": "string",
+            "description": "Behavioral notes",
+            "example": "Friendly with other dogs"
+          },
+          "dietary_requirements": {
+            "type": "string",
+            "description": "Special dietary requirements",
+            "example": "Grain-free diet"
+          },
+          "allergies": {
+            "description": "Allergies and sensitivities",
+            "example": [
+              "Peanuts",
+              "Dairy"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "medications": {
+            "description": "Current medications",
+            "example": [
+              "Heartgard",
+              "Flea treatment"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "emergency_contact": {
+            "type": "string",
+            "description": "Emergency contact information",
+            "example": "John Doe"
+          },
+          "emergency_phone": {
+            "type": "string",
+            "description": "Emergency phone number",
+            "example": "+1234567890"
+          },
+          "photo_url": {
+            "type": "string",
+            "description": "Profile photo URL",
+            "example": "https://example.com/pet-photo.jpg"
+          }
+        }
+      },
+      "CreateAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment",
+            "enum": [
+              "consultation",
+              "vaccination",
+              "surgery",
+              "follow_up",
+              "emergency",
+              "wellness_exam",
+              "dental_cleaning",
+              "laboratory_test",
+              "imaging",
+              "therapy",
+              "grooming",
+              "behavioral_training",
+              "nutrition_consultation",
+              "physical_therapy",
+              "specialist_consultation"
+            ],
+            "example": "consultation"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the appointment",
+            "enum": [
+              "pending",
+              "confirmed",
+              "in_progress",
+              "completed",
+              "cancelled",
+              "no_show",
+              "rescheduled",
+              "waiting"
+            ],
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priority level of the appointment",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent",
+              "emergency"
+            ],
+            "example": "normal"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "description": "Scheduled date and time for the appointment",
+            "example": "2024-01-15T10:00:00Z"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "description": "Duration of the appointment in minutes",
+            "example": 30
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes and instructions for the appointment",
+            "example": "Please bring previous medical records"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the appointment",
+            "example": "Annual wellness checkup"
+          },
+          "symptoms": {
+            "type": "string",
+            "description": "Symptoms or concerns reported by the owner",
+            "example": "Lethargy and decreased appetite"
+          },
+          "is_telemedicine": {
+            "type": "boolean",
+            "description": "Whether this is a telemedicine appointment",
+            "example": false
+          },
+          "telemedicine_link": {
+            "type": "string",
+            "description": "Telemedicine consultation link",
+            "example": "https://meet.google.com/abc-defg-hij"
+          },
+          "home_visit_address": {
+            "type": "string",
+            "description": "Address for home visits",
+            "example": "123 Main St, City, State 12345"
+          },
+          "is_home_visit": {
+            "type": "boolean",
+            "description": "Whether this is a home visit appointment",
+            "example": false
+          },
+          "reminder_settings": {
+            "type": "object",
+            "description": "Reminder settings for the appointment"
+          },
+          "pet_id": {
+            "type": "string",
+            "description": "ID of the pet",
+            "example": "uuid-string"
+          },
+          "clinic_id": {
+            "type": "string",
+            "description": "ID of the clinic",
+            "example": "uuid-string"
+          },
+          "staff_id": {
+            "type": "string",
+            "description": "ID of the assigned staff member",
+            "example": "uuid-string"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "ID of the clinic service",
+            "example": "uuid-string"
+          }
+        },
+        "required": [
+          "appointment_type",
+          "scheduled_date",
+          "pet_id",
+          "clinic_id"
+        ]
+      },
+      "Appointment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the appointment"
+          },
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment",
+            "enum": [
+              "consultation",
+              "vaccination",
+              "surgery",
+              "follow_up",
+              "emergency",
+              "wellness_exam",
+              "dental_cleaning",
+              "laboratory_test",
+              "imaging",
+              "therapy",
+              "grooming",
+              "behavioral_training",
+              "nutrition_consultation",
+              "physical_therapy",
+              "specialist_consultation"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the appointment",
+            "enum": [
+              "pending",
+              "confirmed",
+              "in_progress",
+              "completed",
+              "cancelled",
+              "no_show",
+              "rescheduled",
+              "waiting"
+            ]
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priority level of the appointment",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent",
+              "emergency"
+            ]
+          },
+          "scheduled_date": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Scheduled date and time for the appointment"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "description": "Duration of the appointment in minutes",
+            "example": 30
+          },
+          "actual_start_time": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Actual start time of the appointment"
+          },
+          "actual_end_time": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Actual end time of the appointment"
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes and instructions for the appointment"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the appointment"
+          },
+          "symptoms": {
+            "type": "string",
+            "description": "Symptoms or concerns reported by the owner"
+          },
+          "diagnosis": {
+            "type": "string",
+            "description": "Diagnosis made during the appointment"
+          },
+          "treatment_plan": {
+            "type": "string",
+            "description": "Treatment plan or recommendations"
+          },
+          "prescriptions": {
+            "description": "Prescriptions given during the appointment",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "follow_up_instructions": {
+            "type": "string",
+            "description": "Follow-up instructions"
+          },
+          "cost": {
+            "type": "number",
+            "description": "Cost of the appointment"
+          },
+          "payment_status": {
+            "type": "string",
+            "description": "Payment status"
+          },
+          "is_telemedicine": {
+            "type": "boolean",
+            "description": "Whether this is a telemedicine appointment"
+          },
+          "telemedicine_link": {
+            "type": "string",
+            "description": "Telemedicine consultation link"
+          },
+          "home_visit_address": {
+            "type": "string",
+            "description": "Address for home visits"
+          },
+          "is_home_visit": {
+            "type": "boolean",
+            "description": "Whether this is a home visit appointment"
+          },
+          "reminder_settings": {
+            "type": "object",
+            "description": "Reminder settings for the appointment"
+          },
+          "is_active": {
+            "type": "boolean",
+            "description": "Whether the appointment is active"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the appointment was created"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the appointment was last updated"
+          },
+          "owner_id": {
+            "type": "string",
+            "description": "ID of the pet owner"
+          },
+          "pet_id": {
+            "type": "string",
+            "description": "ID of the pet"
+          },
+          "clinic_id": {
+            "type": "string",
+            "description": "ID of the clinic"
+          },
+          "staff_id": {
+            "type": "string",
+            "description": "ID of the assigned staff member"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "ID of the clinic service"
+          }
+        },
+        "required": [
+          "id",
+          "appointment_type",
+          "status",
+          "priority",
+          "scheduled_date",
+          "duration_minutes",
+          "actual_start_time",
+          "actual_end_time",
+          "notes",
+          "reason",
+          "symptoms",
+          "diagnosis",
+          "treatment_plan",
+          "prescriptions",
+          "follow_up_instructions",
+          "cost",
+          "payment_status",
+          "is_telemedicine",
+          "telemedicine_link",
+          "home_visit_address",
+          "is_home_visit",
+          "reminder_settings",
+          "is_active",
+          "created_at",
+          "updated_at",
+          "owner_id",
+          "pet_id",
+          "clinic_id",
+          "staff_id",
+          "service_id"
+        ]
+      },
+      "UpdateAppointmentDto": {
+        "type": "object",
+        "properties": {
+          "appointment_type": {
+            "type": "string",
+            "description": "Type of appointment",
+            "enum": [
+              "consultation",
+              "vaccination",
+              "surgery",
+              "follow_up",
+              "emergency",
+              "wellness_exam",
+              "dental_cleaning",
+              "laboratory_test",
+              "imaging",
+              "therapy",
+              "grooming",
+              "behavioral_training",
+              "nutrition_consultation",
+              "physical_therapy",
+              "specialist_consultation"
+            ],
+            "example": "consultation"
+          },
+          "status": {
+            "type": "string",
+            "description": "Current status of the appointment",
+            "enum": [
+              "pending",
+              "confirmed",
+              "in_progress",
+              "completed",
+              "cancelled",
+              "no_show",
+              "rescheduled",
+              "waiting"
+            ],
+            "example": "pending"
+          },
+          "priority": {
+            "type": "string",
+            "description": "Priority level of the appointment",
+            "enum": [
+              "low",
+              "normal",
+              "high",
+              "urgent",
+              "emergency"
+            ],
+            "example": "normal"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "description": "Scheduled date and time for the appointment",
+            "example": "2024-01-15T10:00:00Z"
+          },
+          "duration_minutes": {
+            "type": "number",
+            "description": "Duration of the appointment in minutes",
+            "example": 30
+          },
+          "notes": {
+            "type": "string",
+            "description": "Notes and instructions for the appointment",
+            "example": "Please bring previous medical records"
+          },
+          "reason": {
+            "type": "string",
+            "description": "Reason for the appointment",
+            "example": "Annual wellness checkup"
+          },
+          "symptoms": {
+            "type": "string",
+            "description": "Symptoms or concerns reported by the owner",
+            "example": "Lethargy and decreased appetite"
+          },
+          "is_telemedicine": {
+            "type": "boolean",
+            "description": "Whether this is a telemedicine appointment",
+            "example": false
+          },
+          "telemedicine_link": {
+            "type": "string",
+            "description": "Telemedicine consultation link",
+            "example": "https://meet.google.com/abc-defg-hij"
+          },
+          "home_visit_address": {
+            "type": "string",
+            "description": "Address for home visits",
+            "example": "123 Main St, City, State 12345"
+          },
+          "is_home_visit": {
+            "type": "boolean",
+            "description": "Whether this is a home visit appointment",
+            "example": false
+          },
+          "reminder_settings": {
+            "type": "object",
+            "description": "Reminder settings for the appointment"
+          },
+          "pet_id": {
+            "type": "string",
+            "description": "ID of the pet",
+            "example": "uuid-string"
+          },
+          "clinic_id": {
+            "type": "string",
+            "description": "ID of the clinic",
+            "example": "uuid-string"
+          },
+          "staff_id": {
+            "type": "string",
+            "description": "ID of the assigned staff member",
+            "example": "uuid-string"
+          },
+          "service_id": {
+            "type": "string",
+            "description": "ID of the clinic service",
+            "example": "uuid-string"
+          }
+        }
+      },
+      "GenerateRecommendationsDto": {
+        "type": "object",
+        "properties": {
+          "pet_id": {
+            "type": "string",
+            "description": "ID of the pet to generate recommendations for"
+          },
+          "categories": {
+            "type": "array",
+            "description": "Specific categories to focus on",
+            "items": {
+              "type": "string",
+              "enum": [
+                "health",
+                "nutrition",
+                "behavior",
+                "preventive_care",
+                "emergency",
+                "lifestyle",
+                "training",
+                "grooming"
+              ]
+            }
+          },
+          "insight_types": {
+            "type": "array",
+            "description": "Types of insights to generate",
+            "items": {
+              "type": "string",
+              "enum": [
+                "recommendation",
+                "alert",
+                "prediction",
+                "reminder",
+                "educational",
+                "preventive"
+              ]
+            }
+          },
+          "include_emergency_alerts": {
+            "type": "boolean",
+            "description": "Include emergency alerts",
+            "default": true
+          },
+          "include_preventive_care": {
+            "type": "boolean",
+            "description": "Include preventive care recommendations",
+            "default": true
+          },
+          "include_lifestyle_tips": {
+            "type": "boolean",
+            "description": "Include lifestyle and training tips",
+            "default": true
+          },
+          "custom_context": {
+            "type": "string",
+            "description": "Custom context or specific concerns to address"
+          }
+        },
+        "required": [
+          "pet_id"
+        ]
+      },
+      "AiHealthInsight": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the AI insight"
+          },
+          "pet_id": {
+            "type": "string",
+            "description": "ID of the pet this insight is for"
+          },
+          "insight_type": {
+            "type": "string",
+            "description": "Type of insight",
+            "enum": [
+              "recommendation",
+              "alert",
+              "prediction",
+              "reminder",
+              "educational",
+              "preventive"
+            ]
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the insight",
+            "enum": [
+              "health",
+              "nutrition",
+              "behavior",
+              "preventive_care",
+              "emergency",
+              "lifestyle",
+              "training",
+              "grooming"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "description": "Title of the insight"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of the insight"
+          },
+          "confidence_score": {
+            "type": "number",
+            "description": "AI confidence score (0.0 to 1.0)"
+          },
+          "urgency_level": {
+            "type": "string",
+            "description": "Urgency level of the insight",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "urgent"
+            ]
+          },
+          "suggested_action": {
+            "type": "string",
+            "description": "Suggested action for the pet owner"
+          },
+          "context": {
+            "type": "string",
+            "description": "Additional context or reasoning"
+          },
+          "supporting_data": {
+            "type": "object",
+            "description": "Related data that influenced this insight"
+          },
+          "dismissed": {
+            "type": "boolean",
+            "description": "Whether the insight has been dismissed by the owner"
+          },
+          "dismissed_at": {
+            "type": "object",
+            "description": "Date when the insight was dismissed"
+          },
+          "acted_upon": {
+            "type": "boolean",
+            "description": "Whether the insight has been acted upon"
+          },
+          "acted_upon_at": {
+            "type": "object",
+            "description": "Date when the insight was acted upon"
+          },
+          "owner_feedback": {
+            "type": "string",
+            "description": "Owner feedback on the insight"
+          },
+          "owner_rating": {
+            "type": "number",
+            "description": "Rating given by the owner (1-5)"
+          },
+          "created_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the insight was created"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Date when the insight was last updated"
+          }
+        },
+        "required": [
+          "id",
+          "pet_id",
+          "insight_type",
+          "category",
+          "title",
+          "description",
+          "confidence_score",
+          "urgency_level",
+          "suggested_action",
+          "context",
+          "supporting_data",
+          "dismissed",
+          "dismissed_at",
+          "acted_upon",
+          "acted_upon_at",
+          "owner_feedback",
+          "owner_rating",
+          "created_at",
+          "updated_at"
+        ]
+      },
+      "UpdateInsightDto": {
+        "type": "object",
+        "properties": {
+          "dismissed": {
+            "type": "boolean",
+            "description": "Whether the insight has been dismissed"
+          },
+          "acted_upon": {
+            "type": "boolean",
+            "description": "Whether the insight has been acted upon"
+          },
+          "owner_feedback": {
+            "type": "string",
+            "description": "Owner feedback on the insight"
+          },
+          "owner_rating": {
+            "type": "number",
+            "description": "Owner rating of the insight (1-5)",
+            "minimum": 1,
+            "maximum": 5
+          }
+        }
       }
     }
   }

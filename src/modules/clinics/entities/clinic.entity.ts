@@ -4,7 +4,7 @@ import { ClinicService } from './clinic-service.entity';
 import { ClinicReview } from './clinic-review.entity';
 import { ClinicPhoto } from './clinic-photo.entity';
 import { ClinicOperatingHours } from './clinic-operating-hours.entity';
-import { ClinicAppointment } from './clinic-appointment.entity';
+import { Appointment } from '../../appointments/entities/appointment.entity';
 
 export interface OperatingHours {
   [key: string]: {
@@ -126,6 +126,6 @@ export class Clinic {
   @OneToMany(() => ClinicOperatingHours, (hours) => hours.clinic)
   operating_hours_detail!: ClinicOperatingHours[];
 
-  @OneToMany(() => ClinicAppointment, (appointment) => appointment.clinic)
-  appointments!: ClinicAppointment[];
+  @OneToMany(() => Appointment, (appointment) => appointment.clinic)
+  appointments!: Appointment[];
 }
