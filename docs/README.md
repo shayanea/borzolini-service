@@ -4,16 +4,16 @@
 This is the API documentation for the AI-Powered Pet Clinic Management Platform Backend.
 
 ## API Statistics
-- **Total Endpoints**: 89
-- **Total Controllers**: 6
-- **Authentication Required**: 67
-- **Public Endpoints**: 22
+- **Total Endpoints**: 99
+- **Total Controllers**: 8
+- **Authentication Required**: 75
+- **Public Endpoints**: 24
 
 ## HTTP Methods
-- GET: 43
-- POST: 28
+- GET: 49
+- POST: 31
 - PUT: 4
-- DELETE: 8
+- DELETE: 9
 - PATCH: 6
 
 ## API Controllers
@@ -21,7 +21,9 @@ This is the API documentation for the AI-Powered Pet Clinic Management Platform 
 - appointments
 - auth
 - clinics
+- file-upload
 - pets
+- static-files
 - users
 
 ## Authentication

@@ -104,6 +104,25 @@ SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
+## 📁 File Storage Options
+
+Since Firebase Storage has costs, consider these alternatives:
+
+### **Local Storage (Development)**
+- Store files in local `./uploads` directory
+- Good for development and testing
+- No external costs
+
+### **Supabase Storage (Production)**
+- 1GB free storage included
+- 2GB bandwidth/month free
+- Integrated with your existing Supabase setup
+
+### **Cloud Storage Alternatives**
+- **AWS S3**: Pay per use, very cost-effective
+- **Google Cloud Storage**: Similar pricing to Firebase
+- **Azure Blob Storage**: Microsoft's cloud storage solution
+
 ## 🛠️ Development Commands
 
 ```bash

@@ -9,9 +9,10 @@ import { NotificationService } from './notification.service';
 import { ServiceHealthService } from './service-health.service';
 import { SmsService } from './sms.service';
 import { SupabaseModule } from './supabase.module';
+import { LocalStorageModule } from './local-storage.module';
 
 @Module({
-  imports: [SupabaseModule],
+  imports: [SupabaseModule, LocalStorageModule],
   providers: [
     CommonService,
     DatabaseService,
