@@ -33,7 +33,7 @@ A professional NestJS backend for managing pet clinics, telemedicine consultatio
 - **Authentication**: JWT with Passport.js
 - **AI Integration**: OpenAI GPT-4 for health analysis
 - **Video Calls**: Daily.co API for telemedicine
-- **File Storage**: AWS S3 for media files
+- **File Storage**: Local file system (development) / Supabase Storage (production)
 - **Email**: SMTP for notifications
 - **Documentation**: Swagger/OpenAPI
 
@@ -61,9 +61,9 @@ src/
 ### Prerequisites
 
 - Node.js 18+ and pnpm
-- PostgreSQL database
+- Docker and Docker Compose (for local PostgreSQL)
 - OpenAI API key (for AI features)
-- Daily.co API key (for telemedicine)
+- Daily.co API key (for telemedicine, optional)
 
 ### Installation
 
@@ -80,13 +80,21 @@ src/
 
 3. **Environment Setup**
    ```bash
+   # For local development (recommended)
+   cp config.env.local.template config.env.local
+   # Edit config.env.local with your configuration
+   
+   # Or use the example file
    cp config.env.example .env
    # Edit .env with your configuration
    ```
 
 4. **Database Setup**
    ```bash
-   # Create PostgreSQL database
+   # Start local PostgreSQL with Docker
+   docker compose up -d postgres
+   
+   # Or create PostgreSQL database manually
    createdb borzolini_clinic
    ```
 
@@ -99,6 +107,32 @@ src/
    pnpm run build
    pnpm run start:prod
    ```
+
+### Quick Start with Local Development
+
+For the fastest setup experience:
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/shayanea/borzolini-service.git
+cd borzolini-service
+
+# 2. Copy environment template
+cp config.env.local.template config.env.local
+
+# 3. Update OpenAI API key in config.env.local
+# Get your key from: https://platform.openai.com/api-keys
+
+# 4. Start local database
+docker compose up -d postgres
+
+# 5. Install dependencies and run
+pnpm install
+pnpm run start:dev
+
+# 6. Open Swagger UI
+open http://localhost:3001/api/docs
+```
 
 ## 🔧 Configuration
 
