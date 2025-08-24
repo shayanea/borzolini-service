@@ -58,7 +58,8 @@ export class EmailService implements OnModuleInit {
 
     // Validate SMTP port
     const smtpPort = this.configService.get<number>('SMTP_PORT');
-    if (isNaN(smtpPort!) || smtpPort! < 1 || smtpPort! > 65535) {
+    const isPortValid = !isNaN(smtpPort!) && smtpPort! >= 1 && smtpPort! <= 65535;
+    if (!isPortValid) {
       throw new Error(`Invalid SMTP_PORT: ${smtpPort}`);
     }
 

@@ -34,6 +34,612 @@
         }
       }
     },
+    "/file-upload/upload": {
+      "post": {
+        "operationId": "uploadFile",
+        "summary": "Upload file to local storage",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "File uploaded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "number"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "type": "string"
+                        },
+                        "metadata": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid file or request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/files/{category}/{subcategory}": {
+      "get": {
+        "operationId": "listFiles",
+        "summary": "List files in a category",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": false,
+            "in": "path",
+            "description": "File subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "description": "Number of files to skip",
+            "schema": {}
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Maximum number of files to return",
+            "schema": {}
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Files listed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string"
+                          },
+                          "path": {
+                            "type": "string"
+                          },
+                          "size": {
+                            "type": "number"
+                          },
+                          "contentType": {
+                            "type": "string"
+                          },
+                          "originalName": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/files/{category}/{subcategory}/{filename}": {
+      "get": {
+        "operationId": "getFileInfo",
+        "summary": "Get file information",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": true,
+            "in": "path",
+            "description": "File subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File information retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "number"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "type": "string"
+                        },
+                        "metadata": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      },
+      "delete": {
+        "operationId": "deleteFile",
+        "summary": "Delete file from local storage",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": true,
+            "in": "path",
+            "description": "File subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/files/{category}/{subcategory}/{filename}/copy": {
+      "post": {
+        "operationId": "copyFile",
+        "summary": "Copy file to new location",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "Source file category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": true,
+            "in": "path",
+            "description": "Source file subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "Source file name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File copied successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string"
+                        },
+                        "path": {
+                          "type": "string"
+                        },
+                        "size": {
+                          "type": "number"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "originalName": {
+                          "type": "string"
+                        },
+                        "metadata": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/stats": {
+      "get": {
+        "operationId": "getStorageStats",
+        "summary": "Get storage statistics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Storage statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalFiles": {
+                          "type": "number"
+                        },
+                        "totalSize": {
+                          "type": "number"
+                        },
+                        "categories": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/cleanup": {
+      "post": {
+        "operationId": "cleanupOldFiles",
+        "summary": "Clean up old files",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cleanup completed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "deletedCount": {
+                      "type": "number"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/file-upload/download/{category}/{subcategory}/{filename}": {
+      "get": {
+        "operationId": "downloadFile",
+        "summary": "Download file",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": true,
+            "in": "path",
+            "description": "File subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File downloaded successfully"
+          },
+          "404": {
+            "description": "File not found"
+          }
+        },
+        "tags": [
+          "file-upload"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/files/{category}/{subcategory}/{filename}": {
+      "get": {
+        "operationId": "serveFile",
+        "summary": "Serve static file",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "subcategory",
+            "required": true,
+            "in": "path",
+            "description": "File subcategory",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File served successfully"
+          },
+          "404": {
+            "description": "File not found"
+          }
+        },
+        "tags": [
+          "static-files"
+        ]
+      }
+    },
+    "/files/{category}/{filename}": {
+      "get": {
+        "operationId": "serveFileNoSubcategory",
+        "summary": "Serve static file (no subcategory)",
+        "parameters": [
+          {
+            "name": "category",
+            "required": true,
+            "in": "path",
+            "description": "File category",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filename",
+            "required": true,
+            "in": "path",
+            "description": "File name",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "File served successfully"
+          },
+          "404": {
+            "description": "File not found"
+          }
+        },
+        "tags": [
+          "static-files"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "operationId": "register",
