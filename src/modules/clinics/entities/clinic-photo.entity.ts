@@ -1,48 +1,55 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from "typeorm";
 
-import { Clinic } from './clinic.entity';
+import { Clinic } from "./clinic.entity";
 
 export enum PhotoCategory {
-  FACILITY = 'facility',
-  STAFF = 'staff',
-  EQUIPMENT = 'equipment',
-  WAITING_AREA = 'waiting_area',
-  EXAMINATION_ROOM = 'examination_room',
-  SURGERY_ROOM = 'surgery_room',
-  LABORATORY = 'laboratory',
-  RECEPTION = 'reception',
-  EXTERIOR = 'exterior',
-  OTHER = 'other',
+  FACILITY = "facility",
+  STAFF = "staff",
+  EQUIPMENT = "equipment",
+  WAITING_AREA = "waiting_area",
+  EXAMINATION_ROOM = "examination_room",
+  SURGERY_ROOM = "surgery_room",
+  LABORATORY = "laboratory",
+  RECEPTION = "reception",
+  EXTERIOR = "exterior",
+  OTHER = "other",
 }
 
-@Entity('clinic_photos')
+@Entity("clinic_photos")
 export class ClinicPhoto {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: "uuid" })
   clinic_id!: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   photo_url!: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   caption!: string;
 
-  @Column({ type: 'enum', enum: PhotoCategory })
+  @Column({ type: "enum", enum: PhotoCategory })
   category!: PhotoCategory;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: "boolean", default: false })
   is_primary!: boolean;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: "boolean", default: true })
   is_active!: boolean;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: "timestamp with time zone" })
   created_at!: Date;
 
   // Relationships
   @ManyToOne(() => Clinic, (clinic) => clinic.photos)
-  @JoinColumn({ name: 'clinic_id' })
+  @JoinColumn({ name: "clinic_id" })
   clinic!: Clinic;
 }

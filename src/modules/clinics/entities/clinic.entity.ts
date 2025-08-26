@@ -1,10 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
-import { ClinicStaff } from './clinic-staff.entity';
-import { ClinicService } from './clinic-service.entity';
-import { ClinicReview } from './clinic-review.entity';
-import { ClinicPhoto } from './clinic-photo.entity';
-import { ClinicOperatingHours } from './clinic-operating-hours.entity';
-import { Appointment } from '../../appointments/entities/appointment.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from "typeorm";
+import { ClinicStaff } from "./clinic-staff.entity";
+import { ClinicService } from "./clinic-service.entity";
+import { ClinicReview } from "./clinic-review.entity";
+import { ClinicPhoto } from "./clinic-photo.entity";
+import { ClinicOperatingHours } from "./clinic-operating-hours.entity";
+import { Appointment } from "../../appointments/entities/appointment.entity";
 
 export interface OperatingHours {
   [key: string]: {
@@ -30,84 +37,84 @@ export interface InsuranceProviders {
   [key: string]: boolean;
 }
 
-@Entity('clinics')
+@Entity("clinics")
 export class Clinic {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn("uuid")
   id!: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: "varchar", length: 255 })
   name!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description?: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: "text" })
   address!: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: "varchar", length: 100 })
   city!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: "varchar", length: 100, nullable: true })
   state?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true })
   postal_code?: string;
 
-  @Column({ type: 'varchar', length: 100, default: 'USA' })
+  @Column({ type: "varchar", length: 100, default: "USA" })
   country!: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true })
   phone?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   email?: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   website?: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: "varchar", length: 500, nullable: true })
   logo_url?: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ type: "varchar", length: 500, nullable: true })
   banner_url?: string;
 
-  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
+  @Column({ type: "decimal", precision: 3, scale: 2, default: 0 })
   rating!: number;
 
-  @Column({ type: 'int', default: 0 })
+  @Column({ type: "int", default: 0 })
   total_reviews!: number;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: "boolean", default: false })
   is_verified!: boolean;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: "boolean", default: true })
   is_active!: boolean;
 
-  @Column({ type: 'jsonb', default: {} })
+  @Column({ type: "jsonb", default: {} })
   operating_hours!: OperatingHours;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
+  @Column({ type: "varchar", length: 255, nullable: true })
   emergency_contact?: string;
 
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: "varchar", length: 20, nullable: true })
   emergency_phone?: string;
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: "jsonb", default: [] })
   services!: string[];
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: "jsonb", default: [] })
   specializations!: string[];
 
-  @Column({ type: 'jsonb', default: ['cash', 'credit_card', 'insurance'] })
+  @Column({ type: "jsonb", default: ["cash", "credit_card", "insurance"] })
   payment_methods!: string[];
 
-  @Column({ type: 'jsonb', default: [] })
+  @Column({ type: "jsonb", default: [] })
   insurance_providers!: string[];
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: "timestamp with time zone" })
   created_at!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: "timestamp with time zone" })
   updated_at!: Date;
 
   // Relationships

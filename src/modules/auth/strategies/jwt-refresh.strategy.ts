@@ -1,12 +1,15 @@
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { ExtractJwt, Strategy } from "passport-jwt";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 
-import { PassportStrategy } from '@nestjs/passport';
-import { Request } from 'express';
-import { UsersService } from '../../users/users.service';
+import { PassportStrategy } from "@nestjs/passport";
+import { Request } from "express";
+import { UsersService } from "../../users/users.service";
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh') {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  "jwt-refresh",
+) {
   constructor(private usersService: UsersService) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -30,17 +33,17 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
     const refreshToken = req?.cookies?.refreshToken || req?.body?.refreshToken;
 
     if (!refreshToken) {
-      throw new UnauthorizedException('Refresh token not found');
+      throw new UnauthorizedException("Refresh token not found");
     }
 
     const user = await this.usersService.findOne(payload.sub);
 
     if (!user || !user.isActive || user.refreshToken !== refreshToken) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException("Invalid refresh token");
     }
 
     if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
-      throw new UnauthorizedException('Refresh token expired');
+      throw new UnauthorizedException("Refresh token expired");
     }
 
     return {

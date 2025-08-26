@@ -1,13 +1,13 @@
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule, ConfigService } from "@nestjs/config";
 
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { JwtModule } from '@nestjs/jwt';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
-import { Module } from '@nestjs/common';
-import { PassportModule } from '@nestjs/passport';
-import { UsersModule } from '../users/users.module';
+import { AuthController } from "./auth.controller";
+import { AuthService } from "./auth.service";
+import { JwtModule } from "@nestjs/jwt";
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { JwtRefreshStrategy } from "./strategies/jwt-refresh.strategy";
+import { Module } from "@nestjs/common";
+import { PassportModule } from "@nestjs/passport";
+import { UsersModule } from "../users/users.module";
 
 @Module({
   imports: [
@@ -16,14 +16,14 @@ import { UsersModule } from '../users/users.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
-        const secret = configService.get<string>('JWT_SECRET');
+        const secret = configService.get<string>("JWT_SECRET");
         if (!secret) {
-          throw new Error('JWT_SECRET is not configured');
+          throw new Error("JWT_SECRET is not configured");
         }
         return {
           secret,
           signOptions: {
-            expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '15m',
+            expiresIn: configService.get<string>("JWT_EXPIRES_IN") || "15m",
           },
         };
       },

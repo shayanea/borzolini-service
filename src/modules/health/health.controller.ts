@@ -1,7 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
-import { HealthService } from './health.service';
+import { Controller, Get } from "@nestjs/common";
+import { HealthService } from "./health.service";
 
-@Controller('health')
+@Controller("health")
 export class HealthController {
   constructor(private healthService: HealthService) {}
 
@@ -10,17 +10,17 @@ export class HealthController {
     return this.healthService.checkHealth();
   }
 
-  @Get('database')
+  @Get("database")
   async getDatabaseInfo() {
     return this.healthService.getDatabaseInfo();
   }
 
-  @Get('ping')
+  @Get("ping")
   ping() {
     return {
-      message: 'pong',
+      message: "pong",
       timestamp: new Date().toISOString(),
-      service: 'Borzolini Service API',
+      service: "Borzolini Service API",
     };
   }
 }

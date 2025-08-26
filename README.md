@@ -14,7 +14,7 @@ A professional NestJS backend for managing pet clinics, telemedicine consultatio
 ### AI Health Monitoring
 
 - **Proactive Health Alerts** - AI-powered symptom analysis
-- **Breed-Specific Insights** - Persian cat specialization (Fariborz!)
+- **Breed-Specific Insights** - Pet specialization
 - **Health Pattern Recognition** - Predictive health modeling
 - **Personalized Recommendations** - AI-driven care suggestions
 

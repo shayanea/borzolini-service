@@ -1,15 +1,26 @@
-import { Injectable, NotFoundException, BadRequestException, Logger, ConflictException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, LessThan, MoreThan, In, Not } from 'typeorm';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+  ConflictException,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository, Between, LessThan, MoreThan, In, Not } from "typeorm";
 
-import { Appointment, AppointmentType, AppointmentStatus, AppointmentPriority } from './entities/appointment.entity';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
-import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { User } from '../users/entities/user.entity';
-import { Pet } from '../pets/entities/pet.entity';
-import { Clinic } from '../clinics/entities/clinic.entity';
-import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
-import { ClinicService } from '../clinics/entities/clinic-service.entity';
+import {
+  Appointment,
+  AppointmentType,
+  AppointmentStatus,
+  AppointmentPriority,
+} from "./entities/appointment.entity";
+import { CreateAppointmentDto } from "./dto/create-appointment.dto";
+import { UpdateAppointmentDto } from "./dto/update-appointment.dto";
+import { User } from "../users/entities/user.entity";
+import { Pet } from "../pets/entities/pet.entity";
+import { Clinic } from "../clinics/entities/clinic.entity";
+import { ClinicStaff } from "../clinics/entities/clinic-staff.entity";
+import { ClinicService } from "../clinics/entities/clinic-service.entity";
 
 export interface AppointmentFilters {
   status?: AppointmentStatus | undefined;
@@ -65,7 +76,10 @@ export class AppointmentsService {
     private readonly serviceRepository: Repository<ClinicService>,
   ) {}
 
-  async create(createAppointmentDto: CreateAppointmentDto, ownerId: string): Promise<Appointment> {
+  async create(
+    createAppointmentDto: CreateAppointmentDto,
+    ownerId: string,
+  ): Promise<Appointment> {
     // Verify owner exists
     const owner = await this.userRepository.findOne({ where: { id: ownerId } });
     if (!owner) {
@@ -73,20 +87,29 @@ export class AppointmentsService {
     }
 
     // Verify pet exists and belongs to owner
-    const pet = await this.petRepository.findOne({ where: { id: createAppointmentDto.pet_id, owner_id: ownerId } });
+    const pet = await this.petRepository.findOne({
+      where: { id: createAppointmentDto.pet_id, owner_id: ownerId },
+    });
     if (!pet) {
       throw new NotFoundException(`Pet not found or does not belong to you`);
     }
 
     // Verify clinic exists
-    const clinic = await this.clinicRepository.findOne({ where: { id: createAppointmentDto.clinic_id } });
+    const clinic = await this.clinicRepository.findOne({
+      where: { id: createAppointmentDto.clinic_id },
+    });
     if (!clinic) {
       throw new NotFoundException(`Clinic not found`);
     }
 
     // Verify staff if provided
     if (createAppointmentDto.staff_id) {
-      const staff = await this.staffRepository.findOne({ where: { id: createAppointmentDto.staff_id, clinic_id: createAppointmentDto.clinic_id } });
+      const staff = await this.staffRepository.findOne({
+        where: {
+          id: createAppointmentDto.staff_id,
+          clinic_id: createAppointmentDto.clinic_id,
+        },
+      });
       if (!staff) {
         throw new NotFoundException(`Staff member not found at this clinic`);
       }
@@ -94,7 +117,12 @@ export class AppointmentsService {
 
     // Verify service if provided
     if (createAppointmentDto.service_id) {
-      const service = await this.serviceRepository.findOne({ where: { id: createAppointmentDto.service_id, clinic_id: createAppointmentDto.clinic_id } });
+      const service = await this.serviceRepository.findOne({
+        where: {
+          id: createAppointmentDto.service_id,
+          clinic_id: createAppointmentDto.clinic_id,
+        },
+      });
       if (!service) {
         throw new NotFoundException(`Service not found at this clinic`);
       }
@@ -109,12 +137,20 @@ export class AppointmentsService {
       where: [
         {
           pet_id: createAppointmentDto.pet_id,
-          status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING]),
+          status: In([
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED,
+            AppointmentStatus.WAITING,
+          ]),
           scheduled_date: Between(scheduledDate, endTime),
         },
         {
           pet_id: createAppointmentDto.pet_id,
-          status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING]),
+          status: In([
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED,
+            AppointmentStatus.WAITING,
+          ]),
           scheduled_date: LessThan(scheduledDate),
           duration_minutes: MoreThan(0),
         },
@@ -122,7 +158,9 @@ export class AppointmentsService {
     });
 
     if (conflicts.length > 0) {
-      throw new ConflictException(`Appointment conflicts with existing appointment at ${conflicts[0]?.scheduled_date || 'unknown time'}`);
+      throw new ConflictException(
+        `Appointment conflicts with existing appointment at ${conflicts[0]?.scheduled_date || "unknown time"}`,
+      );
     }
 
     // Create appointment
@@ -136,12 +174,23 @@ export class AppointmentsService {
     });
 
     const savedAppointment = await this.appointmentRepository.save(appointment);
-    this.logger.log(`Created appointment ${savedAppointment.id} for pet ${pet.name}`);
+    this.logger.log(
+      `Created appointment ${savedAppointment.id} for pet ${pet.name}`,
+    );
 
     return savedAppointment;
   }
 
-  async findAll(filters?: AppointmentFilters, page: number = 1, limit: number = 10): Promise<{ appointments: Appointment[]; total: number; page: number; totalPages: number }> {
+  async findAll(
+    filters?: AppointmentFilters,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{
+    appointments: Appointment[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
     const where: any = { is_active: true };
 
     // Apply filters
@@ -152,31 +201,38 @@ export class AppointmentsService {
     if (filters?.staff_id) where.staff_id = filters.staff_id;
     if (filters?.pet_id) where.pet_id = filters.pet_id;
     if (filters?.owner_id) where.owner_id = filters.owner_id;
-    if (filters?.is_telemedicine !== undefined) where.is_telemedicine = filters.is_telemedicine;
-    if (filters?.is_home_visit !== undefined) where.is_home_visit = filters.is_home_visit;
+    if (filters?.is_telemedicine !== undefined)
+      where.is_telemedicine = filters.is_telemedicine;
+    if (filters?.is_home_visit !== undefined)
+      where.is_home_visit = filters.is_home_visit;
 
     // Build query
-    let query = this.appointmentRepository.createQueryBuilder('appointment')
-      .leftJoinAndSelect('appointment.owner', 'owner')
-      .leftJoinAndSelect('appointment.pet', 'pet')
-      .leftJoinAndSelect('appointment.clinic', 'clinic')
-      .leftJoinAndSelect('appointment.staff', 'staff')
-      .leftJoinAndSelect('appointment.service', 'service')
+    let query = this.appointmentRepository
+      .createQueryBuilder("appointment")
+      .leftJoinAndSelect("appointment.owner", "owner")
+      .leftJoinAndSelect("appointment.pet", "pet")
+      .leftJoinAndSelect("appointment.clinic", "clinic")
+      .leftJoinAndSelect("appointment.staff", "staff")
+      .leftJoinAndSelect("appointment.service", "service")
       .where(where);
 
     // Apply date filters
     if (filters?.date_from) {
-      query = query.andWhere('appointment.scheduled_date >= :dateFrom', { dateFrom: filters.date_from });
+      query = query.andWhere("appointment.scheduled_date >= :dateFrom", {
+        dateFrom: filters.date_from,
+      });
     }
     if (filters?.date_to) {
-      query = query.andWhere('appointment.scheduled_date <= :dateTo', { dateTo: filters.date_to });
+      query = query.andWhere("appointment.scheduled_date <= :dateTo", {
+        dateTo: filters.date_to,
+      });
     }
 
     // Apply search filter
     if (filters?.search) {
       query = query.andWhere(
-        '(pet.name ILIKE :search OR owner.first_name ILIKE :search OR owner.last_name ILIKE :search OR appointment.notes ILIKE :search)',
-        { search: `%${filters.search}%` }
+        "(pet.name ILIKE :search OR owner.first_name ILIKE :search OR owner.last_name ILIKE :search OR appointment.notes ILIKE :search)",
+        { search: `%${filters.search}%` },
       );
     }
 
@@ -187,7 +243,7 @@ export class AppointmentsService {
     const appointments = await query
       .skip((page - 1) * limit)
       .take(limit)
-      .orderBy('appointment.scheduled_date', 'ASC')
+      .orderBy("appointment.scheduled_date", "ASC")
       .getMany();
 
     const totalPages = Math.ceil(total / limit);
@@ -203,7 +259,7 @@ export class AppointmentsService {
   async findOne(id: string): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id, is_active: true },
-      relations: ['owner', 'pet', 'clinic', 'staff', 'service'],
+      relations: ["owner", "pet", "clinic", "staff", "service"],
     });
 
     if (!appointment) {
@@ -216,8 +272,8 @@ export class AppointmentsService {
   async findByOwner(ownerId: string): Promise<Appointment[]> {
     const appointments = await this.appointmentRepository.find({
       where: { owner_id: ownerId, is_active: true },
-      relations: ['pet', 'clinic', 'staff', 'service'],
-      order: { scheduled_date: 'ASC' },
+      relations: ["pet", "clinic", "staff", "service"],
+      order: { scheduled_date: "ASC" },
     });
 
     return appointments;
@@ -226,8 +282,8 @@ export class AppointmentsService {
   async findByPet(petId: string): Promise<Appointment[]> {
     const appointments = await this.appointmentRepository.find({
       where: { pet_id: petId, is_active: true },
-      relations: ['owner', 'clinic', 'staff', 'service'],
-      order: { scheduled_date: 'ASC' },
+      relations: ["owner", "clinic", "staff", "service"],
+      order: { scheduled_date: "ASC" },
     });
 
     return appointments;
@@ -235,20 +291,20 @@ export class AppointmentsService {
 
   async findByClinic(clinicId: string, date?: Date): Promise<Appointment[]> {
     const where: any = { clinic_id: clinicId, is_active: true };
-    
+
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
+
       where.scheduled_date = Between(startOfDay, endOfDay);
     }
 
     const appointments = await this.appointmentRepository.find({
       where,
-      relations: ['owner', 'pet', 'staff', 'service'],
-      order: { scheduled_date: 'ASC' },
+      relations: ["owner", "pet", "staff", "service"],
+      order: { scheduled_date: "ASC" },
     });
 
     return appointments;
@@ -256,42 +312,60 @@ export class AppointmentsService {
 
   async findByStaff(staffId: string, date?: Date): Promise<Appointment[]> {
     const where: any = { staff_id: staffId, is_active: true };
-    
+
     if (date) {
       const startOfDay = new Date(date);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(date);
       endOfDay.setHours(23, 59, 59, 999);
-      
+
       where.scheduled_date = Between(startOfDay, endOfDay);
     }
 
     const appointments = await this.appointmentRepository.find({
       where,
-      relations: ['owner', 'pet', 'clinic', 'service'],
-      order: { scheduled_date: 'ASC' },
+      relations: ["owner", "pet", "clinic", "service"],
+      order: { scheduled_date: "ASC" },
     });
 
     return appointments;
   }
 
-  async update(id: string, updateAppointmentDto: UpdateAppointmentDto, userId: string, userRole: string): Promise<Appointment> {
+  async update(
+    id: string,
+    updateAppointmentDto: UpdateAppointmentDto,
+    userId: string,
+    userRole: string,
+  ): Promise<Appointment> {
     const appointment = await this.findOne(id);
 
     // Check permissions
-    if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
-      throw new BadRequestException('You can only update your own appointments');
+    if (
+      appointment.owner_id !== userId &&
+      !["admin", "veterinarian", "staff"].includes(userRole)
+    ) {
+      throw new BadRequestException(
+        "You can only update your own appointments",
+      );
     }
 
     // Handle date conversion
     if (updateAppointmentDto.scheduled_date) {
-      (updateAppointmentDto as any).scheduled_date = new Date(updateAppointmentDto.scheduled_date);
+      (updateAppointmentDto as any).scheduled_date = new Date(
+        updateAppointmentDto.scheduled_date,
+      );
     }
 
     // Check for scheduling conflicts if date/time is being changed
-    if (updateAppointmentDto.scheduled_date || updateAppointmentDto.duration_minutes) {
-      const scheduledDate = (updateAppointmentDto.scheduled_date as any) || appointment.scheduled_date;
-      const duration = updateAppointmentDto.duration_minutes || appointment.duration_minutes;
+    if (
+      updateAppointmentDto.scheduled_date ||
+      updateAppointmentDto.duration_minutes
+    ) {
+      const scheduledDate =
+        (updateAppointmentDto.scheduled_date as any) ||
+        appointment.scheduled_date;
+      const duration =
+        updateAppointmentDto.duration_minutes || appointment.duration_minutes;
       const endTime = new Date(scheduledDate.getTime() + duration * 60000);
 
       const conflicts = await this.appointmentRepository.find({
@@ -299,43 +373,67 @@ export class AppointmentsService {
           {
             id: Not(id),
             pet_id: appointment.pet_id,
-            status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING]),
+            status: In([
+              AppointmentStatus.PENDING,
+              AppointmentStatus.CONFIRMED,
+              AppointmentStatus.WAITING,
+            ]),
             scheduled_date: Between(scheduledDate as any, endTime),
           },
         ],
       });
 
       if (conflicts.length > 0) {
-        throw new ConflictException(`Appointment conflicts with existing appointment`);
+        throw new ConflictException(
+          `Appointment conflicts with existing appointment`,
+        );
       }
     }
 
     Object.assign(appointment, updateAppointmentDto);
-    const updatedAppointment = await this.appointmentRepository.save(appointment);
+    const updatedAppointment =
+      await this.appointmentRepository.save(appointment);
 
     this.logger.log(`Updated appointment ${id}`);
     return updatedAppointment;
   }
 
-  async updateStatus(id: string, status: AppointmentStatus, userId: string, userRole: string): Promise<Appointment> {
+  async updateStatus(
+    id: string,
+    status: AppointmentStatus,
+    userId: string,
+    userRole: string,
+  ): Promise<Appointment> {
     const appointment = await this.findOne(id);
 
     // Check permissions
-    if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
-      throw new BadRequestException('You can only update your own appointments');
+    if (
+      appointment.owner_id !== userId &&
+      !["admin", "veterinarian", "staff"].includes(userRole)
+    ) {
+      throw new BadRequestException(
+        "You can only update your own appointments",
+      );
     }
 
     // Update status
     appointment.status = status;
 
     // Set actual times based on status
-    if (status === AppointmentStatus.IN_PROGRESS && !appointment.actual_start_time) {
+    if (
+      status === AppointmentStatus.IN_PROGRESS &&
+      !appointment.actual_start_time
+    ) {
       appointment.actual_start_time = new Date();
-    } else if (status === AppointmentStatus.COMPLETED && !appointment.actual_end_time) {
+    } else if (
+      status === AppointmentStatus.COMPLETED &&
+      !appointment.actual_end_time
+    ) {
       appointment.actual_end_time = new Date();
     }
 
-    const updatedAppointment = await this.appointmentRepository.save(appointment);
+    const updatedAppointment =
+      await this.appointmentRepository.save(appointment);
     this.logger.log(`Updated appointment ${id} status to ${status}`);
 
     return updatedAppointment;
@@ -345,8 +443,13 @@ export class AppointmentsService {
     const appointment = await this.findOne(id);
 
     // Check permissions
-    if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
-      throw new BadRequestException('You can only cancel your own appointments');
+    if (
+      appointment.owner_id !== userId &&
+      !["admin", "veterinarian", "staff"].includes(userRole)
+    ) {
+      throw new BadRequestException(
+        "You can only cancel your own appointments",
+      );
     }
 
     // Soft delete by setting is_active to false
@@ -358,7 +461,9 @@ export class AppointmentsService {
   }
 
   async getAppointmentStats(): Promise<AppointmentStats> {
-    const appointments = await this.appointmentRepository.find({ where: { is_active: true } });
+    const appointments = await this.appointmentRepository.find({
+      where: { is_active: true },
+    });
 
     const stats: AppointmentStats = {
       total: appointments.length,
@@ -407,7 +512,7 @@ export class AppointmentsService {
     let totalDuration = 0;
     let appointmentsWithDuration = 0;
 
-    appointments.forEach(appointment => {
+    appointments.forEach((appointment) => {
       // Count by status
       stats.byStatus[appointment.status]++;
 
@@ -433,12 +538,19 @@ export class AppointmentsService {
       }
     });
 
-    stats.averageDuration = appointmentsWithDuration > 0 ? Math.round(totalDuration / appointmentsWithDuration) : 0;
+    stats.averageDuration =
+      appointmentsWithDuration > 0
+        ? Math.round(totalDuration / appointmentsWithDuration)
+        : 0;
 
     return stats;
   }
 
-  async getAvailableTimeSlots(clinicId: string, date: Date, duration: number = 30): Promise<TimeSlot[]> {
+  async getAvailableTimeSlots(
+    clinicId: string,
+    date: Date,
+    duration: number = 30,
+  ): Promise<TimeSlot[]> {
     const startOfDay = new Date(date);
     startOfDay.setHours(8, 0, 0, 0); // Start at 8 AM
 
@@ -450,10 +562,14 @@ export class AppointmentsService {
       where: {
         clinic_id: clinicId,
         scheduled_date: Between(startOfDay, endOfDay),
-        status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING]),
+        status: In([
+          AppointmentStatus.PENDING,
+          AppointmentStatus.CONFIRMED,
+          AppointmentStatus.WAITING,
+        ]),
         is_active: true,
       },
-      order: { scheduled_date: 'ASC' },
+      order: { scheduled_date: "ASC" },
     });
 
     // Generate time slots
@@ -462,10 +578,12 @@ export class AppointmentsService {
 
     while (currentTime < endOfDay) {
       const slotEnd = new Date(currentTime.getTime() + duration * 60000);
-      
+
       if (slotEnd <= endOfDay) {
-        const conflictingAppointment = existingAppointments.find(apt => {
-          const aptEnd = new Date(apt.scheduled_date.getTime() + apt.duration_minutes * 60000);
+        const conflictingAppointment = existingAppointments.find((apt) => {
+          const aptEnd = new Date(
+            apt.scheduled_date.getTime() + apt.duration_minutes * 60000,
+          );
           return (
             (currentTime >= apt.scheduled_date && currentTime < aptEnd) ||
             (slotEnd > apt.scheduled_date && slotEnd <= aptEnd) ||
@@ -487,29 +605,47 @@ export class AppointmentsService {
     return timeSlots;
   }
 
-  async rescheduleAppointment(id: string, newDate: Date, userId: string, userRole: string): Promise<Appointment> {
+  async rescheduleAppointment(
+    id: string,
+    newDate: Date,
+    userId: string,
+    userRole: string,
+  ): Promise<Appointment> {
     const appointment = await this.findOne(id);
 
     // Check permissions
-    if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
-      throw new BadRequestException('You can only reschedule your own appointments');
+    if (
+      appointment.owner_id !== userId &&
+      !["admin", "veterinarian", "staff"].includes(userRole)
+    ) {
+      throw new BadRequestException(
+        "You can only reschedule your own appointments",
+      );
     }
 
     // Check for conflicts
-    const endTime = new Date(newDate.getTime() + appointment.duration_minutes * 60000);
+    const endTime = new Date(
+      newDate.getTime() + appointment.duration_minutes * 60000,
+    );
     const conflicts = await this.appointmentRepository.find({
       where: [
         {
           id: Not(id),
           pet_id: appointment.pet_id,
-          status: In([AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED, AppointmentStatus.WAITING]),
+          status: In([
+            AppointmentStatus.PENDING,
+            AppointmentStatus.CONFIRMED,
+            AppointmentStatus.WAITING,
+          ]),
           scheduled_date: Between(newDate, endTime),
         },
       ],
     });
 
     if (conflicts.length > 0) {
-      throw new ConflictException(`New time conflicts with existing appointment`);
+      throw new ConflictException(
+        `New time conflicts with existing appointment`,
+      );
     }
 
     // Update appointment
@@ -517,7 +653,8 @@ export class AppointmentsService {
     appointment.status = AppointmentStatus.RESCHEDULED;
     appointment.updated_at = new Date();
 
-    const updatedAppointment = await this.appointmentRepository.save(appointment);
+    const updatedAppointment =
+      await this.appointmentRepository.save(appointment);
     this.logger.log(`Rescheduled appointment ${id} to ${newDate}`);
 
     return updatedAppointment;

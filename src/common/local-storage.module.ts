@@ -1,8 +1,8 @@
-import { ConfigModule } from '@nestjs/config';
-import { FileUploadController } from './file-upload.controller';
-import { LocalStorageService } from './local-storage.service';
-import { Module } from '@nestjs/common';
-import { StaticFilesController } from './static-files.controller';
+import { ConfigModule } from "@nestjs/config";
+import { FileUploadController } from "./file-upload.controller";
+import { LocalStorageService } from "./local-storage.service";
+import { Module } from "@nestjs/common";
+import { StaticFilesController } from "./static-files.controller";
 
 @Module({
   imports: [ConfigModule],

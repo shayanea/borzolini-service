@@ -1,10 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from "fs";
+import * as path from "path";
 
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 
-import { AppModule } from '../app.module';
-import { NestFactory } from '@nestjs/core';
+import { AppModule } from "../app.module";
+import { NestFactory } from "@nestjs/core";
 
 interface ApiStats {
   totalEndpoints: number;
@@ -23,7 +23,7 @@ interface ApiStats {
 
 async function generateSwagger() {
   try {
-    console.log('🚀 Starting Swagger documentation generation...');
+    console.log("🚀 Starting Swagger documentation generation...");
 
     // Create a minimal app instance for Swagger generation
     const app = await NestFactory.create(AppModule, {
@@ -32,45 +32,46 @@ async function generateSwagger() {
 
     // Configure Swagger
     const config = new DocumentBuilder()
-      .setTitle('Clinic Management API')
-      .setDescription('AI-Powered Pet Clinic Management Platform Backend API')
-      .setVersion('1.0.0')
-      .addTag('auth', 'Authentication endpoints')
-      .addTag('users', 'User management endpoints')
-      .addTag('clinics', 'Clinic management endpoints')
-      .addTag('appointments', 'Appointment management endpoints')
-      .addTag('pets', 'Pet management endpoints')
-      .addTag('payments', 'Payment processing endpoints')
-      .addTag('telemedicine', 'Telemedicine endpoints')
-      .addTag('ai-health', 'AI health monitoring endpoints')
-      .addTag('social-media', 'Social media integration endpoints')
-      .addTag('health', 'Health check endpoints')
+      .setTitle("Clinic Management API")
+      .setDescription("AI-Powered Pet Clinic Management Platform Backend API")
+      .setVersion("1.0.0")
+      .addTag("auth", "Authentication endpoints")
+      .addTag("users", "User management endpoints")
+      .addTag("clinics", "Clinic management endpoints")
+      .addTag("appointments", "Appointment management endpoints")
+      .addTag("pets", "Pet management endpoints")
+      .addTag("payments", "Payment processing endpoints")
+      .addTag("telemedicine", "Telemedicine endpoints")
+      .addTag("ai-health", "AI health monitoring endpoints")
+      .addTag("social-media", "Social media integration endpoints")
+      .addTag("health", "Health check endpoints")
       .addBearerAuth()
       .build();
 
     const document = SwaggerModule.createDocument(app, config, {
-      operationIdFactory: (_controllerKey: string, methodKey: string) => methodKey,
+      operationIdFactory: (_controllerKey: string, methodKey: string) =>
+        methodKey,
     });
 
     // Ensure docs directory exists
-    const docsDir = path.join(__dirname, '../../docs');
+    const docsDir = path.join(__dirname, "../../docs");
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
 
     // Write Swagger JSON
-    const swaggerPath = path.join(docsDir, 'swagger.json');
+    const swaggerPath = path.join(docsDir, "swagger.json");
     fs.writeFileSync(swaggerPath, JSON.stringify(document, null, 2));
     console.log(`✅ Swagger JSON generated: ${swaggerPath}`);
 
     // Generate API statistics
     const stats = generateApiStats(document);
-    const statsPath = path.join(docsDir, 'api-stats.json');
+    const statsPath = path.join(docsDir, "api-stats.json");
     fs.writeFileSync(statsPath, JSON.stringify(stats, null, 2));
     console.log(`✅ API statistics generated: ${statsPath}`);
 
     // Generate README
-    const readmePath = path.join(docsDir, 'README.md');
+    const readmePath = path.join(docsDir, "README.md");
     const readmeContent = generateReadme(stats);
     fs.writeFileSync(readmePath, readmeContent);
     console.log(`✅ API documentation README generated: ${readmePath}`);
@@ -78,16 +79,16 @@ async function generateSwagger() {
     // Close the app
     await app.close();
 
-    console.log('🎉 Swagger documentation generation completed successfully!');
+    console.log("🎉 Swagger documentation generation completed successfully!");
     console.log(`📁 Documentation files saved in: ${docsDir}`);
     console.log(`🌐 Swagger UI available at: http://localhost:3001/api/docs`);
 
     return stats;
   } catch (error) {
-    console.error('❌ Error generating Swagger documentation:', error);
+    console.error("❌ Error generating Swagger documentation:", error);
 
     // Fallback: create a basic Swagger file
-    console.log('🔄 Creating fallback Swagger documentation...');
+    console.log("🔄 Creating fallback Swagger documentation...");
     await createFallbackSwagger();
     throw error;
   }
@@ -95,38 +96,38 @@ async function generateSwagger() {
 
 async function createFallbackSwagger() {
   try {
-    const docsDir = path.join(__dirname, '../../docs');
+    const docsDir = path.join(__dirname, "../../docs");
     if (!fs.existsSync(docsDir)) {
       fs.mkdirSync(docsDir, { recursive: true });
     }
 
     // Create a basic Swagger document
     const basicSwagger = {
-      openapi: '3.0.0',
+      openapi: "3.0.0",
       info: {
-        title: 'Clinic Management API',
-        description: 'AI-Powered Pet Clinic Management Platform Backend API',
-        version: '1.0.0',
+        title: "Clinic Management API",
+        description: "AI-Powered Pet Clinic Management Platform Backend API",
+        version: "1.0.0",
       },
       servers: [
         {
-          url: 'http://localhost:3001',
-          description: 'Development server',
+          url: "http://localhost:3001",
+          description: "Development server",
         },
       ],
       tags: [
-        { name: 'auth', description: 'Authentication endpoints' },
-        { name: 'users', description: 'User management endpoints' },
-        { name: 'health', description: 'Health check endpoints' },
+        { name: "auth", description: "Authentication endpoints" },
+        { name: "users", description: "User management endpoints" },
+        { name: "health", description: "Health check endpoints" },
       ],
       paths: {
-        '/health': {
+        "/health": {
           get: {
-            tags: ['health'],
-            summary: 'Health check',
+            tags: ["health"],
+            summary: "Health check",
             responses: {
-              '200': {
-                description: 'Health check successful',
+              "200": {
+                description: "Health check successful",
               },
             },
           },
@@ -134,7 +135,7 @@ async function createFallbackSwagger() {
       },
     };
 
-    const swaggerPath = path.join(docsDir, 'swagger.json');
+    const swaggerPath = path.join(docsDir, "swagger.json");
     fs.writeFileSync(swaggerPath, JSON.stringify(basicSwagger, null, 2));
     console.log(`✅ Fallback Swagger JSON generated: ${swaggerPath}`);
 
@@ -142,25 +143,27 @@ async function createFallbackSwagger() {
     const stats = {
       totalEndpoints: 1,
       totalControllers: 3,
-      tags: ['auth', 'users', 'health'],
+      tags: ["auth", "users", "health"],
       methods: { GET: 1, POST: 0, PUT: 0, DELETE: 0, PATCH: 0 },
       authEndpoints: 0,
       publicEndpoints: 1,
     };
 
-    const statsPath = path.join(docsDir, 'api-stats.json');
+    const statsPath = path.join(docsDir, "api-stats.json");
     fs.writeFileSync(statsPath, JSON.stringify(stats, null, 2));
     console.log(`✅ Fallback API statistics generated: ${statsPath}`);
 
     // Create basic README
-    const readmePath = path.join(docsDir, 'README.md');
+    const readmePath = path.join(docsDir, "README.md");
     const readmeContent = generateReadme(stats);
     fs.writeFileSync(readmePath, readmeContent);
-    console.log(`✅ Fallback API documentation README generated: ${readmePath}`);
+    console.log(
+      `✅ Fallback API documentation README generated: ${readmePath}`,
+    );
 
-    console.log('✅ Fallback documentation created successfully');
+    console.log("✅ Fallback documentation created successfully");
   } catch (fallbackError) {
-    console.error('❌ Failed to create fallback documentation:', fallbackError);
+    console.error("❌ Failed to create fallback documentation:", fallbackError);
   }
 }
 
@@ -214,9 +217,9 @@ function generateApiStats(document: any): ApiStats {
 function generateReadme(stats: ApiStats): string {
   const methodCounts = Object.entries(stats.methods)
     .map(([method, count]) => `- ${method}: ${count}`)
-    .join('\n');
+    .join("\n");
 
-  const tagList = stats.tags.map((tag) => `- ${tag}`).join('\n');
+  const tagList = stats.tags.map((tag) => `- ${tag}`).join("\n");
 
   return `# Clinic Management API Documentation
 
@@ -272,11 +275,11 @@ Access the interactive Swagger UI at: http://localhost:3001/api/docs
 if (require.main === module) {
   generateSwagger()
     .then(() => {
-      console.log('✅ Script completed successfully');
+      console.log("✅ Script completed successfully");
       process.exit(0);
     })
     .catch((error) => {
-      console.error('❌ Script failed:', error);
+      console.error("❌ Script failed:", error);
       process.exit(1);
     });
 }

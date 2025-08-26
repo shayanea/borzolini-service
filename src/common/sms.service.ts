@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from "@nestjs/config";
 
 export interface SmsMessage {
   to: string;
@@ -34,61 +34,70 @@ export class SmsService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    this.logger.log('Initializing SMS service...');
+    this.logger.log("Initializing SMS service...");
 
     try {
       await this.validateConfiguration();
       await this.testConnection();
 
       this.isInitialized = true;
-      this.logger.log('SMS service initialized successfully');
+      this.logger.log("SMS service initialized successfully");
     } catch (error) {
-      this.logger.warn('SMS service initialization failed, running in mock mode:', error instanceof Error ? error.message : 'Unknown error');
+      this.logger.warn(
+        "SMS service initialization failed, running in mock mode:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
       this.isInitialized = false;
     }
   }
 
   private async validateConfiguration(): Promise<void> {
-    const isEnabled = this.configService.get<boolean>('SMS_ENABLED', false);
+    const isEnabled = this.configService.get<boolean>("SMS_ENABLED", false);
 
     if (!isEnabled) {
-      this.logger.log('SMS service is disabled via configuration');
+      this.logger.log("SMS service is disabled via configuration");
       this.smsConfig = {
         isEnabled: false,
-        defaultFrom: 'Borzolini Clinic',
-        provider: 'mock',
+        defaultFrom: "Borzolini Clinic",
+        provider: "mock",
       };
       return;
     }
 
     // Check for required SMS provider configuration
-    const provider = this.configService.get<string>('SMS_PROVIDER', 'twilio');
+    const provider = this.configService.get<string>("SMS_PROVIDER", "twilio");
     let hasValidConfig = false;
 
-    if (provider === 'twilio') {
-      const accountSid = this.configService.get('TWILIO_ACCOUNT_SID');
-      const authToken = this.configService.get('TWILIO_AUTH_TOKEN');
+    if (provider === "twilio") {
+      const accountSid = this.configService.get("TWILIO_ACCOUNT_SID");
+      const authToken = this.configService.get("TWILIO_AUTH_TOKEN");
 
       if (accountSid && authToken) {
         hasValidConfig = true;
         this.smsConfig = {
           isEnabled: true,
-          defaultFrom: this.configService.get<string>('SMS_DEFAULT_FROM', 'Borzolini Clinic'),
-          provider: 'twilio',
+          defaultFrom: this.configService.get<string>(
+            "SMS_DEFAULT_FROM",
+            "Borzolini Clinic",
+          ),
+          provider: "twilio",
           accountSid,
           authToken,
         };
       }
-    } else if (provider === 'aws-sns') {
-      const apiKey = this.configService.get('AWS_ACCESS_KEY_ID');
-      const apiSecret = this.configService.get('AWS_SECRET_ACCESS_KEY');
+    } else if (provider === "aws-sns") {
+      const apiKey = this.configService.get("AWS_ACCESS_KEY_ID");
+      const apiSecret = this.configService.get("AWS_SECRET_ACCESS_KEY");
 
       if (apiKey && apiSecret) {
         hasValidConfig = true;
         this.smsConfig = {
           isEnabled: true,
-          defaultFrom: this.configService.get<string>('SMS_DEFAULT_FROM', 'Borzolini Clinic'),
-          provider: 'aws-sns',
+          defaultFrom: this.configService.get<string>(
+            "SMS_DEFAULT_FROM",
+            "Borzolini Clinic",
+          ),
+          provider: "aws-sns",
           apiKey,
           apiSecret,
         };
@@ -96,25 +105,31 @@ export class SmsService implements OnModuleInit {
     }
 
     if (!hasValidConfig) {
-      throw new Error(`SMS provider '${provider}' configuration is incomplete. Check environment variables.`);
+      throw new Error(
+        `SMS provider '${provider}' configuration is incomplete. Check environment variables.`,
+      );
     }
 
-    this.logger.log(`SMS configuration validated successfully for provider: ${provider}`);
+    this.logger.log(
+      `SMS configuration validated successfully for provider: ${provider}`,
+    );
   }
 
   private async testConnection(): Promise<void> {
     if (!this.smsConfig?.isEnabled) {
-      this.logger.log('SMS service disabled, skipping connection test');
+      this.logger.log("SMS service disabled, skipping connection test");
       return;
     }
 
     try {
       // TODO: Implement actual SMS provider connection test
       // For now, just validate the configuration
-      this.logger.log('SMS configuration test passed (mock mode)');
+      this.logger.log("SMS configuration test passed (mock mode)");
     } catch (error) {
-      this.logger.error('SMS connection test failed:', error);
-      throw new Error(`SMS connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.error("SMS connection test failed:", error);
+      throw new Error(
+        `SMS connection test failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -127,16 +142,19 @@ export class SmsService implements OnModuleInit {
     if (!this.isInitialized) {
       return {
         success: false,
-        error: 'SMS service not initialized',
+        error: "SMS service not initialized",
         timestamp: new Date(),
       };
     }
 
     if (!this.smsConfig?.isEnabled) {
-      this.logger.warn('SMS service is disabled. Message would have been sent:', message);
+      this.logger.warn(
+        "SMS service is disabled. Message would have been sent:",
+        message,
+      );
       return {
         success: true,
-        messageId: 'mock-message-id',
+        messageId: "mock-message-id",
         timestamp: new Date(),
       };
     }
@@ -161,10 +179,10 @@ export class SmsService implements OnModuleInit {
         timestamp: new Date(),
       };
     } catch (error) {
-      this.logger.error('Failed to send SMS:', error);
+      this.logger.error("Failed to send SMS:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date(),
       };
     }
@@ -176,13 +194,16 @@ export class SmsService implements OnModuleInit {
    * @param otp The OTP code to send
    * @returns Promise<SmsResponse> The result of the SMS sending operation
    */
-  async sendVerificationOtp(phoneNumber: string, otp: string): Promise<SmsResponse> {
+  async sendVerificationOtp(
+    phoneNumber: string,
+    otp: string,
+  ): Promise<SmsResponse> {
     const message = `Your Borzolini Clinic verification code is: ${otp}. Valid for 10 minutes. Do not share this code.`;
 
     return this.sendSms({
       to: phoneNumber,
       message,
-      from: this.smsConfig?.defaultFrom || 'Borzolini Clinic',
+      from: this.smsConfig?.defaultFrom || "Borzolini Clinic",
     });
   }
 
@@ -192,13 +213,16 @@ export class SmsService implements OnModuleInit {
    * @param appointmentDetails The appointment details
    * @returns Promise<SmsResponse> The result of the SMS sending operation
    */
-  async sendAppointmentReminder(phoneNumber: string, appointmentDetails: any): Promise<SmsResponse> {
+  async sendAppointmentReminder(
+    phoneNumber: string,
+    appointmentDetails: any,
+  ): Promise<SmsResponse> {
     const message = `Reminder: You have an appointment at Borzolini Clinic on ${appointmentDetails.date} at ${appointmentDetails.time}. Please arrive 15 minutes early.`;
 
     return this.sendSms({
       to: phoneNumber,
       message,
-      from: this.smsConfig?.defaultFrom || 'Borzolini Clinic',
+      from: this.smsConfig?.defaultFrom || "Borzolini Clinic",
     });
   }
 
@@ -208,13 +232,16 @@ export class SmsService implements OnModuleInit {
    * @param alertMessage The health alert message
    * @returns Promise<SmsResponse> The result of the SMS sending operation
    */
-  async sendHealthAlert(phoneNumber: string, alertMessage: string): Promise<SmsResponse> {
+  async sendHealthAlert(
+    phoneNumber: string,
+    alertMessage: string,
+  ): Promise<SmsResponse> {
     const message = `Health Alert from Borzolini Clinic: ${alertMessage}`;
 
     return this.sendSms({
       to: phoneNumber,
       message,
-      from: this.smsConfig?.defaultFrom || 'Borzolini Clinic',
+      from: this.smsConfig?.defaultFrom || "Borzolini Clinic",
     });
   }
 
@@ -224,11 +251,14 @@ export class SmsService implements OnModuleInit {
    * @param notificationMessage The notification message
    * @returns Promise<SmsResponse> The result of the SMS sending operation
    */
-  async sendNotification(phoneNumber: string, notificationMessage: string): Promise<SmsResponse> {
+  async sendNotification(
+    phoneNumber: string,
+    notificationMessage: string,
+  ): Promise<SmsResponse> {
     return this.sendSms({
       to: phoneNumber,
       message: notificationMessage,
-      from: this.smsConfig?.defaultFrom || 'Borzolini Clinic',
+      from: this.smsConfig?.defaultFrom || "Borzolini Clinic",
     });
   }
 
@@ -245,7 +275,7 @@ export class SmsService implements OnModuleInit {
    * @returns string The default sender
    */
   getDefaultFrom(): string {
-    return this.smsConfig?.defaultFrom || 'Borzolini Clinic';
+    return this.smsConfig?.defaultFrom || "Borzolini Clinic";
   }
 
   /**
@@ -258,11 +288,16 @@ export class SmsService implements OnModuleInit {
   /**
    * Get SMS service status
    */
-  getServiceStatus(): { isInitialized: boolean; isEnabled: boolean; provider: string; hasConfig: boolean } {
+  getServiceStatus(): {
+    isInitialized: boolean;
+    isEnabled: boolean;
+    provider: string;
+    hasConfig: boolean;
+  } {
     return {
       isInitialized: this.isInitialized,
       isEnabled: this.smsConfig?.isEnabled || false,
-      provider: this.smsConfig?.provider || 'none',
+      provider: this.smsConfig?.provider || "none",
       hasConfig: !!this.smsConfig,
     };
   }
@@ -281,9 +316,9 @@ export class SmsService implements OnModuleInit {
    */
   formatPhoneNumber(phoneNumber: string): string {
     // Ensure phone number starts with +
-    if (!phoneNumber.startsWith('+')) {
+    if (!phoneNumber.startsWith("+")) {
       // Assume US number if no country code
-      return `+1${phoneNumber.replace(/\D/g, '')}`;
+      return `+1${phoneNumber.replace(/\D/g, "")}`;
     }
     return phoneNumber;
   }

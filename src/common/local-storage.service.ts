@@ -1,8 +1,8 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as crypto from 'crypto';
+import { Injectable, Logger, BadRequestException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
 
 export interface FileUploadResult {
   url: string;
@@ -31,26 +31,29 @@ export class LocalStorageService {
   private readonly allowedMimeTypes: string[];
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUploadDir = this.configService.get('LOCAL_STORAGE_PATH', './uploads');
-    this.maxFileSize = this.configService.get('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB default
+    this.baseUploadDir = this.configService.get(
+      "LOCAL_STORAGE_PATH",
+      "./uploads",
+    );
+    this.maxFileSize = this.configService.get("MAX_FILE_SIZE", 5 * 1024 * 1024); // 5MB default
     this.allowedMimeTypes = [
       // Images
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp',
-      'image/svg+xml',
+      "image/jpeg",
+      "image/png",
+      "image/gif",
+      "image/webp",
+      "image/svg+xml",
       // Documents
-      'application/pdf',
-      'text/plain',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      "application/pdf",
+      "text/plain",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       // Archives
-      'application/zip',
-      'application/x-rar-compressed',
-      'application/x-7z-compressed',
+      "application/zip",
+      "application/x-rar-compressed",
+      "application/x-7z-compressed",
     ];
 
     // Ensure upload directory exists
@@ -64,7 +67,7 @@ export class LocalStorageService {
     file: Express.Multer.File,
     category: string,
     subcategory?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<FileUploadResult> {
     try {
       // Validate file
@@ -72,11 +75,11 @@ export class LocalStorageService {
 
       // Generate unique filename
       const fileName = this.generateUniqueFileName(file.originalname);
-      
+
       // Create directory path
       const relativePath = this.buildFilePath(category, fileName, subcategory);
       const fullPath = path.join(this.baseUploadDir, relativePath);
-      
+
       // Ensure directory exists
       this.ensureDirectoryExists(path.dirname(fullPath));
 
@@ -88,7 +91,7 @@ export class LocalStorageService {
         originalName: file.originalname,
         contentType: file.mimetype,
         size: file.size,
-        uploadedBy: 'clinic-api',
+        uploadedBy: "clinic-api",
         uploadedAt: new Date(),
         category,
         tags: metadata?.tags || [],
@@ -113,9 +116,9 @@ export class LocalStorageService {
           ...metadata,
         },
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`File upload failed: ${errorMessage}`);
       throw new BadRequestException(`File upload failed: ${errorMessage}`);
     }
@@ -127,7 +130,7 @@ export class LocalStorageService {
   async deleteFile(filePath: string): Promise<boolean> {
     try {
       const fullPath = path.join(this.baseUploadDir, filePath);
-      
+
       if (!fs.existsSync(fullPath)) {
         this.logger.warn(`File not found: ${filePath}`);
         return false;
@@ -144,9 +147,9 @@ export class LocalStorageService {
 
       this.logger.log(`File deleted successfully: ${filePath}`);
       return true;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`File deletion failed: ${errorMessage}`);
       return false;
     }
@@ -158,16 +161,16 @@ export class LocalStorageService {
   async getFileMetadata(filePath: string): Promise<FileMetadata | null> {
     try {
       const metadataPath = this.getMetadataPath(filePath);
-      
+
       if (!fs.existsSync(metadataPath)) {
         return null;
       }
 
-      const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+      const metadataContent = fs.readFileSync(metadataPath, "utf8");
       return JSON.parse(metadataContent);
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to get file metadata: ${errorMessage}`);
       return null;
     }
@@ -176,10 +179,17 @@ export class LocalStorageService {
   /**
    * List files in a directory
    */
-  async listFiles(category: string, subcategory?: string): Promise<FileUploadResult[]> {
+  async listFiles(
+    category: string,
+    subcategory?: string,
+  ): Promise<FileUploadResult[]> {
     try {
-      const dirPath = path.join(this.baseUploadDir, category, subcategory || '');
-      
+      const dirPath = path.join(
+        this.baseUploadDir,
+        category,
+        subcategory || "",
+      );
+
       if (!fs.existsSync(dirPath)) {
         return [];
       }
@@ -188,11 +198,11 @@ export class LocalStorageService {
       const fileResults: FileUploadResult[] = [];
 
       for (const file of files) {
-        if (file.endsWith('.json')) continue; // Skip metadata files
-        
-        const filePath = path.join(category, subcategory || '', file);
+        if (file.endsWith(".json")) continue; // Skip metadata files
+
+        const filePath = path.join(category, subcategory || "", file);
         const metadata = await this.getFileMetadata(filePath);
-        
+
         if (metadata) {
           fileResults.push({
             url: this.generateLocalUrl(filePath),
@@ -200,15 +210,15 @@ export class LocalStorageService {
             size: metadata.size,
             contentType: metadata.contentType,
             originalName: metadata.originalName,
-            metadata: metadata,
+            metadata,
           });
         }
       }
 
       return fileResults;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to list files: ${errorMessage}`);
       return [];
     }
@@ -220,7 +230,7 @@ export class LocalStorageService {
   async getFileInfo(filePath: string): Promise<FileUploadResult | null> {
     try {
       const fullPath = path.join(this.baseUploadDir, filePath);
-      
+
       if (!fs.existsSync(fullPath)) {
         return null;
       }
@@ -238,11 +248,11 @@ export class LocalStorageService {
         size: stats.size,
         contentType: metadata.contentType,
         originalName: metadata.originalName,
-        metadata: metadata,
+        metadata,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to get file info: ${errorMessage}`);
       return null;
     }
@@ -254,16 +264,20 @@ export class LocalStorageService {
   async copyFile(
     sourcePath: string,
     newCategory: string,
-    newSubcategory?: string
+    newSubcategory?: string,
   ): Promise<FileUploadResult | null> {
     try {
       const sourceInfo = await this.getFileInfo(sourcePath);
       if (!sourceInfo) {
-        throw new Error('Source file not found');
+        throw new Error("Source file not found");
       }
 
       const newFileName = this.generateUniqueFileName(sourceInfo.originalName);
-      const newPath = this.buildFilePath(newCategory, newFileName, newSubcategory);
+      const newPath = this.buildFilePath(
+        newCategory,
+        newFileName,
+        newSubcategory,
+      );
       const newFullPath = path.join(this.baseUploadDir, newPath);
 
       // Ensure directory exists
@@ -281,7 +295,7 @@ export class LocalStorageService {
         uploadedBy: sourceInfo.metadata.uploadedBy,
         uploadedAt: new Date(),
         category: newCategory,
-        tags: [...(sourceInfo.metadata.tags || []), 'copied'],
+        tags: [...(sourceInfo.metadata.tags || []), "copied"],
       };
 
       await this.saveMetadata(newPath, newMetadata);
@@ -296,9 +310,9 @@ export class LocalStorageService {
         originalName: sourceInfo.originalName,
         metadata: newMetadata,
       };
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`File copy failed: ${errorMessage}`);
       return null;
     }
@@ -316,7 +330,8 @@ export class LocalStorageService {
       const stats = await this.calculateStorageStats(this.baseUploadDir);
       return stats;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Failed to get storage stats: ${errorMessage}`);
       return { totalFiles: 0, totalSize: 0, categories: {} };
     }
@@ -329,10 +344,10 @@ export class LocalStorageService {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
-      
+
       let deletedCount = 0;
       const files = await this.getAllFiles(this.baseUploadDir);
-      
+
       for (const file of files) {
         const metadata = await this.getFileMetadata(file);
         if (metadata && metadata.uploadedAt < cutoffDate) {
@@ -344,9 +359,9 @@ export class LocalStorageService {
 
       this.logger.log(`Cleanup completed: ${deletedCount} old files deleted`);
       return deletedCount;
-
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       this.logger.error(`Cleanup failed: ${errorMessage}`);
       return 0;
     }
@@ -356,32 +371,36 @@ export class LocalStorageService {
 
   private validateFile(file: Express.Multer.File): void {
     if (!file) {
-      throw new BadRequestException('No file provided');
+      throw new BadRequestException("No file provided");
     }
 
     if (file.size > this.maxFileSize) {
       throw new BadRequestException(
-        `File size ${file.size} bytes exceeds maximum allowed size ${this.maxFileSize} bytes`
+        `File size ${file.size} bytes exceeds maximum allowed size ${this.maxFileSize} bytes`,
       );
     }
 
     if (!this.allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`
+        `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(", ")}`,
       );
     }
   }
 
   private generateUniqueFileName(originalName: string): string {
     const timestamp = Date.now();
-    const randomString = crypto.randomBytes(8).toString('hex');
+    const randomString = crypto.randomBytes(8).toString("hex");
     const extension = path.extname(originalName);
     const nameWithoutExt = path.basename(originalName, extension);
-    
+
     return `${timestamp}-${randomString}-${nameWithoutExt}${extension}`;
   }
 
-  private buildFilePath(category: string, fileName: string, subcategory?: string): string {
+  private buildFilePath(
+    category: string,
+    fileName: string,
+    subcategory?: string,
+  ): string {
     const parts = [category];
     if (subcategory) {
       parts.push(subcategory);
@@ -415,12 +434,15 @@ export class LocalStorageService {
     });
   }
 
-  private async saveMetadata(filePath: string, metadata: FileMetadata): Promise<void> {
+  private async saveMetadata(
+    filePath: string,
+    metadata: FileMetadata,
+  ): Promise<void> {
     const metadataPath = this.getMetadataPath(filePath);
     const metadataDir = path.dirname(metadataPath);
-    
+
     this.ensureDirectoryExists(metadataDir);
-    
+
     return new Promise((resolve, reject) => {
       fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), (error) => {
         if (error) {
@@ -439,7 +461,10 @@ export class LocalStorageService {
   }
 
   private generateLocalUrl(filePath: string): string {
-    const baseUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+    const baseUrl = this.configService.get(
+      "FRONTEND_URL",
+      "http://localhost:3000",
+    );
     return `${baseUrl}/api/v1/files/${filePath}`;
   }
 
@@ -448,30 +473,34 @@ export class LocalStorageService {
     totalSize: number;
     categories: Record<string, { count: number; size: number }>;
   }> {
-    const stats = { totalFiles: 0, totalSize: 0, categories: {} as Record<string, { count: number; size: number }> };
-    
+    const stats = {
+      totalFiles: 0,
+      totalSize: 0,
+      categories: {} as Record<string, { count: number; size: number }>,
+    };
+
     if (!fs.existsSync(dirPath)) {
       return stats;
     }
 
     const items = fs.readdirSync(dirPath);
-    
+
     for (const item of items) {
       const itemPath = path.join(dirPath, item);
       const itemStat = fs.statSync(itemPath);
-      
+
       if (itemStat.isDirectory()) {
         const categoryStats = await this.calculateStorageStats(itemPath);
         stats.totalFiles += categoryStats.totalFiles;
         stats.totalSize += categoryStats.totalSize;
-        
+
         if (categoryStats.totalFiles > 0) {
           stats.categories[item] = {
             count: categoryStats.totalFiles,
             size: categoryStats.totalSize,
           };
         }
-      } else if (!item.endsWith('.json')) {
+      } else if (!item.endsWith(".json")) {
         stats.totalFiles++;
         stats.totalSize += itemStat.size;
       }
@@ -482,21 +511,21 @@ export class LocalStorageService {
 
   private async getAllFiles(dirPath: string): Promise<string[]> {
     const files: string[] = [];
-    
+
     if (!fs.existsSync(dirPath)) {
       return files;
     }
 
     const items = fs.readdirSync(dirPath);
-    
+
     for (const item of items) {
       const itemPath = path.join(dirPath, item);
       const itemStat = fs.statSync(itemPath);
-      
+
       if (itemStat.isDirectory()) {
         const subFiles = await this.getAllFiles(itemPath);
-        files.push(...subFiles.map(f => path.join(item, f)));
-      } else if (!item.endsWith('.json')) {
+        files.push(...subFiles.map((f) => path.join(item, f)));
+      } else if (!item.endsWith(".json")) {
         files.push(item);
       }
     }

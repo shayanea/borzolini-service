@@ -1,22 +1,22 @@
-import { DatabaseService } from '../../common/database.service';
-import { Injectable } from '@nestjs/common';
-import { SupabaseService } from '../../common/supabase.service';
+import { DatabaseService } from "../../common/database.service";
+import { Injectable } from "@nestjs/common";
+import { SupabaseService } from "../../common/supabase.service";
 
 @Injectable()
 export class HealthService {
   constructor(
     private supabaseService: SupabaseService,
-    private databaseService: DatabaseService
+    private databaseService: DatabaseService,
   ) {}
 
   async checkHealth() {
     const health = {
-      status: 'ok',
+      status: "ok",
       timestamp: new Date().toISOString(),
       services: {
-        supabase: 'unknown',
-        database: 'unknown',
-        typeorm: 'unknown',
+        supabase: "unknown",
+        database: "unknown",
+        typeorm: "unknown",
       },
       uptime: process.uptime(),
     };
@@ -25,27 +25,35 @@ export class HealthService {
       // Test Supabase connection
       const supabaseClient = this.supabaseService.getClient();
       if (supabaseClient) {
-        health.services.supabase = 'connected';
+        health.services.supabase = "connected";
       }
 
       // Test database connection using enhanced database service
       const dbHealth = await this.databaseService.checkHealth();
-      health.services.database = dbHealth.status === 'healthy' ? 'connected' : 'disconnected';
-      health.services.typeorm = dbHealth.status === 'healthy' ? 'connected' : 'disconnected';
+      health.services.database =
+        dbHealth.status === "healthy" ? "connected" : "disconnected";
+      health.services.typeorm =
+        dbHealth.status === "healthy" ? "connected" : "disconnected";
 
       // Update overall status based on service health
-      if (health.services.database === 'disconnected' || health.services.typeorm === 'disconnected') {
-        health.status = 'degraded';
+      if (
+        health.services.database === "disconnected" ||
+        health.services.typeorm === "disconnected"
+      ) {
+        health.status = "degraded";
       }
 
-      if (health.services.database === 'disconnected' && health.services.typeorm === 'disconnected') {
-        health.status = 'error';
+      if (
+        health.services.database === "disconnected" &&
+        health.services.typeorm === "disconnected"
+      ) {
+        health.status = "error";
       }
     } catch (error) {
-      health.status = 'error';
-      health.services.supabase = 'error';
-      health.services.database = 'error';
-      health.services.typeorm = 'error';
+      health.status = "error";
+      health.services.supabase = "error";
+      health.services.database = "error";
+      health.services.typeorm = "error";
     }
 
     return health;
@@ -55,7 +63,7 @@ export class HealthService {
     try {
       const health = await this.databaseService.checkHealth();
       return {
-        status: health.status === 'healthy' ? 'up' : 'down',
+        status: health.status === "healthy" ? "up" : "down",
         timestamp: health.timestamp,
         message: health.message,
         connectionCount: health.connectionCount,
@@ -63,7 +71,7 @@ export class HealthService {
       };
     } catch (error) {
       return {
-        status: 'down',
+        status: "down",
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : String(error),
       };
@@ -75,13 +83,13 @@ export class HealthService {
       // For now, just check if Supabase client is available
       this.supabaseService.getClient();
       return {
-        status: 'up',
+        status: "up",
         timestamp: new Date().toISOString(),
-        message: 'Supabase client available',
+        message: "Supabase client available",
       };
     } catch (error) {
       return {
-        status: 'down',
+        status: "down",
         timestamp: new Date().toISOString(),
         error: error instanceof Error ? error.message : String(error),
       };
@@ -95,10 +103,12 @@ export class HealthService {
 
       return {
         supabaseUrl: process.env.SUPABASE_URL,
-        hasCredentials: !!(process.env.SUPABASE_ANON_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY),
+        hasCredentials: !!(
+          process.env.SUPABASE_ANON_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY
+        ),
         connectionHealth: health,
         connectionStats,
-        message: 'Database info with enhanced monitoring',
+        message: "Database info with enhanced monitoring",
       };
     } catch (error) {
       return {
@@ -109,7 +119,10 @@ export class HealthService {
 
   async getDetailedHealth() {
     try {
-      const [dbHealth, connectionStats] = await Promise.all([this.databaseService.checkHealth(), this.databaseService.getConnectionStats()]);
+      const [dbHealth, connectionStats] = await Promise.all([
+        this.databaseService.checkHealth(),
+        this.databaseService.getConnectionStats(),
+      ]);
 
       return {
         timestamp: new Date().toISOString(),
@@ -119,11 +132,11 @@ export class HealthService {
           stats: connectionStats,
         },
         supabase: {
-          status: 'connected', // Basic check
+          status: "connected", // Basic check
           url: process.env.SUPABASE_URL,
         },
         environment: {
-          nodeEnv: process.env.NODE_ENV || 'development',
+          nodeEnv: process.env.NODE_ENV || "development",
           port: process.env.PORT || 3001,
         },
       };

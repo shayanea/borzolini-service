@@ -1,20 +1,33 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, IsUUID, Max, Min } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import {
+  IsBoolean,
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Max,
+  Min,
+} from "class-validator";
 
-import { ServiceCategory } from '../entities/clinic-service.entity';
+import { ServiceCategory } from "../entities/clinic-service.entity";
 
 export class CreateClinicServiceDto {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000', description: 'ID of the clinic' })
+  @ApiProperty({
+    example: "550e8400-e29b-41d4-a716-446655440000",
+    description: "ID of the clinic",
+  })
   @IsUUID()
   clinic_id!: string;
 
-  @ApiProperty({ example: 'Wellness Exam', description: 'Name of the service' })
+  @ApiProperty({ example: "Wellness Exam", description: "Name of the service" })
   @IsString()
   name!: string;
 
   @ApiPropertyOptional({
-    example: 'Comprehensive health checkup including physical examination and vaccinations',
-    description: 'Description of the service',
+    example:
+      "Comprehensive health checkup including physical examination and vaccinations",
+    description: "Description of the service",
   })
   @IsOptional()
   @IsString()
@@ -23,14 +36,14 @@ export class CreateClinicServiceDto {
   @ApiProperty({
     enum: ServiceCategory,
     example: ServiceCategory.PREVENTIVE,
-    description: 'Category of the service',
+    description: "Category of the service",
   })
   @IsEnum(ServiceCategory)
   category!: ServiceCategory;
 
   @ApiPropertyOptional({
     example: 45,
-    description: 'Duration of the service in minutes',
+    description: "Duration of the service in minutes",
     default: 30,
     minimum: 15,
     maximum: 480,
@@ -43,7 +56,7 @@ export class CreateClinicServiceDto {
 
   @ApiPropertyOptional({
     example: 75.0,
-    description: 'Price of the service',
+    description: "Price of the service",
     minimum: 0,
   })
   @IsOptional()
@@ -52,9 +65,9 @@ export class CreateClinicServiceDto {
   price?: number;
 
   @ApiPropertyOptional({
-    example: 'USD',
-    description: 'Currency for the price',
-    default: 'USD',
+    example: "USD",
+    description: "Currency for the price",
+    default: "USD",
   })
   @IsOptional()
   @IsString()
@@ -62,7 +75,7 @@ export class CreateClinicServiceDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the service is active',
+    description: "Whether the service is active",
     default: true,
   })
   @IsOptional()
@@ -71,7 +84,7 @@ export class CreateClinicServiceDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Whether the service requires an appointment',
+    description: "Whether the service requires an appointment",
     default: true,
   })
   @IsOptional()

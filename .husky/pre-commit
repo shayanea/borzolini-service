@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Run ESLint
+echo "📝 Running ESLint..."
+pnpm lint
+
+# Run TypeScript type checking
+echo "🔧 Running TypeScript type check..."
+pnpm build --dry-run
+
+# Run tests if they exist
+if [ -f "package.json" ] && grep -q "\"test\":" package.json; then
+  echo "🧪 Running tests..."
+  pnpm test --passWithNoTests
+fi
+
+echo "✅ Pre-commit checks passed!"

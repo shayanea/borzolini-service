@@ -1,6 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 
-import { ConfigService } from '@nestjs/config';
+import { ConfigService } from "@nestjs/config";
 
 export interface EmailConfig {
   smtpHost: string;
@@ -27,22 +27,25 @@ export class EmailService implements OnModuleInit {
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
-    this.logger.log('Initializing Email service...');
+    this.logger.log("Initializing Email service...");
 
     try {
       await this.validateConfiguration();
       await this.testConnection();
 
       this.isInitialized = true;
-      this.logger.log('Email service initialized successfully');
+      this.logger.log("Email service initialized successfully");
     } catch (error) {
-      this.logger.warn('Email service initialization failed, running in mock mode:', error instanceof Error ? error.message : 'Unknown error');
+      this.logger.warn(
+        "Email service initialization failed, running in mock mode:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
       this.isInitialized = false;
     }
   }
 
   private async validateConfiguration(): Promise<void> {
-    const requiredVars = ['SMTP_HOST', 'SMTP_PORT', 'SMTP_USER', 'SMTP_PASS'];
+    const requiredVars = ["SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS"];
     const missingVars: string[] = [];
 
     for (const varName of requiredVars) {
@@ -53,51 +56,61 @@ export class EmailService implements OnModuleInit {
     }
 
     if (missingVars.length > 0) {
-      throw new Error(`Missing required email environment variables: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required email environment variables: ${missingVars.join(", ")}`,
+      );
     }
 
     // Validate SMTP port
-    const smtpPort = this.configService.get<number>('SMTP_PORT');
-    const isPortValid = !isNaN(smtpPort!) && smtpPort! >= 1 && smtpPort! <= 65535;
+    const smtpPort = this.configService.get<number>("SMTP_PORT");
+    const isPortValid =
+      !isNaN(smtpPort!) && smtpPort! >= 1 && smtpPort! <= 65535;
     if (!isPortValid) {
       throw new Error(`Invalid SMTP_PORT: ${smtpPort}`);
     }
 
     this.emailConfig = {
-      smtpHost: this.configService.get('SMTP_HOST')!,
+      smtpHost: this.configService.get("SMTP_HOST")!,
       smtpPort: smtpPort!,
-      smtpUser: this.configService.get('SMTP_USER')!,
-      smtpPass: this.configService.get('SMTP_PASS')!,
-      fromEmail: this.configService.get('SMTP_USER')!,
-      fromName: this.configService.get('EMAIL_FROM_NAME', 'Borzolini Clinic'),
+      smtpUser: this.configService.get("SMTP_USER")!,
+      smtpPass: this.configService.get("SMTP_PASS")!,
+      fromEmail: this.configService.get("SMTP_USER")!,
+      fromName: this.configService.get("EMAIL_FROM_NAME", "Borzolini Clinic"),
     };
 
-    this.logger.log('Email configuration validated successfully');
+    this.logger.log("Email configuration validated successfully");
   }
 
   private async testConnection(): Promise<void> {
     if (!this.emailConfig) {
-      throw new Error('Email configuration not available');
+      throw new Error("Email configuration not available");
     }
 
     try {
       // TODO: Implement actual SMTP connection test
       // For now, just validate the configuration
-      this.logger.log('Email configuration test passed (mock mode)');
+      this.logger.log("Email configuration test passed (mock mode)");
     } catch (error) {
-      this.logger.error('Email connection test failed:', error);
-      throw new Error(`Email connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      this.logger.error("Email connection test failed:", error);
+      throw new Error(
+        `Email connection test failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
   /**
    * Send email notification
    */
-  async sendEmail(to: string, subject: string, body: string, isHtml: boolean = false): Promise<EmailResult> {
+  async sendEmail(
+    to: string,
+    subject: string,
+    body: string,
+    isHtml: boolean = false,
+  ): Promise<EmailResult> {
     if (!this.isInitialized) {
       return {
         success: false,
-        error: 'Email service not initialized',
+        error: "Email service not initialized",
         timestamp: new Date(),
       };
     }
@@ -119,7 +132,7 @@ export class EmailService implements OnModuleInit {
         };
       } else {
         // Fallback to console logging
-        this.logger.warn('Email service not configured, logging to console');
+        this.logger.warn("Email service not configured, logging to console");
         this.logger.log(`📧 Email would be sent to ${to}: ${subject}`);
 
         return {
@@ -129,10 +142,10 @@ export class EmailService implements OnModuleInit {
         };
       }
     } catch (error) {
-      this.logger.error('Failed to send email:', error);
+      this.logger.error("Failed to send email:", error);
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         timestamp: new Date(),
       };
     }
@@ -141,8 +154,15 @@ export class EmailService implements OnModuleInit {
   /**
    * Send email verification email
    */
-  async sendVerificationEmail(email: string, firstName: string, token: string): Promise<EmailResult> {
-    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+  async sendVerificationEmail(
+    email: string,
+    firstName: string,
+    token: string,
+  ): Promise<EmailResult> {
+    const frontendUrl = this.configService.get(
+      "FRONTEND_URL",
+      "http://localhost:3000",
+    );
 
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -160,14 +180,26 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    return await this.sendEmail(email, 'Verify Your Email - Borzolini Clinic', htmlBody, true);
+    return await this.sendEmail(
+      email,
+      "Verify Your Email - Borzolini Clinic",
+      htmlBody,
+      true,
+    );
   }
 
   /**
    * Send password reset email
    */
-  async sendPasswordResetEmail(email: string, firstName: string, resetToken: string): Promise<EmailResult> {
-    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
+  async sendPasswordResetEmail(
+    email: string,
+    firstName: string,
+    resetToken: string,
+  ): Promise<EmailResult> {
+    const frontendUrl = this.configService.get(
+      "FRONTEND_URL",
+      "http://localhost:3000",
+    );
 
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -186,13 +218,21 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    return await this.sendEmail(email, 'Password Reset Request - Borzolini Clinic', htmlBody, true);
+    return await this.sendEmail(
+      email,
+      "Password Reset Request - Borzolini Clinic",
+      htmlBody,
+      true,
+    );
   }
 
   /**
    * Send welcome email after successful registration
    */
-  async sendWelcomeEmail(email: string, firstName: string): Promise<EmailResult> {
+  async sendWelcomeEmail(
+    email: string,
+    firstName: string,
+  ): Promise<EmailResult> {
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Welcome to Borzolini Clinic!</h2>
@@ -210,7 +250,12 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    return await this.sendEmail(email, 'Welcome to Borzolini Clinic!', htmlBody, true);
+    return await this.sendEmail(
+      email,
+      "Welcome to Borzolini Clinic!",
+      htmlBody,
+      true,
+    );
   }
 
   /**
@@ -218,14 +263,19 @@ export class EmailService implements OnModuleInit {
    */
   async sendPhoneVerificationSMS(phone: string, otp: string): Promise<boolean> {
     // TODO: Implement actual SMS sending logic with Twilio or similar service
-    this.logger.log(`📱 SMS sent to ${phone}: Your verification code is ${otp}`);
+    this.logger.log(
+      `📱 SMS sent to ${phone}: Your verification code is ${otp}`,
+    );
     return true;
   }
 
   /**
    * Send appointment reminder email
    */
-  async sendAppointmentReminder(email: string, appointmentData: any): Promise<EmailResult> {
+  async sendAppointmentReminder(
+    email: string,
+    appointmentData: any,
+  ): Promise<EmailResult> {
     const htmlBody = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">Appointment Reminder</h2>
@@ -243,7 +293,12 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    return await this.sendEmail(email, 'Appointment Reminder - Borzolini Clinic', htmlBody, true);
+    return await this.sendEmail(
+      email,
+      "Appointment Reminder - Borzolini Clinic",
+      htmlBody,
+      true,
+    );
   }
 
   /**
@@ -266,7 +321,12 @@ export class EmailService implements OnModuleInit {
       </div>
     `;
 
-    return await this.sendEmail(email, 'Health Alert - Borzolini Clinic', htmlBody, true);
+    return await this.sendEmail(
+      email,
+      "Health Alert - Borzolini Clinic",
+      htmlBody,
+      true,
+    );
   }
 
   /**
@@ -279,11 +339,15 @@ export class EmailService implements OnModuleInit {
   /**
    * Get email service status
    */
-  getServiceStatus(): { isInitialized: boolean; hasConfig: boolean; mode: string } {
+  getServiceStatus(): {
+    isInitialized: boolean;
+    hasConfig: boolean;
+    mode: string;
+  } {
     return {
       isInitialized: this.isInitialized,
       hasConfig: !!this.emailConfig,
-      mode: this.emailConfig ? 'smtp' : 'mock',
+      mode: this.emailConfig ? "smtp" : "mock",
     };
   }
 }

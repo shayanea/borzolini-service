@@ -1,13 +1,13 @@
 #!/usr/bin/env ts-node
 
-import { AppModule } from '../app.module';
-import { DataSource } from 'typeorm';
-import { Logger } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { AppModule } from "../app.module";
+import { DataSource } from "typeorm";
+import { Logger } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
 
 async function runMigrations() {
-  const logger = new Logger('MigrationRunner');
-  logger.log('🚀 Starting database migrations...');
+  const logger = new Logger("MigrationRunner");
+  logger.log("🚀 Starting database migrations...");
 
   try {
     const app = await NestFactory.createApplicationContext(AppModule);
@@ -15,24 +15,24 @@ async function runMigrations() {
 
     // Wait for database connection
     if (!dataSource.isInitialized) {
-      logger.log('⏳ Waiting for database connection...');
+      logger.log("⏳ Waiting for database connection...");
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
     if (!dataSource.isInitialized) {
-      throw new Error('Database connection not established');
+      throw new Error("Database connection not established");
     }
 
-    logger.log('✅ Database connected, running migrations...');
+    logger.log("✅ Database connected, running migrations...");
 
     // Run pending migrations
     const pendingMigrations = await dataSource.showMigrations();
     if (pendingMigrations) {
-      logger.log('📋 Found pending migrations, running them...');
+      logger.log("📋 Found pending migrations, running them...");
       await dataSource.runMigrations();
-      logger.log('✅ All migrations completed successfully');
+      logger.log("✅ All migrations completed successfully");
     } else {
-      logger.log('ℹ️ No pending migrations found');
+      logger.log("ℹ️ No pending migrations found");
     }
 
     // Log migration history
@@ -44,31 +44,33 @@ async function runMigrations() {
     `);
 
     if (migrations.length > 0) {
-      logger.log('📚 Recent migrations:');
+      logger.log("📚 Recent migrations:");
       migrations.forEach((migration: any) => {
-        logger.log(`   - ${migration.name} (${new Date(migration.timestamp).toISOString()})`);
+        logger.log(
+          `   - ${migration.name} (${new Date(migration.timestamp).toISOString()})`,
+        );
       });
     }
 
     await app.close();
-    logger.log('🎉 Migration process completed successfully');
+    logger.log("🎉 Migration process completed successfully");
     process.exit(0);
   } catch (error) {
-    logger.error('❌ Migration failed:', error);
+    logger.error("❌ Migration failed:", error);
     process.exit(1);
   }
 }
 
 // Handle process termination
-process.on('SIGINT', () => {
-  const logger = new Logger('MigrationRunner');
-  logger.log('🛑 Migration process interrupted');
+process.on("SIGINT", () => {
+  const logger = new Logger("MigrationRunner");
+  logger.log("🛑 Migration process interrupted");
   process.exit(0);
 });
 
-process.on('SIGTERM', () => {
-  const logger = new Logger('MigrationRunner');
-  logger.log('🛑 Migration process terminated');
+process.on("SIGTERM", () => {
+  const logger = new Logger("MigrationRunner");
+  logger.log("🛑 Migration process terminated");
   process.exit(0);
 });
 

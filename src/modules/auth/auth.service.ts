@@ -1,12 +1,17 @@
-import * as bcrypt from 'bcryptjs';
+import * as bcrypt from "bcryptjs";
 
-import { Injectable, UnauthorizedException, OnModuleInit, Logger } from '@nestjs/common';
-import { LoginDto, RegisterDto } from './dto/auth.dto';
-import { Request, Response } from 'express';
+import {
+  Injectable,
+  UnauthorizedException,
+  OnModuleInit,
+  Logger,
+} from "@nestjs/common";
+import { LoginDto, RegisterDto } from "./dto/auth.dto";
+import { Request, Response } from "express";
 
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
+import { ConfigService } from "@nestjs/config";
+import { JwtService } from "@nestjs/jwt";
+import { UsersService } from "../users/users.service";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -16,20 +21,20 @@ export class AuthService implements OnModuleInit {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
-    private configService: ConfigService
+    private configService: ConfigService,
   ) {}
 
   async onModuleInit() {
-    this.logger.log('Initializing Auth service...');
-    
+    this.logger.log("Initializing Auth service...");
+
     try {
       await this.validateDependencies();
       await this.validateConfiguration();
-      
+
       this.isInitialized = true;
-      this.logger.log('Auth service initialized successfully');
+      this.logger.log("Auth service initialized successfully");
     } catch (error) {
-      this.logger.error('Failed to initialize Auth service:', error);
+      this.logger.error("Failed to initialize Auth service:", error);
       throw error;
     }
   }
@@ -37,18 +42,23 @@ export class AuthService implements OnModuleInit {
   private async validateDependencies(): Promise<void> {
     // Check if required services are ready
     if (!this.usersService) {
-      throw new Error('UsersService not available');
+      throw new Error("UsersService not available");
     }
 
     if (!this.jwtService) {
-      throw new Error('JwtService not available');
+      throw new Error("JwtService not available");
     }
 
-    this.logger.log('Auth service dependencies validated successfully');
+    this.logger.log("Auth service dependencies validated successfully");
   }
 
   private async validateConfiguration(): Promise<void> {
-    const requiredVars = ['JWT_SECRET', 'JWT_EXPIRES_IN', 'JWT_REFRESH_SECRET', 'JWT_REFRESH_EXPIRES_IN'];
+    const requiredVars = [
+      "JWT_SECRET",
+      "JWT_EXPIRES_IN",
+      "JWT_REFRESH_SECRET",
+      "JWT_REFRESH_EXPIRES_IN",
+    ];
     const missingVars: string[] = [];
 
     for (const varName of requiredVars) {
@@ -59,27 +69,30 @@ export class AuthService implements OnModuleInit {
     }
 
     if (missingVars.length > 0) {
-      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
+      throw new Error(
+        `Missing required environment variables: ${missingVars.join(", ")}`,
+      );
     }
 
     // Validate JWT secret
-    const jwtSecret = this.configService.get<string>('JWT_SECRET')!;
+    const jwtSecret = this.configService.get<string>("JWT_SECRET")!;
     if (jwtSecret.length < 32) {
-      throw new Error('JWT_SECRET must be at least 32 characters long');
+      throw new Error("JWT_SECRET must be at least 32 characters long");
     }
 
     // Validate JWT refresh secret
-    const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET')!;
+    const jwtRefreshSecret =
+      this.configService.get<string>("JWT_REFRESH_SECRET")!;
     if (jwtRefreshSecret.length < 32) {
-      throw new Error('JWT_REFRESH_SECRET must be at least 32 characters long');
+      throw new Error("JWT_REFRESH_SECRET must be at least 32 characters long");
     }
 
-    this.logger.log('Auth service configuration validated successfully');
+    this.logger.log("Auth service configuration validated successfully");
   }
 
   async validateUser(email: string, password: string): Promise<any> {
     if (!this.isInitialized) {
-      throw new Error('Auth service not initialized');
+      throw new Error("Auth service not initialized");
     }
 
     const user = await this.usersService.findByEmail(email);
@@ -90,16 +103,21 @@ export class AuthService implements OnModuleInit {
 
     // Check if account is locked
     if (user.lockedUntil && user.lockedUntil > new Date()) {
-      throw new UnauthorizedException(`Account is locked until ${user.lockedUntil.toISOString()}`);
+      throw new UnauthorizedException(
+        `Account is locked until ${user.lockedUntil.toISOString()}`,
+      );
     }
 
     // Check if user can login
     if (!user.canLogin()) {
-      throw new UnauthorizedException('Account is not active or email not verified');
+      throw new UnauthorizedException(
+        "Account is not active or email not verified",
+      );
     }
 
     if (await bcrypt.compare(password, user.passwordHash)) {
-      const { passwordHash, ...result } = user;
+      const result = { ...user };
+      delete (result as any).passwordHash;
       return result;
     }
 
@@ -113,7 +131,7 @@ export class AuthService implements OnModuleInit {
       if (!user) {
         // Handle failed login attempt
         await this.usersService.handleFailedLogin(loginDto.email);
-        throw new UnauthorizedException('Invalid credentials');
+        throw new UnauthorizedException("Invalid credentials");
       }
 
       // Handle successful login
@@ -128,7 +146,7 @@ export class AuthService implements OnModuleInit {
       await this.usersService.updateRefreshToken(
         user.id,
         tokens.refreshToken,
-        new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
+        new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
       );
 
       // Set cookies if response object is provided
@@ -149,22 +167,34 @@ export class AuthService implements OnModuleInit {
           profileCompletionPercentage: user.profileCompletionPercentage,
           accountStatus: user.accountStatus,
         },
-        message: 'Login successful',
+        message: "Login successful",
       };
     } catch (error) {
       // Log failed login attempt
       if (req) {
         const user = await this.usersService.findByEmail(loginDto.email);
         if (user) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          await this.usersService.logUserActivity(user.id, 'login' as any, 'failed' as any, { reason: errorMessage }, req.ip, req.get('User-Agent'));
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          await this.usersService.logUserActivity(
+            user.id,
+            "login" as any,
+            "failed" as any,
+            { reason: errorMessage },
+            req.ip,
+            req.get("User-Agent"),
+          );
         }
       }
       throw error;
     }
   }
 
-  async register(registerDto: RegisterDto, req?: Request, res?: Response): Promise<any> {
+  async register(
+    registerDto: RegisterDto,
+    req?: Request,
+    res?: Response,
+  ): Promise<any> {
     // Create user (this will also send verification email)
     const user = await this.usersService.create(registerDto);
 
@@ -175,7 +205,7 @@ export class AuthService implements OnModuleInit {
     await this.usersService.updateRefreshToken(
       user.id,
       tokens.refreshToken,
-      new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
+      new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
     );
 
     // Set cookies if response object is provided
@@ -185,7 +215,14 @@ export class AuthService implements OnModuleInit {
 
     // Log registration activity with request info
     if (req) {
-      await this.usersService.logUserActivity(user.id, 'register' as any, 'success' as any, { email: user.email, role: user.role }, req.ip, req.get('User-Agent'));
+      await this.usersService.logUserActivity(
+        user.id,
+        "register" as any,
+        "success" as any,
+        { email: user.email, role: user.role },
+        req.ip,
+        req.get("User-Agent"),
+      );
     }
 
     return {
@@ -201,7 +238,8 @@ export class AuthService implements OnModuleInit {
         profileCompletionPercentage: user.profileCompletionPercentage,
         accountStatus: user.accountStatus,
       },
-      message: 'Registration successful. Please check your email to verify your account.',
+      message:
+        "Registration successful. Please check your email to verify your account.",
     };
   }
 
@@ -210,12 +248,13 @@ export class AuthService implements OnModuleInit {
       const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
       if (!refreshToken) {
-        throw new UnauthorizedException('Refresh token not found');
+        throw new UnauthorizedException("Refresh token not found");
       }
 
-      const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      const jwtRefreshSecret =
+        this.configService.get<string>("JWT_REFRESH_SECRET");
       if (!jwtRefreshSecret) {
-        throw new UnauthorizedException('JWT refresh secret not configured');
+        throw new UnauthorizedException("JWT refresh secret not configured");
       }
 
       const payload = this.jwtService.verify(refreshToken, {
@@ -225,11 +264,14 @@ export class AuthService implements OnModuleInit {
       const user = await this.usersService.findOne(payload.sub);
 
       if (!user || user.refreshToken !== refreshToken) {
-        throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException("Invalid refresh token");
       }
 
-      if (user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
-        throw new UnauthorizedException('Refresh token expired');
+      if (
+        user.refreshTokenExpiresAt &&
+        user.refreshTokenExpiresAt < new Date()
+      ) {
+        throw new UnauthorizedException("Refresh token expired");
       }
 
       // Generate new tokens
@@ -239,7 +281,7 @@ export class AuthService implements OnModuleInit {
       await this.usersService.updateRefreshToken(
         user.id,
         tokens.refreshToken,
-        new Date(Date.now() + 10 * 24 * 60 * 60 * 1000) // 10 days
+        new Date(Date.now() + 10 * 24 * 60 * 60 * 1000), // 10 days
       );
 
       // Set new cookies if response object is provided
@@ -248,7 +290,7 @@ export class AuthService implements OnModuleInit {
       }
 
       return {
-        message: 'Token refreshed successfully',
+        message: "Token refreshed successfully",
         user: {
           id: user.id,
           email: user.email,
@@ -256,7 +298,7 @@ export class AuthService implements OnModuleInit {
         },
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw new UnauthorizedException("Invalid refresh token");
     }
   }
 
@@ -273,7 +315,7 @@ export class AuthService implements OnModuleInit {
       this.clearAuthCookies(res);
     }
 
-    return { message: 'Logged out successfully' };
+    return { message: "Logged out successfully" };
   }
 
   private async generateTokens(user: any) {
@@ -283,13 +325,16 @@ export class AuthService implements OnModuleInit {
       role: user.role,
     };
 
-    const jwtSecret = this.configService.get<string>('JWT_SECRET');
-    const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
-    const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '15m';
-    const jwtRefreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
+    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtRefreshSecret =
+      this.configService.get<string>("JWT_REFRESH_SECRET");
+    const jwtExpiresIn =
+      this.configService.get<string>("JWT_EXPIRES_IN") || "15m";
+    const jwtRefreshExpiresIn =
+      this.configService.get<string>("JWT_REFRESH_EXPIRES_IN") || "7d";
 
     if (!jwtSecret || !jwtRefreshSecret) {
-      throw new Error('JWT secrets not configured');
+      throw new Error("JWT secrets not configured");
     }
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -309,84 +354,106 @@ export class AuthService implements OnModuleInit {
     };
   }
 
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
-    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
-    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+  private setAuthCookies(
+    res: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
+    const isProduction =
+      this.configService.get<string>("NODE_ENV") === "production";
+    const domain = this.configService.get<string>("COOKIE_DOMAIN");
 
     // Access token cookie (short-lived, httpOnly, secure in production)
-    res.cookie('accessToken', accessToken, {
+    res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: isProduction ? "strict" : "lax",
       domain: domain || undefined,
       maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
+      path: "/",
     });
 
     // Refresh token cookie (longer-lived, httpOnly, secure in production)
-    res.cookie('refreshToken', refreshToken, {
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
+      sameSite: isProduction ? "strict" : "lax",
       domain: domain || undefined,
       maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days
-      path: '/',
+      path: "/",
     });
   }
 
   private clearAuthCookies(res: Response): void {
-    const domain = this.configService.get<string>('COOKIE_DOMAIN');
+    const domain = this.configService.get<string>("COOKIE_DOMAIN");
 
-    res.clearCookie('accessToken', {
+    res.clearCookie("accessToken", {
       httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      secure: this.configService.get<string>("NODE_ENV") === "production",
+      sameSite:
+        this.configService.get<string>("NODE_ENV") === "production"
+          ? "strict"
+          : "lax",
       domain: domain || undefined,
-      path: '/',
+      path: "/",
     });
 
-    res.clearCookie('refreshToken', {
+    res.clearCookie("refreshToken", {
       httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
+      secure: this.configService.get<string>("NODE_ENV") === "production",
+      sameSite:
+        this.configService.get<string>("NODE_ENV") === "production"
+          ? "strict"
+          : "lax",
       domain: domain || undefined,
-      path: '/',
+      path: "/",
     });
   }
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<any> {
-    await this.usersService.changePassword(userId, currentPassword, newPassword);
-    return { message: 'Password changed successfully' };
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<any> {
+    await this.usersService.changePassword(
+      userId,
+      currentPassword,
+      newPassword,
+    );
+    return { message: "Password changed successfully" };
   }
 
   async forgotPassword(email: string): Promise<any> {
     await this.usersService.forgotPassword(email);
-    return { message: 'If an account with that email exists, a password reset link has been sent.' };
+    return {
+      message:
+        "If an account with that email exists, a password reset link has been sent.",
+    };
   }
 
   async resetPassword(token: string, newPassword: string): Promise<any> {
     await this.usersService.resetPassword(token, newPassword);
-    return { message: 'Password reset successfully' };
+    return { message: "Password reset successfully" };
   }
 
   async verifyEmail(token: string): Promise<any> {
     await this.usersService.verifyEmail(token);
-    return { message: 'Email verified successfully' };
+    return { message: "Email verified successfully" };
   }
 
   async resendVerificationEmail(email: string): Promise<any> {
     await this.usersService.resendVerificationEmail(email);
-    return { message: 'Verification email sent successfully' };
+    return { message: "Verification email sent successfully" };
   }
 
   async requestPhoneVerification(phone: string): Promise<any> {
     await this.usersService.requestPhoneVerification(phone);
-    return { message: 'Phone verification code sent successfully' };
+    return { message: "Phone verification code sent successfully" };
   }
 
   async verifyPhone(phone: string, otp: string): Promise<any> {
     await this.usersService.verifyPhone(phone, otp);
-    return { message: 'Phone verified successfully' };
+    return { message: "Phone verified successfully" };
   }
 
   async getProfile(userId: string): Promise<any> {
