@@ -167,7 +167,8 @@ async function createFallbackSwagger() {
   }
 }
 
-function generateApiStats(document: any): ApiStats {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function generateApiStats(document: { paths: any }): ApiStats {
   const paths = document.paths || {};
   const tags = new Set<string>();
   const methods = {

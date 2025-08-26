@@ -45,7 +45,7 @@ async function runMigrations() {
 
     if (migrations.length > 0) {
       logger.log("📚 Recent migrations:");
-      migrations.forEach((migration: any) => {
+      migrations.forEach((migration: { name: string; timestamp: string }) => {
         logger.log(
           `   - ${migration.name} (${new Date(migration.timestamp).toISOString()})`,
         );
