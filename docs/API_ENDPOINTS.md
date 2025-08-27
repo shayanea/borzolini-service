@@ -561,15 +561,22 @@ Authorization: Bearer <admin_access_token>
 
 ### GET /users
 
-**Get all users (Admin only)**
+**Get users based on role permissions**
 
-Retrieve all users in the system.
+Retrieve users based on the authenticated user's role and permissions.
 
 **Headers:**
 
 ```
-Authorization: Bearer <admin_access_token>
+Authorization: Bearer <access_token>
 ```
+
+**Access Control:**
+
+- **Admin**: Can see all users in the system
+- **Veterinarian**: Can only see patients and other veterinarians
+- **Staff**: Can only see patients and other staff members
+- **Patient**: Cannot access this endpoint
 
 **Response (200):**
 
@@ -582,10 +589,209 @@ Authorization: Bearer <admin_access_token>
     "lastName": "Doe",
     "role": "patient",
     "isActive": true,
-    "createdAt": "2024-01-01T12:00:00Z"
+    "createdAt": "2024-01-01T12:00:00Z",
+    "accountStatus": "active"
   }
 ]
 ```
+
+**Error Responses:**
+
+- `401`: Unauthorized - Invalid or missing token
+- `403`: Forbidden - Insufficient permissions for the user's role
+
+---
+
+### GET /users/{id}
+
+**Get user by ID with role-based access control**
+
+Retrieve a specific user based on the authenticated user's role and permissions.
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters:**
+
+- `id`: User ID (UUID)
+
+**Access Control:**
+
+- **Admin**: Can view any user in the system
+- **Veterinarian**: Can only view patients and other veterinarians
+- **Staff**: Can only view patients and other staff members
+- **Patient**: Can only view their own profile
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid-string",
+  "email": "john.doe@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "role": "patient",
+  "isActive": true,
+  "createdAt": "2024-01-01T12:00:00Z",
+  "accountStatus": "active",
+  "profileCompletionPercentage": 85
+}
+```
+
+**Error Responses:**
+
+- `401`: Unauthorized - Invalid or missing token
+- `403`: Forbidden - Insufficient permissions for the user's role
+- `404`: User not found
+
+---
+
+### PUT /users/{id}
+
+**Update user with role-based access control**
+
+Update a specific user based on the authenticated user's role and permissions.
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Path Parameters:**
+
+- `id`: User ID (UUID)
+
+**Access Control:**
+
+- **Admin**: Can update any user in the system
+- **Veterinarian**: Can only update patients and other veterinarians
+- **Staff**: Can only update patients and other staff members
+- **Patient**: Can only update their own profile
+
+**Request Body:**
+
+```json
+{
+  "firstName": "John",
+  "lastName": "Smith",
+  "phone": "+1234567890",
+  "address": "123 Main St",
+  "city": "New York",
+  "country": "USA"
+}
+```
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid-string",
+  "email": "john.doe@example.com",
+  "firstName": "John",
+  "lastName": "Smith",
+  "role": "patient",
+  "isActive": true,
+  "createdAt": "2024-01-01T12:00:00Z",
+  "accountStatus": "active",
+  "profileCompletionPercentage": 90
+}
+```
+
+**Error Responses:**
+
+- `401`: Unauthorized - Invalid or missing token
+- `403`: Forbidden - Insufficient permissions for the user's role
+- `404`: User not found
+- `400`: Bad request - Validation errors
+
+---
+
+### DELETE /users/{id}
+
+**Delete user (Admin only)**
+
+Delete a user from the system. Only administrators can perform this operation.
+
+**Headers:**
+
+```
+Authorization: Bearer <admin_access_token>
+```
+
+**Path Parameters:**
+
+- `id`: User ID (UUID)
+
+**Access Control:**
+
+- **Admin**: Can delete any user (except themselves)
+- **Veterinarian**: Cannot delete users
+- **Staff**: Cannot delete users
+- **Patient**: Cannot delete users
+
+**Response (200):**
+
+```json
+{
+  "message": "User deleted successfully"
+}
+```
+
+**Error Responses:**
+
+- `401`: Unauthorized - Invalid or missing token
+- `403`: Forbidden - Admin access required
+- `404`: User not found
+
+---
+
+### GET /users/search/email
+
+**Search user by email with role-based access control**
+
+Search for a user by email address based on the authenticated user's role and permissions.
+
+**Headers:**
+
+```
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `email`: Email address to search for
+
+**Access Control:**
+
+- **Admin**: Can search for any user in the system
+- **Veterinarian**: Can only search for patients and other veterinarians
+- **Staff**: Can only search for patients and other staff members
+- **Patient**: Cannot access this endpoint
+
+**Response (200):**
+
+```json
+{
+  "id": "uuid-string",
+  "email": "john.doe@example.com",
+  "firstName": "John",
+  "lastName": "Doe",
+  "role": "patient",
+  "isActive": true,
+  "createdAt": "2024-01-01T12:00:00Z",
+  "accountStatus": "active"
+}
+```
+
+**Error Responses:**
+
+- `401`: Unauthorized - Invalid or missing token
+- `403`: Forbidden - Insufficient permissions for the user's role
+- `404`: User not found
 
 ---
 

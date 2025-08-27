@@ -87,32 +87,56 @@ export class UsersController {
 ```typescript
 @Get()
 @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-@ApiOperation({ summary: 'Get all users (Staff/Vets/Admins only)' })
+@ApiOperation({ summary: 'Get users based on role permissions (Admin: all users, Staff/Vets: own people and patients only)' })
 ```
 
-**Security**: Staff, veterinarians, and admins only
-**Use Case**: Clinic staff viewing user directory
-**Data Access**: Complete user list with basic information
+**Security**: Role-based access control
+**Use Case**: Clinic staff viewing relevant user directory
+**Data Access**: 
+- **Admin**: All users in the system
+- **Veterinarian**: Patients + other veterinarians only
+- **Staff**: Patients + other staff members only
 
 ### 3. Individual User View (`GET /users/:id`)
 
 ```typescript
 @Get(':id')
-@ApiOperation({ summary: 'Get user by ID (Staff/Vets/Admins can view any user, Patients can only view themselves)' })
+@ApiOperation({ summary: 'Get user by ID (Role-based access: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves)' })
 ```
 
 **Security**: Role-based with ownership validation
 **Logic**:
 
 ```typescript
-// Staff, vets, and admins can view any user
-if ([UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role as UserRole)) {
+// Admin can view any user
+if (currentUserRole === UserRole.ADMIN) {
   return this.usersService.findOne(id);
 }
 
 // Patients can only view their own profile
-if (req.user.id !== id) {
-  throw new ForbiddenException('You can only view your own profile');
+if (currentUserRole === UserRole.PATIENT) {
+  if (req.user.id !== id) {
+    throw new ForbiddenException('You can only view your own profile');
+  }
+  return this.usersService.findOne(id);
+}
+
+// Staff and veterinarians can only view their own people and patients
+if (currentUserRole === UserRole.VETERINARIAN || currentUserRole === UserRole.STAFF) {
+  const targetUser = await this.usersService.findOne(id);
+  
+  // Can view patients (any patient)
+  if (targetUser.role === UserRole.PATIENT) {
+    return targetUser;
+  }
+  
+  // Can view people with same role (other staff/vets)
+  if (targetUser.role === currentUserRole) {
+    return targetUser;
+  }
+  
+  // Cannot view admins or other role types
+  throw new ForbiddenException('You can only view patients and users with the same role as you');
 }
 ```
 
@@ -120,11 +144,11 @@ if (req.user.id !== id) {
 
 ```typescript
 @Put(':id')
-@ApiOperation({ summary: 'Update user (Staff/Vets/Admins can update any user, Patients can only update themselves)' })
+@ApiOperation({ summary: 'Update user (Role-based access: Admin can update any user, Staff/Vets can only update own people and patients, Patients can only update themselves)' })
 ```
 
 **Security**: Role-based with ownership validation
-**Logic**: Similar to user viewing - staff/vets/admins can update any user, patients only themselves
+**Logic**: Similar to user viewing - staff/vets can only update patients and users with the same role, patients only themselves
 
 ### 5. User Deletion (`DELETE /users/:id`)
 

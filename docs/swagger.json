@@ -1540,7 +1540,7 @@
       },
       "get": {
         "operationId": "findAll",
-        "summary": "Get all users (Staff/Vets/Admins only)",
+        "summary": "Get users based on role permissions (Admin: all users, Staff/Vets: own people and patients only)",
         "parameters": [],
         "responses": {
           "200": {
@@ -1566,7 +1566,7 @@
     "/users/{id}": {
       "get": {
         "operationId": "findOne",
-        "summary": "Get user by ID (Staff/Vets/Admins can view any user, Patients can only view themselves)",
+        "summary": "Get user by ID (Role-based access: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves)",
         "parameters": [
           {
             "name": "id",
@@ -1603,7 +1603,7 @@
       },
       "put": {
         "operationId": "update",
-        "summary": "Update user (Staff/Vets/Admins can update any user, Patients can only update themselves)",
+        "summary": "Update user (Role-based access: Admin can update any user, Staff/Vets can only update own people and patients, Patients can only update themselves)",
         "parameters": [
           {
             "name": "id",
@@ -1689,7 +1689,7 @@
     "/users/search/email": {
       "get": {
         "operationId": "findByEmail",
-        "summary": "Search user by email (Staff/Vets/Admins only)",
+        "summary": "Search user by email (Role-based access: Admin can search any user, Staff/Vets can only search own people and patients)",
         "parameters": [
           {
             "name": "email",

@@ -23,8 +23,8 @@ export class UsersController {
 | Role | Create | Read All | Read Any | Update Any | Update Own | Delete | Admin Functions |
 |------|--------|----------|----------|------------|------------|--------|-----------------|
 | **ADMIN** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **VETERINARIAN** | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
-| **STAFF** | ❌ | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| **VETERINARIAN** | ❌ | ✅ (Patients + Vets) | ✅ (Patients + Vets) | ✅ (Patients + Vets) | ✅ | ❌ | ❌ |
+| **STAFF** | ❌ | ✅ (Patients + Staff) | ✅ (Patients + Staff) | ✅ (Patients + Staff) | ✅ | ❌ | ❌ |
 | **PATIENT** | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 
 ## 🔒 Endpoint Security
@@ -36,17 +36,17 @@ export class UsersController {
 @Roles(UserRole.ADMIN)
 ```
 
-### Staff/Vets/Admins
+### Staff/Vets/Admins (Role-Based Filtering)
 ```typescript
-@Get()            // List all users
-@Get('search/email')  // Search users
+@Get()            // List users (filtered by role)
+@Get('search/email')  // Search users (filtered by role)
 @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
 ```
 
 ### Role-Based with Ownership
 ```typescript
-@Get(':id')       // View user (staff/vets can view any, patients only own)
-@Put(':id')       // Update user (staff/vets can update any, patients only own)
+@Get(':id')       // View user (role-based access + ownership)
+@Put(':id')       // Update user (role-based access + ownership)
 // No @Roles decorator - logic handled in method
 ```
 
@@ -60,20 +60,41 @@ export class UsersController {
 
 ## 🛡️ Security Patterns
 
-### Ownership Validation
+### Role-Based Access Control
 ```typescript
 async findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-  // Staff, vets, and admins can view any user
-  if ([UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role as UserRole)) {
+  const currentUserRole = req.user.role as UserRole;
+  
+  // Admin can view any user
+  if (currentUserRole === UserRole.ADMIN) {
     return this.usersService.findOne(id);
   }
-  
+
   // Patients can only view their own profile
-  if (req.user.id !== id) {
-    throw new ForbiddenException('You can only view your own profile');
+  if (currentUserRole === UserRole.PATIENT) {
+    if (req.user.id !== id) {
+      throw new ForbiddenException('You can only view your own profile');
+    }
+    return this.usersService.findOne(id);
   }
-  
-  return this.usersService.findOne(id);
+
+  // Staff and veterinarians can only view their own people and patients
+  if (currentUserRole === UserRole.VETERINARIAN || currentUserRole === UserRole.STAFF) {
+    const targetUser = await this.usersService.findOne(id);
+    
+    // Can view patients (any patient)
+    if (targetUser.role === UserRole.PATIENT) {
+      return targetUser;
+    }
+    
+    // Can view people with same role (other staff/vets)
+    if (targetUser.role === currentUserRole) {
+      return targetUser;
+    }
+    
+    // Cannot view admins or other role types
+    throw new ForbiddenException('You can only view patients and users with the same role as you');
+  }
 }
 ```
 
