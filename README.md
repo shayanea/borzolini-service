@@ -218,6 +218,10 @@ docker run -p 3001:3001 --env-file .env borzolini-service
 - **Input Validation** - Request sanitization
 - **JWT Authentication** - Secure token-based auth
 - **CORS Configuration** - Cross-origin protection
+- **Role-Based Access Control** - Comprehensive user permission management
+- **Data Isolation** - Users can only access appropriate resources
+- **User Security Implementation** - [docs/USER_SECURITY_IMPLEMENTATION.md](docs/USER_SECURITY_IMPLEMENTATION.md)
+- **Security Quick Reference** - [docs/USER_SECURITY_QUICK_REFERENCE.md](docs/USER_SECURITY_QUICK_REFERENCE.md)
 
 ## 🤖 AI Health Monitoring
 
