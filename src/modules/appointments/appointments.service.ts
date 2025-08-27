@@ -185,6 +185,8 @@ export class AppointmentsService {
     filters?: AppointmentFilters,
     page: number = 1,
     limit: number = 10,
+    sortBy: string = 'scheduled_date',
+    sortOrder: 'ASC' | 'DESC' = 'ASC',
   ): Promise<{
     appointments: Appointment[];
     total: number;
@@ -239,11 +241,13 @@ export class AppointmentsService {
     // Get total count
     const total = await query.getCount();
 
+    // Apply sorting
+    query = query.orderBy(`appointment.${sortBy}`, sortOrder);
+
     // Apply pagination
     const appointments = await query
       .skip((page - 1) * limit)
       .take(limit)
-      .orderBy("appointment.scheduled_date", "ASC")
       .getMany();
 
     const totalPages = Math.ceil(total / limit);

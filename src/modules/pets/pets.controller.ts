@@ -119,6 +119,20 @@ export class PetsController {
     type: String,
     description: "Filter by owner ID (admin only)",
   })
+  @ApiQuery({
+    name: "sortBy",
+    required: false,
+    type: String,
+    description: "Field to sort by (default: created_at)",
+    example: "name"
+  })
+  @ApiQuery({
+    name: "sortOrder",
+    required: false,
+    enum: ["ASC", "DESC"],
+    description: "Sort order (default: DESC)",
+    example: "DESC"
+  })
   async findAll(
     @Request() req: any,
     @Query("page", new ParseIntPipe({ optional: true })) page: number = 1,
@@ -130,6 +144,8 @@ export class PetsController {
     @Query("is_vaccinated") is_vaccinated?: boolean,
     @Query("search") search?: string,
     @Query("owner_id") owner_id?: string,
+    @Query("sortBy") sortBy?: string,
+    @Query("sortOrder") sortOrder?: "ASC" | "DESC",
   ) {
     // Only allow admins to filter by owner_id
     if (owner_id && req.user.role !== UserRole.ADMIN) {
@@ -146,7 +162,7 @@ export class PetsController {
       owner_id: owner_id || req.user.id,
     };
 
-    return this.petsService.findAll(filters, page, limit);
+    return this.petsService.findAll(filters, page, limit, sortBy, sortOrder);
   }
 
   @Get("my-pets")

@@ -7,6 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { PhoneVerificationStatusDto, RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
+import { FindUsersDto } from './dto/find-users.dto';
 import { UserRole } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -44,13 +45,28 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({ summary: 'Get users based on role permissions (Admin: all users, Staff/Vets: own people and patients only)' })
-  @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
+  @ApiOperation({ summary: 'Get users with filtering, pagination, and sorting (Admin: all users, Staff/Vets: own people and patients only)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Users retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        users: { type: 'array', items: { $ref: '#/components/schemas/User' } },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        totalPages: { type: 'number' }
+      }
+    }
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  async findAll(@Request() req: AuthenticatedRequest) {
-    // Pass the current user's role to filter results appropriately
-    return this.usersService.findAll(req.user.role as UserRole);
+  async findAll(
+    @Request() req: AuthenticatedRequest,
+    @Query() query: FindUsersDto
+  ) {
+    // Pass the current user's role and query parameters to filter results appropriately
+    return this.usersService.findAll(req.user.role as UserRole, query);
   }
 
   @Get(':id')

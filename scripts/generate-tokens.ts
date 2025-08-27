@@ -142,7 +142,8 @@ class TokenGenerator {
     console.log('📋 Listing existing users...');
 
     try {
-      const users = await this.usersService.findAll();
+      const usersResult = await this.usersService.findAll();
+      const users = usersResult.users;
 
       if (users.length === 0) {
         console.log('No users found in the database');

@@ -134,7 +134,8 @@ export class ClinicsSeeder {
   } | null> {
     try {
       // Get all users and filter by role
-      const allUsers = await this.usersService.findAll();
+      const allUsersResult = await this.usersService.findAll();
+      const allUsers = allUsersResult.users;
       const adminUsers = allUsers.filter(
         (user) => user.role === UserRole.ADMIN && user.isActive,
       );

@@ -8,6 +8,7 @@ import { EmailService } from '../../common/email.service';
 import { SmsService } from '../../common/sms.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
+import { FindUsersDto } from './dto/find-users.dto';
 import { ActivityStatus, ActivityType, UserActivity } from './entities/user-activity.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { User, UserRole } from './entities/user.entity';
@@ -229,29 +230,91 @@ export class UsersService implements OnModuleInit {
     return savedUser;
   }
 
-  async findAll(userRole?: UserRole): Promise<User[]> {
-    // If no role specified, return all users (admin access)
-    if (!userRole) {
-      return this.userRepository.find({
-        select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt'],
-      });
-    }
-
-    // For veterinarians and staff, only show their own people and patients
+  async findAll(
+    userRole?: UserRole,
+    query?: FindUsersDto
+  ): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
+    // Build base query with role-based security
+    let whereConditions: any[] = [];
+    
     if (userRole === UserRole.VETERINARIAN || userRole === UserRole.STAFF) {
-      return this.userRepository.find({
-        where: [
-          { role: UserRole.PATIENT }, // Can see all patients
-          { role: userRole }, // Can see people with same role
-        ],
-        select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt'],
-      });
+      // For veterinarians and staff, only show their own people and patients
+      whereConditions = [
+        { role: UserRole.PATIENT }, // Can see all patients
+        { role: userRole }, // Can see people with same role
+      ];
+    } else if (userRole === UserRole.ADMIN) {
+      // Admin can see all users - no role restrictions
+      whereConditions = [];
+    } else {
+      // If no role specified, return all users (admin access)
+      whereConditions = [];
     }
 
-    // Admin can see all users
-    return this.userRepository.find({
-      select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt', 'accountStatus'],
-    });
+    // Build query builder
+    let queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .select([
+        'user.id',
+        'user.email',
+        'user.firstName',
+        'user.lastName',
+        'user.role',
+        'user.isActive',
+        'user.createdAt',
+        'user.updatedAt'
+      ]);
+
+    // Add role-based where conditions
+    if (whereConditions.length > 0) {
+      queryBuilder = queryBuilder.where(whereConditions);
+    }
+
+    // Apply role filter from query parameters (if admin)
+    if (query?.role && userRole === UserRole.ADMIN) {
+      queryBuilder = queryBuilder.andWhere('user.role = :role', { role: query.role });
+    }
+
+    // Apply active status filter
+    if (query?.isActive !== undefined) {
+      queryBuilder = queryBuilder.andWhere('user.isActive = :isActive', { isActive: query.isActive });
+    }
+
+    // Apply search filter
+    if (query?.search) {
+      queryBuilder = queryBuilder.andWhere(
+        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
+        { search: `%${query.search}%` }
+      );
+    }
+
+    // Get total count before pagination
+    const total = await queryBuilder.getCount();
+
+    // Apply sorting
+    const sortBy = query?.sortBy || 'createdAt';
+    const sortOrder = query?.sortOrder || 'DESC';
+    queryBuilder = queryBuilder.orderBy(`user.${sortBy}`, sortOrder);
+
+    // Apply pagination
+    const page = query?.page || 1;
+    const limit = Math.min(query?.limit || 10, 100); // Cap at 100
+    const skip = (page - 1) * limit;
+    
+    queryBuilder = queryBuilder.skip(skip).take(limit);
+
+    // Execute query
+    const users = await queryBuilder.getMany();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      users,
+      total,
+      page,
+      totalPages,
+    };
   }
 
   async findOne(id: string): Promise<User> {

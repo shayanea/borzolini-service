@@ -1,22 +1,16 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  OnModuleInit,
-  Logger,
-} from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, Like, Not } from "typeorm";
-import { Clinic } from "./entities/clinic.entity";
-import { ClinicStaff } from "./entities/clinic-staff.entity";
-import { ClinicService } from "./entities/clinic-service.entity";
-import { ClinicReview } from "./entities/clinic-review.entity";
-import { ClinicPhoto, PhotoCategory } from "./entities/clinic-photo.entity";
-import { CreateClinicDto } from "./dto/create-clinic.dto";
-import { UpdateClinicDto } from "./dto/update-clinic.dto";
-import { CreateClinicStaffDto } from "./dto/create-clinic-staff.dto";
-import { CreateClinicServiceDto } from "./dto/create-clinic-service.dto";
-import { ConfigService } from "@nestjs/config";
+import { ConflictException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Like, Not, Repository } from 'typeorm';
+import { CreateClinicServiceDto } from './dto/create-clinic-service.dto';
+import { CreateClinicStaffDto } from './dto/create-clinic-staff.dto';
+import { CreateClinicDto } from './dto/create-clinic.dto';
+import { UpdateClinicDto } from './dto/update-clinic.dto';
+import { ClinicPhoto, PhotoCategory } from './entities/clinic-photo.entity';
+import { ClinicReview } from './entities/clinic-review.entity';
+import { ClinicService } from './entities/clinic-service.entity';
+import { ClinicStaff } from './entities/clinic-staff.entity';
+import { Clinic } from './entities/clinic.entity';
 
 export interface ClinicFilters {
   name?: string;
@@ -33,8 +27,8 @@ export interface ClinicFilters {
 export interface ClinicSearchOptions {
   page?: number;
   limit?: number;
-  sort_by?: string;
-  sort_order?: "ASC" | "DESC";
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 @Injectable()
@@ -53,37 +47,31 @@ export class ClinicsService implements OnModuleInit {
     private readonly clinicReviewRepository: Repository<ClinicReview>,
     @InjectRepository(ClinicPhoto)
     private readonly clinicPhotoRepository: Repository<ClinicPhoto>,
-    private configService: ConfigService,
+    private configService: ConfigService
   ) {}
 
   async onModuleInit() {
-    this.logger.log("Initializing Clinics service...");
+    this.logger.log('Initializing Clinics service...');
 
     try {
       await this.validateDependencies();
       await this.validateConfiguration();
 
       this.isInitialized = true;
-      this.logger.log("Clinics service initialized successfully");
+      this.logger.log('Clinics service initialized successfully');
     } catch (error) {
-      this.logger.error("Failed to initialize Clinics service:", error);
+      this.logger.error('Failed to initialize Clinics service:', error);
       throw error;
     }
   }
 
   private async validateDependencies(): Promise<void> {
     // Check if repositories are available
-    if (
-      !this.clinicRepository ||
-      !this.clinicStaffRepository ||
-      !this.clinicServiceRepository ||
-      !this.clinicReviewRepository ||
-      !this.clinicPhotoRepository
-    ) {
-      throw new Error("Required repositories not available");
+    if (!this.clinicRepository || !this.clinicStaffRepository || !this.clinicServiceRepository || !this.clinicReviewRepository || !this.clinicPhotoRepository) {
+      throw new Error('Required repositories not available');
     }
 
-    this.logger.log("Clinics service dependencies validated successfully");
+    this.logger.log('Clinics service dependencies validated successfully');
   }
 
   private async validateConfiguration(): Promise<void> {
@@ -99,17 +87,15 @@ export class ClinicsService implements OnModuleInit {
     }
 
     if (missingVars.length > 0) {
-      throw new Error(
-        `Missing required environment variables: ${missingVars.join(", ")}`,
-      );
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
 
-    this.logger.log("Clinics service configuration validated successfully");
+    this.logger.log('Clinics service configuration validated successfully');
   }
 
   async create(createClinicDto: CreateClinicDto): Promise<Clinic> {
     if (!this.isInitialized) {
-      throw new Error("Clinics service not initialized");
+      throw new Error('Clinics service not initialized');
     }
 
     // Check if clinic with same name and city already exists
@@ -121,118 +107,99 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (existingClinic) {
-      throw new ConflictException(
-        "A clinic with this name already exists in this city",
-      );
+      throw new ConflictException('A clinic with this name already exists in this city');
     }
 
     const clinic = this.clinicRepository.create(createClinicDto);
     const savedClinic = await this.clinicRepository.save(clinic);
 
-    this.logger.log(
-      `Created clinic: ${savedClinic.name} in ${savedClinic.city}`,
-    );
+    this.logger.log(`Created clinic: ${savedClinic.name} in ${savedClinic.city}`);
     return savedClinic;
   }
 
-  async findAll(
-    filters: ClinicFilters = {},
-    options: ClinicSearchOptions = {},
-  ): Promise<{ clinics: Clinic[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sort_by = "created_at",
-      sort_order = "DESC",
-    } = options;
+  async findAll(filters: ClinicFilters = {}, options: ClinicSearchOptions = {}): Promise<{ clinics: Clinic[]; total: number; page: number; totalPages: number }> {
+    const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'DESC' } = options;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.clinicRepository
-      .createQueryBuilder("clinic")
-      .leftJoinAndSelect("clinic.staff", "staff")
-      .leftJoinAndSelect("clinic.clinic_services", "services")
-      .leftJoinAndSelect("clinic.photos", "photos")
-      .leftJoinAndSelect("clinic.operating_hours_detail", "hours");
+      .createQueryBuilder('clinic')
+      .leftJoinAndSelect('clinic.staff', 'staff')
+      .leftJoinAndSelect('clinic.clinic_services', 'services')
+      .leftJoinAndSelect('clinic.photos', 'photos')
+      .leftJoinAndSelect('clinic.operating_hours_detail', 'hours');
 
     // Apply filters
     if (filters.name) {
-      queryBuilder.andWhere("clinic.name ILIKE :name", {
+      queryBuilder.andWhere('clinic.name ILIKE :name', {
         name: `%${filters.name}%`,
       });
     }
 
     if (filters.city) {
-      queryBuilder.andWhere("clinic.city ILIKE :city", {
+      queryBuilder.andWhere('clinic.city ILIKE :city', {
         city: `%${filters.city}%`,
       });
     }
 
     if (filters.state) {
-      queryBuilder.andWhere("clinic.state ILIKE :state", {
+      queryBuilder.andWhere('clinic.state ILIKE :state', {
         state: `%${filters.state}%`,
       });
     }
 
     if (filters.is_verified !== undefined) {
-      queryBuilder.andWhere("clinic.is_verified = :is_verified", {
+      queryBuilder.andWhere('clinic.is_verified = :is_verified', {
         is_verified: filters.is_verified,
       });
     }
 
     if (filters.is_active !== undefined) {
-      queryBuilder.andWhere("clinic.is_active = :is_active", {
+      queryBuilder.andWhere('clinic.is_active = :is_active', {
         is_active: filters.is_active,
       });
     }
 
     if (filters.services && filters.services.length > 0) {
-      queryBuilder.andWhere("clinic.services @> :services", {
+      queryBuilder.andWhere('clinic.services @> :services', {
         services: JSON.stringify(filters.services),
       });
     }
 
     if (filters.specializations && filters.specializations.length > 0) {
-      queryBuilder.andWhere("clinic.specializations @> :specializations", {
+      queryBuilder.andWhere('clinic.specializations @> :specializations', {
         specializations: JSON.stringify(filters.specializations),
       });
     }
 
     if (filters.rating_min !== undefined) {
-      queryBuilder.andWhere("clinic.rating >= :rating_min", {
+      queryBuilder.andWhere('clinic.rating >= :rating_min', {
         rating_min: filters.rating_min,
       });
     }
 
     if (filters.rating_max !== undefined) {
-      queryBuilder.andWhere("clinic.rating <= :rating_max", {
+      queryBuilder.andWhere('clinic.rating <= :rating_max', {
         rating_max: filters.rating_max,
       });
     }
 
     // Apply sorting
-    queryBuilder.orderBy(`clinic.${sort_by}`, sort_order);
+    queryBuilder.orderBy(`clinic.${sortBy}`, sortOrder);
 
     // Apply pagination
     queryBuilder.skip(skip).take(limit);
 
     const [clinics, total] = await queryBuilder.getManyAndCount();
 
-    return { clinics, total };
+    const totalPages = Math.ceil(total / limit);
+
+    return { clinics, total, page, totalPages };
   }
 
   async findOne(id: string): Promise<Clinic> {
     const clinic = await this.clinicRepository.findOne({
       where: { id },
-      relations: [
-        "staff",
-        "staff.user",
-        "clinic_services",
-        "reviews",
-        "reviews.user",
-        "photos",
-        "operating_hours_detail",
-        "appointments",
-      ],
+      relations: ['staff', 'staff.user', 'clinic_services', 'reviews', 'reviews.user', 'photos', 'operating_hours_detail', 'appointments'],
     });
 
     if (!clinic) {
@@ -245,14 +212,14 @@ export class ClinicsService implements OnModuleInit {
   async findByName(name: string): Promise<Clinic[]> {
     return await this.clinicRepository.find({
       where: { name: Like(`%${name}%`) },
-      relations: ["staff", "clinic_services", "photos"],
+      relations: ['staff', 'clinic_services', 'photos'],
     });
   }
 
   async findByCity(city: string): Promise<Clinic[]> {
     return await this.clinicRepository.find({
       where: { city: Like(`%${city}%`) },
-      relations: ["staff", "clinic_services", "photos"],
+      relations: ['staff', 'clinic_services', 'photos'],
     });
   }
 
@@ -274,9 +241,7 @@ export class ClinicsService implements OnModuleInit {
         });
 
         if (existingClinic) {
-          throw new ConflictException(
-            "A clinic with this name already exists in this city",
-          );
+          throw new ConflictException('A clinic with this name already exists in this city');
         }
       }
     }
@@ -290,9 +255,7 @@ export class ClinicsService implements OnModuleInit {
     await this.clinicRepository.remove(clinic);
   }
 
-  async addStaff(
-    createClinicStaffDto: CreateClinicStaffDto,
-  ): Promise<ClinicStaff> {
+  async addStaff(createClinicStaffDto: CreateClinicStaffDto): Promise<ClinicStaff> {
     // Check if user is already staff at this clinic
     const existingStaff = await this.clinicStaffRepository.findOne({
       where: {
@@ -302,7 +265,7 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (existingStaff) {
-      throw new ConflictException("User is already staff at this clinic");
+      throw new ConflictException('User is already staff at this clinic');
     }
 
     // Check if clinic exists
@@ -311,9 +274,7 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (!clinic) {
-      throw new NotFoundException(
-        `Clinic with ID ${createClinicStaffDto.clinic_id} not found`,
-      );
+      throw new NotFoundException(`Clinic with ID ${createClinicStaffDto.clinic_id} not found`);
     }
 
     const staff = this.clinicStaffRepository.create(createClinicStaffDto);
@@ -329,15 +290,13 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (!staff) {
-      throw new NotFoundException("Staff member not found");
+      throw new NotFoundException('Staff member not found');
     }
 
     await this.clinicStaffRepository.remove(staff);
   }
 
-  async addService(
-    createClinicServiceDto: CreateClinicServiceDto,
-  ): Promise<ClinicService> {
+  async addService(createClinicServiceDto: CreateClinicServiceDto): Promise<ClinicService> {
     // Check if service with same name already exists at this clinic
     const existingService = await this.clinicServiceRepository.findOne({
       where: {
@@ -347,9 +306,7 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (existingService) {
-      throw new ConflictException(
-        "A service with this name already exists at this clinic",
-      );
+      throw new ConflictException('A service with this name already exists at this clinic');
     }
 
     // Check if clinic exists
@@ -358,19 +315,14 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (!clinic) {
-      throw new NotFoundException(
-        `Clinic with ID ${createClinicServiceDto.clinic_id} not found`,
-      );
+      throw new NotFoundException(`Clinic with ID ${createClinicServiceDto.clinic_id} not found`);
     }
 
     const service = this.clinicServiceRepository.create(createClinicServiceDto);
     return await this.clinicServiceRepository.save(service);
   }
 
-  async updateService(
-    id: string,
-    updateServiceDto: Partial<CreateClinicServiceDto>,
-  ): Promise<ClinicService> {
+  async updateService(id: string, updateServiceDto: Partial<CreateClinicServiceDto>): Promise<ClinicService> {
     const service = await this.clinicServiceRepository.findOne({
       where: { id },
     });
@@ -395,13 +347,7 @@ export class ClinicsService implements OnModuleInit {
     await this.clinicServiceRepository.remove(service);
   }
 
-  async addReview(
-    clinicId: string,
-    userId: string,
-    rating: number,
-    title?: string,
-    comment?: string,
-  ): Promise<ClinicReview> {
+  async addReview(clinicId: string, userId: string, rating: number, title?: string, comment?: string): Promise<ClinicReview> {
     // Check if user has already reviewed this clinic
     const existingReview = await this.clinicReviewRepository.findOne({
       where: {
@@ -411,7 +357,7 @@ export class ClinicsService implements OnModuleInit {
     });
 
     if (existingReview) {
-      throw new ConflictException("User has already reviewed this clinic");
+      throw new ConflictException('User has already reviewed this clinic');
     }
 
     // Check if clinic exists
@@ -461,13 +407,7 @@ export class ClinicsService implements OnModuleInit {
     });
   }
 
-  async addPhoto(
-    clinicId: string,
-    photoUrl: string,
-    caption?: string,
-    category?: string,
-    isPrimary: boolean = false,
-  ): Promise<ClinicPhoto> {
+  async addPhoto(clinicId: string, photoUrl: string, caption?: string, category?: string, isPrimary: boolean = false): Promise<ClinicPhoto> {
     // Check if clinic exists
     const clinic = await this.clinicRepository.findOne({
       where: { id: clinicId },
@@ -479,10 +419,7 @@ export class ClinicsService implements OnModuleInit {
 
     // If this is a primary photo, unset other primary photos
     if (isPrimary) {
-      await this.clinicPhotoRepository.update(
-        { clinic_id: clinicId, is_primary: true },
-        { is_primary: false },
-      );
+      await this.clinicPhotoRepository.update({ clinic_id: clinicId, is_primary: true }, { is_primary: false });
     }
 
     const photo = this.clinicPhotoRepository.create({
@@ -515,13 +452,7 @@ export class ClinicsService implements OnModuleInit {
     averageRating: number;
     totalAppointments: number;
   }> {
-    const [
-      totalStaff,
-      totalServices,
-      totalReviews,
-      averageRating,
-      totalAppointments,
-    ] = await Promise.all([
+    const [totalStaff, totalServices, totalReviews, averageRating, totalAppointments] = await Promise.all([
       this.clinicStaffRepository.count({
         where: { clinic_id: clinicId, is_active: true },
       }),
@@ -531,13 +462,9 @@ export class ClinicsService implements OnModuleInit {
       this.clinicReviewRepository.count({ where: { clinic_id: clinicId } }),
       this.clinicRepository.findOne({
         where: { id: clinicId },
-        select: ["rating"],
+        select: ['rating'],
       }),
-      this.clinicRepository
-        .createQueryBuilder("clinic")
-        .leftJoin("clinic.appointments", "appointments")
-        .where("clinic.id = :clinicId", { clinicId })
-        .getCount(),
+      this.clinicRepository.createQueryBuilder('clinic').leftJoin('clinic.appointments', 'appointments').where('clinic.id = :clinicId', { clinicId }).getCount(),
     ]);
 
     return {
@@ -549,34 +476,25 @@ export class ClinicsService implements OnModuleInit {
     };
   }
 
-  async searchClinics(
-    query: string,
-    options: ClinicSearchOptions = {},
-  ): Promise<{ clinics: Clinic[]; total: number }> {
-    const {
-      page = 1,
-      limit = 10,
-      sort_by = "rating",
-      sort_order = "DESC",
-    } = options;
+  async searchClinics(query: string, options: ClinicSearchOptions = {}): Promise<{ clinics: Clinic[]; total: number; page: number; totalPages: number }> {
+    const { page = 1, limit = 10, sortBy = 'rating', sortOrder = 'DESC' } = options;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.clinicRepository
-      .createQueryBuilder("clinic")
-      .leftJoinAndSelect("clinic.staff", "staff")
-      .leftJoinAndSelect("clinic.clinic_services", "services")
-      .leftJoinAndSelect("clinic.photos", "photos")
-      .where("clinic.is_active = :isActive", { isActive: true })
-      .andWhere(
-        "(clinic.name ILIKE :query OR clinic.description ILIKE :query OR clinic.city ILIKE :query OR clinic.specializations::text ILIKE :query)",
-        { query: `%${query}%` },
-      );
+      .createQueryBuilder('clinic')
+      .leftJoinAndSelect('clinic.staff', 'staff')
+      .leftJoinAndSelect('clinic.clinic_services', 'services')
+      .leftJoinAndSelect('clinic.photos', 'photos')
+      .where('clinic.is_active = :isActive', { isActive: true })
+      .andWhere('(clinic.name ILIKE :query OR clinic.description ILIKE :query OR clinic.city ILIKE :query OR clinic.specializations::text ILIKE :query)', { query: `%${query}%` });
 
-    queryBuilder.orderBy(`clinic.${sort_by}`, sort_order);
+    queryBuilder.orderBy(`clinic.${sortBy}`, sortOrder);
     queryBuilder.skip(skip).take(limit);
 
     const [clinics, total] = await queryBuilder.getManyAndCount();
 
-    return { clinics, total };
+    const totalPages = Math.ceil(total / limit);
+
+    return { clinics, total, page, totalPages };
   }
 }

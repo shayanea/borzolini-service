@@ -73,6 +73,8 @@ export class PetsService {
     filters?: PetFilters,
     page: number = 1,
     limit: number = 10,
+    sortBy: string = 'created_at',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
   ): Promise<{ pets: Pet[]; total: number; page: number; totalPages: number }> {
     const where: any = { is_active: true };
 
@@ -103,11 +105,13 @@ export class PetsService {
     // Get total count
     const total = await query.getCount();
 
+    // Apply sorting
+    query = query.orderBy(`pet.${sortBy}`, sortOrder);
+
     // Apply pagination
     const pets = await query
       .skip((page - 1) * limit)
       .take(limit)
-      .orderBy("pet.created_at", "DESC")
       .getMany();
 
     const totalPages = Math.ceil(total / limit);
