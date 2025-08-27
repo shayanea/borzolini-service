@@ -1,5 +1,5 @@
 {
-  "totalEndpoints": 102,
+  "totalEndpoints": 109,
   "totalControllers": 10,
   "tags": [
     "ai-health",
@@ -14,12 +14,12 @@
     "users"
   ],
   "methods": {
-    "GET": 52,
-    "POST": 31,
+    "GET": 54,
+    "POST": 34,
     "PUT": 4,
     "DELETE": 9,
-    "PATCH": 6
+    "PATCH": 8
   },
-  "authEndpoints": 82,
+  "authEndpoints": 89,
   "publicEndpoints": 20
 }

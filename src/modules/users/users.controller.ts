@@ -8,11 +8,8 @@ import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
 import { RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
+import { AdminDashboardActivityResponseDto, PhoneVerificationStatusResponseDto, UserResponseDto, UsersListResponseDto } from './dto/user-response.dto';
 import { UserRole } from './entities/user.entity';
-import { 
-  UserResponseDto, 
-  UsersListResponseDto
-} from './dto/user-response.dto';
 import { UsersResponseService } from './users-response.service';
 import { UsersService } from './users.service';
 
@@ -42,54 +39,54 @@ export class UsersController {
 
   @Post()
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Create a new user (Admin only)',
-    description: 'Creates a new user account with the specified role and details. Only administrators can create new users.'
+    description: 'Creates a new user account with the specified role and details. Only administrators can create new users.',
   })
-  @ApiResponse({ 
-    status: 201, 
+  @ApiResponse({
+    status: 201,
     description: 'User created successfully',
-    type: UserResponseDto
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 400, 
+  @ApiResponse({
+    status: 400,
     description: 'Bad request - Invalid input data',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 400 },
-        message: { 
-          type: 'array', 
+        message: {
+          type: 'array',
           items: { type: 'string' },
-          example: ['email must be an email', 'password must be longer than or equal to 8 characters']
+          example: ['email must be an email', 'password must be longer than or equal to 8 characters'],
         },
-        error: { type: 'string', example: 'Bad Request' }
-      }
-    }
+        error: { type: 'string', example: 'Bad Request' },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 401 },
         message: { type: 'string', example: 'Unauthorized' },
-        error: { type: 'string', example: 'Unauthorized' }
-      }
-    }
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 403, 
+  @ApiResponse({
+    status: 403,
     description: 'Forbidden - Admin access required',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 403 },
         message: { type: 'string', example: 'Forbidden - Admin access required' },
-        error: { type: 'string', example: 'Forbidden' }
-      }
-    }
+        error: { type: 'string', example: 'Forbidden' },
+      },
+    },
   })
   async create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
@@ -97,70 +94,70 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get users with filtering, pagination, and sorting',
-    description: 'Retrieves a paginated list of users with optional filtering and sorting. Admin users can see all users, while Staff and Veterinarians can only see their own people and patients.'
+    description: 'Retrieves a paginated list of users with optional filtering and sorting. Admin users can see all users, while Staff and Veterinarians can only see their own people and patients.',
   })
-  @ApiQuery({ 
-    name: 'page', 
-    required: false, 
+  @ApiQuery({
+    name: 'page',
+    required: false,
     description: 'Page number for pagination',
-    example: 1
+    example: 1,
   })
-  @ApiQuery({ 
-    name: 'limit', 
-    required: false, 
+  @ApiQuery({
+    name: 'limit',
+    required: false,
     description: 'Number of items per page',
-    example: 10
+    example: 10,
   })
-  @ApiQuery({ 
-    name: 'search', 
-    required: false, 
+  @ApiQuery({
+    name: 'search',
+    required: false,
     description: 'Search term for filtering users by name or email',
-    example: 'john'
+    example: 'john',
   })
-  @ApiQuery({ 
-    name: 'role', 
-    required: false, 
+  @ApiQuery({
+    name: 'role',
+    required: false,
     description: 'Filter users by role',
     enum: ['admin', 'veterinarian', 'staff', 'patient'],
-    example: 'patient'
+    example: 'patient',
   })
-  @ApiQuery({ 
-    name: 'isActive', 
-    required: false, 
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
     description: 'Filter users by active status',
     enum: ['true', 'false'],
-    example: 'true'
+    example: 'true',
   })
   @ApiResponse({
     status: 200,
     description: 'Users retrieved successfully',
-    type: UsersListResponseDto
+    type: UsersListResponseDto,
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 401 },
         message: { type: 'string', example: 'Unauthorized' },
-        error: { type: 'string', example: 'Unauthorized' }
-      }
-    }
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 403, 
+  @ApiResponse({
+    status: 403,
     description: 'Forbidden - Insufficient permissions',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 403 },
         message: { type: 'string', example: 'Forbidden - Insufficient permissions' },
-        error: { type: 'string', example: 'Forbidden' }
-      }
-    }
+        error: { type: 'string', example: 'Forbidden' },
+      },
+    },
   })
   async findAll(@Request() req: AuthenticatedRequest, @Query() query: FindUsersDto) {
     // Pass the current user's role and query parameters to filter results appropriately
@@ -168,55 +165,55 @@ export class UsersController {
   }
 
   @Get(':id')
-  @ApiOperation({ 
+  @ApiOperation({
     summary: 'Get user by ID',
-    description: 'Retrieves a specific user by their ID. Role-based access control applies: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves.'
+    description: 'Retrieves a specific user by their ID. Role-based access control applies: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves.',
   })
-  @ApiParam({ 
-    name: 'id', 
+  @ApiParam({
+    name: 'id',
     description: 'User ID (UUID)',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'User retrieved successfully',
-    type: UserResponseDto
+    type: UserResponseDto,
   })
-  @ApiResponse({ 
-    status: 404, 
+  @ApiResponse({
+    status: 404,
     description: 'User not found',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 404 },
         message: { type: 'string', example: 'User not found' },
-        error: { type: 'string', example: 'Not Found' }
-      }
-    }
+        error: { type: 'string', example: 'Not Found' },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 401, 
+  @ApiResponse({
+    status: 401,
     description: 'Unauthorized - Invalid or missing JWT token',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 401 },
         message: { type: 'string', example: 'Unauthorized' },
-        error: { type: 'string', example: 'Unauthorized' }
-      }
-    }
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
   })
-  @ApiResponse({ 
-    status: 403, 
+  @ApiResponse({
+    status: 403,
     description: 'Forbidden - Insufficient permissions',
     schema: {
       type: 'object',
       properties: {
         statusCode: { type: 'number', example: 403 },
         message: { type: 'string', example: 'Forbidden - You can only view your own profile' },
-        error: { type: 'string', example: 'Forbidden' }
-      }
-    }
+        error: { type: 'string', example: 'Forbidden' },
+      },
+    },
   })
   async findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
     const currentUserRole = req.user.role as UserRole;
@@ -557,5 +554,86 @@ export class UsersController {
       ...status,
     };
     return this.usersResponseService.standardizePhoneVerificationStatusResponse(data, 'Phone verification status retrieved successfully');
+  }
+
+  @Get('phone-verification/status')
+  @ApiOperation({
+    summary: 'Get phone verification status',
+    description: 'Retrieves the current phone verification status for the authenticated user',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Phone verification status retrieved successfully',
+    type: PhoneVerificationStatusResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+  })
+  async getPhoneVerificationStatus(@Request() req: AuthenticatedRequest) {
+    const user = await this.usersService.findOne(req.user.id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return this.usersResponseService.standardizePhoneVerificationStatusResponse(
+      {
+        phone: user.phone,
+        isVerified: user.isPhoneVerified,
+        verificationDate: user.phoneVerificationExpiresAt,
+      },
+      'Phone verification status retrieved successfully'
+    );
+  }
+
+  @Get('admin/dashboard/activities')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Get admin dashboard activities (Admin only)',
+    description: 'Retrieves the latest system activities for admin dashboard. Includes user activities, activity counts, and summary statistics.',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of activities to retrieve (default: 50, max: 100)',
+    example: 50,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Admin dashboard activities retrieved successfully',
+    type: AdminDashboardActivityResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - Invalid or missing JWT token',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 401 },
+        message: { type: 'string', example: 'Unauthorized' },
+        error: { type: 'string', example: 'Unauthorized' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+    schema: {
+      type: 'object',
+      properties: {
+        statusCode: { type: 'number', example: 403 },
+        message: { type: 'string', example: 'Forbidden - Admin access required' },
+        error: { type: 'string', example: 'Forbidden' },
+      },
+    },
+  })
+  async getAdminDashboardActivities(@Query('limit') limit: number = 50) {
+    // Validate limit parameter
+    const validatedLimit = Math.min(Math.max(limit || 50, 1), 100);
+
+    const activities = await this.usersService.getAdminDashboardActivities(validatedLimit);
+
+    return this.usersResponseService.standardizeAdminDashboardActivityResponse(activities, 'Admin dashboard activities retrieved successfully');
   }
 }

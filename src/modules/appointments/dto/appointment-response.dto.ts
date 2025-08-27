@@ -1,5 +1,6 @@
+import { Appointment, AppointmentPriority, AppointmentType } from '../entities/appointment.entity';
+
 import { ApiProperty } from '@nestjs/swagger';
-import { Appointment, AppointmentType, AppointmentStatus, AppointmentPriority } from '../entities/appointment.entity';
 
 export class AppointmentResponseDto {
   @ApiProperty({
@@ -21,7 +22,7 @@ export class AppointmentResponseDto {
       treatment_plan: null,
       prescriptions: [],
       follow_up_instructions: null,
-      cost: 75.00,
+      cost: 75.0,
       payment_status: 'pending',
       is_telemedicine: false,
       telemedicine_link: null,
@@ -31,7 +32,7 @@ export class AppointmentResponseDto {
         email_reminder: true,
         sms_reminder: false,
         push_reminder: true,
-        reminder_hours_before: 24
+        reminder_hours_before: 24,
       },
       is_active: true,
       created_at: '2024-01-15T10:30:00.000Z',
@@ -40,20 +41,20 @@ export class AppointmentResponseDto {
       pet_id: '789e0123-e89b-12d3-a456-426614174002',
       clinic_id: '012e3456-e89b-12d3-a456-426614174003',
       staff_id: '345e6789-e89b-12d3-a456-426614174004',
-      service_id: '678e9012-e89b-12d3-a456-426614174005'
-    }
+      service_id: '678e9012-e89b-12d3-a456-426614174005',
+    },
   })
   data!: Appointment;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment retrieved successfully'
+    example: 'Appointment retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -70,11 +71,11 @@ export class AppointmentsListResponseDto {
         priority: 'normal',
         scheduled_date: '2024-01-20T14:00:00.000Z',
         duration_minutes: 30,
-        cost: 75.00,
+        cost: 75.0,
         payment_status: 'pending',
         is_telemedicine: false,
         is_active: true,
-        created_at: '2024-01-15T10:30:00.000Z'
+        created_at: '2024-01-15T10:30:00.000Z',
       },
       {
         id: '456e7890-e89b-12d3-a456-426614174001',
@@ -83,43 +84,43 @@ export class AppointmentsListResponseDto {
         priority: 'normal',
         scheduled_date: '2024-01-22T10:00:00.000Z',
         duration_minutes: 15,
-        cost: 45.00,
+        cost: 45.0,
         payment_status: 'pending',
         is_telemedicine: false,
         is_active: true,
-        created_at: '2024-01-15T11:00:00.000Z'
-      }
-    ]
+        created_at: '2024-01-15T11:00:00.000Z',
+      },
+    ],
   })
   data!: Appointment[];
 
   @ApiProperty({
     description: 'Total number of appointments',
-    example: 150
+    example: 150,
   })
   total!: number;
 
   @ApiProperty({
     description: 'Current page number',
-    example: 1
+    example: 1,
   })
   page!: number;
 
   @ApiProperty({
     description: 'Total number of pages',
-    example: 15
+    example: 15,
   })
   totalPages!: number;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointments retrieved successfully'
+    example: 'Appointments retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -127,31 +128,31 @@ export class AppointmentsListResponseDto {
 export class AppointmentCreatedResponseDto {
   @ApiProperty({
     description: 'Created appointment data',
-    type: Appointment
+    type: Appointment,
   })
   data!: Appointment;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment created successfully'
+    example: 'Appointment created successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Created appointment ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Creation timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt!: string;
 }
@@ -159,37 +160,37 @@ export class AppointmentCreatedResponseDto {
 export class AppointmentUpdatedResponseDto {
   @ApiProperty({
     description: 'Updated appointment data',
-    type: Appointment
+    type: Appointment,
   })
   data!: Appointment;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment updated successfully'
+    example: 'Appointment updated successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Updated appointment ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Last update timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt!: string;
 
   @ApiProperty({
     description: 'Number of affected rows',
-    example: 1
+    example: 1,
   })
   affectedRows!: number;
 }
@@ -197,31 +198,31 @@ export class AppointmentUpdatedResponseDto {
 export class AppointmentCancelledResponseDto {
   @ApiProperty({
     description: 'Cancelled appointment data',
-    type: Appointment
+    type: Appointment,
   })
   data!: Appointment;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment cancelled successfully'
+    example: 'Appointment cancelled successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Cancelled appointment ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Cancellation timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   cancelledAt!: string;
 }
@@ -229,37 +230,37 @@ export class AppointmentCancelledResponseDto {
 export class AppointmentRescheduledResponseDto {
   @ApiProperty({
     description: 'Rescheduled appointment data',
-    type: Appointment
+    type: Appointment,
   })
   data!: Appointment;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment rescheduled successfully'
+    example: 'Appointment rescheduled successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Rescheduled appointment ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Previous scheduled date',
-    example: '2024-01-20T14:00:00.000Z'
+    example: '2024-01-20T14:00:00.000Z',
   })
   previousDate!: string;
 
   @ApiProperty({
     description: 'New scheduled date',
-    example: '2024-01-21T15:00:00.000Z'
+    example: '2024-01-21T15:00:00.000Z',
   })
   newDate!: string;
 }
@@ -280,18 +281,18 @@ export class AppointmentStatisticsResponseDto {
         surgery: 10,
         follow_up: 20,
         emergency: 5,
-        wellness_exam: 35
+        wellness_exam: 35,
       },
       byPriority: {
         low: 20,
         normal: 80,
         high: 30,
         urgent: 15,
-        emergency: 5
+        emergency: 5,
       },
       averageDuration: 35,
-      totalRevenue: 11250.00
-    }
+      totalRevenue: 11250.0,
+    },
   })
   data!: {
     total: number;
@@ -308,13 +309,13 @@ export class AppointmentStatisticsResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment statistics retrieved successfully'
+    example: 'Appointment statistics retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -331,8 +332,8 @@ export class AppointmentAvailabilityResponseDto {
           { time: '10:00', available: false, duration: 30 },
           { time: '10:30', available: true, duration: 30 },
           { time: '14:00', available: true, duration: 30 },
-          { time: '14:30', available: true, duration: 30 }
-        ]
+          { time: '14:30', available: true, duration: 30 },
+        ],
       },
       {
         date: '2024-01-21',
@@ -340,10 +341,10 @@ export class AppointmentAvailabilityResponseDto {
           { time: '09:00', available: true, duration: 30 },
           { time: '09:30', available: true, duration: 30 },
           { time: '10:00', available: true, duration: 30 },
-          { time: '10:30', available: true, duration: 30 }
-        ]
-      }
-    ]
+          { time: '10:30', available: true, duration: 30 },
+        ],
+      },
+    ],
   })
   data!: Array<{
     date: string;
@@ -356,13 +357,13 @@ export class AppointmentAvailabilityResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Available appointment slots retrieved successfully'
+    example: 'Available appointment slots retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -376,8 +377,8 @@ export class AppointmentReminderResponseDto {
       reminderType: 'email',
       reminderTime: '2024-01-19T14:00:00.000Z',
       recipientEmail: 'owner@example.com',
-      message: 'Reminder: Your pet has an appointment tomorrow at 2:00 PM'
-    }
+      message: 'Reminder: Your pet has an appointment tomorrow at 2:00 PM',
+    },
   })
   data!: {
     appointmentId: string;
@@ -391,13 +392,13 @@ export class AppointmentReminderResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Appointment reminder sent successfully'
+    example: 'Appointment reminder sent successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }

@@ -7,8 +7,8 @@ import { Repository } from 'typeorm';
 import { EmailService } from '../../common/email.service';
 import { SmsService } from '../../common/sms.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
-import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
 import { FindUsersDto } from './dto/find-users.dto';
+import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
 import { ActivityStatus, ActivityType, UserActivity } from './entities/user-activity.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { User, UserRole } from './entities/user.entity';
@@ -230,13 +230,10 @@ export class UsersService implements OnModuleInit {
     return savedUser;
   }
 
-  async findAll(
-    userRole?: UserRole,
-    query?: FindUsersDto
-  ): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
+  async findAll(userRole?: UserRole, query?: FindUsersDto): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
     // Build base query with role-based security
     let whereConditions: any[] = [];
-    
+
     if (userRole === UserRole.VETERINARIAN || userRole === UserRole.STAFF) {
       // For veterinarians and staff, only show their own people and patients
       whereConditions = [
@@ -252,18 +249,7 @@ export class UsersService implements OnModuleInit {
     }
 
     // Build query builder
-    let queryBuilder = this.userRepository
-      .createQueryBuilder('user')
-      .select([
-        'user.id',
-        'user.email',
-        'user.firstName',
-        'user.lastName',
-        'user.role',
-        'user.isActive',
-        'user.createdAt',
-        'user.updatedAt'
-      ]);
+    let queryBuilder = this.userRepository.createQueryBuilder('user').select(['user.id', 'user.email', 'user.firstName', 'user.lastName', 'user.role', 'user.isActive', 'user.createdAt', 'user.updatedAt']);
 
     // Add role-based where conditions
     if (whereConditions.length > 0) {
@@ -282,10 +268,7 @@ export class UsersService implements OnModuleInit {
 
     // Apply search filter
     if (query?.search) {
-      queryBuilder = queryBuilder.andWhere(
-        '(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)',
-        { search: `%${query.search}%` }
-      );
+      queryBuilder = queryBuilder.andWhere('(user.email ILIKE :search OR user.firstName ILIKE :search OR user.lastName ILIKE :search)', { search: `%${query.search}%` });
     }
 
     // Get total count before pagination
@@ -300,7 +283,7 @@ export class UsersService implements OnModuleInit {
     const page = query?.page || 1;
     const limit = Math.min(query?.limit || 10, 100); // Cap at 100
     const skip = (page - 1) * limit;
-    
+
     queryBuilder = queryBuilder.skip(skip).take(limit);
 
     // Execute query
@@ -747,6 +730,92 @@ export class UsersService implements OnModuleInit {
       order: { createdAt: 'DESC' },
       take: limit,
     });
+  }
+
+  async getAdminDashboardActivities(limit: number = 50): Promise<{
+    activities: Array<{
+      id: string;
+      type: string;
+      status: string;
+      description: string;
+      metadata?: any;
+      ipAddress: string;
+      userAgent: string;
+      createdAt: Date;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        role: string;
+      };
+    }>;
+    totalActivities: number;
+    activityTypes: Record<string, number>;
+    recentActivityCount: number;
+  }> {
+    // Get all activities with user information
+    const activities = await this.userActivityRepository
+      .createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.user', 'user')
+      .select([
+        'activity.id',
+        'activity.type',
+        'activity.status',
+        'activity.description',
+        'activity.metadata',
+        'activity.ipAddress',
+        'activity.userAgent',
+        'activity.createdAt',
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.email',
+        'user.role',
+      ])
+      .orderBy('activity.createdAt', 'DESC')
+      .take(limit)
+      .getMany();
+
+    // Get total count of all activities
+    const totalActivities = await this.userActivityRepository.count();
+
+    // Get activity type counts
+    const activityTypeCounts = await this.userActivityRepository.createQueryBuilder('activity').select('activity.type', 'type').addSelect('COUNT(*)', 'count').groupBy('activity.type').getRawMany();
+
+    const activityTypes = activityTypeCounts.reduce(
+      (acc, item) => {
+        acc[item.type] = parseInt(item.count);
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    // Transform activities to include user info
+    const transformedActivities = activities.map((activity) => ({
+      id: activity.id,
+      type: activity.type,
+      status: activity.status,
+      description: activity.description,
+      metadata: activity.metadata,
+      ipAddress: activity.ipAddress,
+      userAgent: activity.userAgent,
+      createdAt: activity.createdAt,
+      user: {
+        id: activity.user.id,
+        firstName: activity.user.firstName,
+        lastName: activity.user.lastName,
+        email: activity.user.email,
+        role: activity.user.role,
+      },
+    }));
+
+    return {
+      activities: transformedActivities,
+      totalActivities,
+      activityTypes,
+      recentActivityCount: activities.length,
+    };
   }
 
   async getActivitySummary(userId: string): Promise<any> {

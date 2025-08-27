@@ -105,6 +105,17 @@ export class UsersResponseService {
   }
 
   /**
+   * Standardize admin dashboard activity response
+   */
+  standardizeAdminDashboardActivityResponse(data: any, message: string = 'Admin dashboard activities retrieved successfully') {
+    return {
+      data,
+      message,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
    * Standardize all profile completions recalculation response
    */
   standardizeAllProfileCompletionsRecalculationResponse(data: any, message: string = 'All profile completions recalculated successfully') {

@@ -339,3 +339,71 @@ export class AllProfileCompletionsRecalculationResponseDto {
   })
   timestamp!: string;
 }
+
+export class AdminDashboardActivityResponseDto {
+  @ApiProperty({
+    description: 'Admin dashboard activity data',
+    example: {
+      activities: [
+        {
+          id: '012e3456-e89b-12d3-a456-426614174003',
+          type: 'clinic_created',
+          status: 'success',
+          description: 'User created a new clinic',
+          metadata: { clinicName: 'VetCare Clinic' },
+          ipAddress: '192.168.1.1',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          createdAt: '2024-01-15T09:15:00.000Z',
+          user: {
+            id: '012e3456-e89b-12d3-a456-426614174004',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john.doe@example.com',
+            role: 'veterinarian',
+          },
+        },
+      ],
+      totalActivities: 150,
+      activityTypes: {
+        clinic_created: 25,
+        user_register: 45,
+        appointment_booking: 80,
+      },
+      recentActivityCount: 50,
+    },
+  })
+  data!: {
+    activities: Array<{
+      id: string;
+      type: string;
+      status: string;
+      description: string;
+      metadata?: unknown;
+      ipAddress: string;
+      userAgent: string;
+      createdAt: string;
+      user: {
+        id: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        role: string;
+      };
+    }>;
+    totalActivities: number;
+    activityTypes: Record<string, number>;
+    recentActivityCount: number;
+  };
+
+  @ApiProperty({
+    description: 'Success message',
+    example: 'Admin dashboard activities retrieved successfully',
+  })
+  message!: string;
+
+  @ApiProperty({
+    description: 'Response timestamp',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  timestamp!: string;
+}

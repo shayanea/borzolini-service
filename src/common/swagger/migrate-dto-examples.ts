@@ -25,8 +25,6 @@ class DTOExampleMigrator {
    * Scan all DTO files for inline examples
    */
   scanDTOFiles(): void {
-    console.log('🔍 Scanning for DTO files with inline examples...\n');
-
     const dtoPattern = 'src/**/*.dto.ts';
     const files = glob.sync(dtoPattern);
 
@@ -56,7 +54,7 @@ class DTOExampleMigrator {
     let match;
 
     while ((match = apiPropertyRegex.exec(content)) !== null) {
-      const exampleValue = match[1].trim();
+      const exampleValue = match[1]?.trim();
       if (exampleValue && !exampleValue.includes('DTO_EXAMPLES')) {
         examples.push(exampleValue);
       }
@@ -66,7 +64,7 @@ class DTOExampleMigrator {
     const apiPropertyOptionalRegex = /@ApiPropertyOptional\s*\(\s*{[^}]*example\s*:\s*([^,}]+)[^}]*\s*\)/g;
 
     while ((match = apiPropertyOptionalRegex.exec(content)) !== null) {
-      const exampleValue = match[1].trim();
+      const exampleValue = match[1]?.trim();
       if (exampleValue && !exampleValue.includes('DTO_EXAMPLES')) {
         examples.push(exampleValue);
       }
@@ -107,7 +105,7 @@ class DTOExampleMigrator {
    */
   private extractModuleName(filePath: string): string | null {
     const match = filePath.match(/src\/modules\/([^\/]+)\//);
-    return match ? match[1] : null;
+    return match?.[1] ?? null;
   }
 
   /**
@@ -148,32 +146,8 @@ class DTOExampleMigrator {
    */
   generateReport(): void {
     if (this.dtoFiles.length === 0) {
-      console.log('✅ No DTOs with inline examples found! All DTOs are already using centralized examples.');
       return;
     }
-
-    console.log(`📊 Found ${this.dtoFiles.length} DTO files with inline examples:\n`);
-
-    this.dtoFiles.forEach((dtoFile, index) => {
-      console.log(`${index + 1}. ${dtoFile.path}`);
-      console.log(`   Inline examples found: ${dtoFile.inlineExamples.length}`);
-
-      if (dtoFile.suggestions.length > 0) {
-        console.log('   Migration suggestions:');
-        dtoFile.suggestions.forEach((suggestion) => {
-          console.log(`     • ${suggestion}`);
-        });
-      }
-
-      console.log('');
-    });
-
-    console.log('🚀 Migration Steps:');
-    console.log('1. Add missing examples to src/common/swagger/dto-examples.ts');
-    console.log('2. Import DTO_EXAMPLES in your DTO files');
-    console.log('3. Replace inline examples with DTO_EXAMPLES constants');
-    console.log('4. Test that Swagger documentation still works correctly');
-    console.log('\n📚 See src/common/swagger/README.md for detailed migration guide');
   }
 
   /**

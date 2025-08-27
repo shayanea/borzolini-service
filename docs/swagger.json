@@ -2446,6 +2446,124 @@
         ]
       }
     },
+    "/users/phone-verification/status": {
+      "get": {
+        "operationId": "getPhoneVerificationStatus",
+        "summary": "Get phone verification status",
+        "description": "Retrieves the current phone verification status for the authenticated user",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Phone verification status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhoneVerificationStatusResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing JWT token"
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/users/admin/dashboard/activities": {
+      "get": {
+        "operationId": "getAdminDashboardActivities",
+        "summary": "Get admin dashboard activities (Admin only)",
+        "description": "Retrieves the latest system activities for admin dashboard. Includes user activities, activity counts, and summary statistics.",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Number of activities to retrieve (default: 50, max: 100)",
+            "schema": {
+              "example": 50,
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Admin dashboard activities retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardActivityResponseDto"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing JWT token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Unauthorized"
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Unauthorized"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - Admin access required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 403
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Forbidden - Admin access required"
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Forbidden"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "users"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
     "/clinics": {
       "post": {
         "operationId": "create",
@@ -3377,6 +3495,257 @@
         },
         "tags": [
           "clinics"
+        ]
+      }
+    },
+    "/clinics/{id}/verify": {
+      "post": {
+        "operationId": "verifyClinic",
+        "summary": "Verify a clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinic verified successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Clinic already verified"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/activate": {
+      "post": {
+        "operationId": "activateClinic",
+        "summary": "Activate a clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinic activated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Clinic already active"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/{id}/deactivate": {
+      "post": {
+        "operationId": "deactivateClinic",
+        "summary": "Deactivate a clinic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Clinic ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Clinic deactivated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Clinic"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Clinic not found"
+          },
+          "409": {
+            "description": "Clinic already inactive"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/staff/{id}/status": {
+      "patch": {
+        "operationId": "updateStaffStatus",
+        "summary": "Update staff member status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Staff ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Staff status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicStaff"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Staff member not found"
+          },
+          "409": {
+            "description": "Staff already has this status"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/clinics/services/{id}/status": {
+      "patch": {
+        "operationId": "updateServiceStatus",
+        "summary": "Update service status",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Service ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Service status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClinicService"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden - Admin role required"
+          },
+          "404": {
+            "description": "Service not found"
+          },
+          "409": {
+            "description": "Service already has this status"
+          }
+        },
+        "tags": [
+          "clinics"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
         ]
       }
     },
@@ -5862,6 +6231,89 @@
         },
         "required": [
           "phone"
+        ]
+      },
+      "PhoneVerificationStatusResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Phone verification status data",
+            "example": {
+              "phone": "+1234567890",
+              "isVerified": true,
+              "verificationDate": "2024-01-10T15:30:00.000Z"
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Phone verification status retrieved successfully"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Response timestamp",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "data",
+          "message",
+          "timestamp"
+        ]
+      },
+      "AdminDashboardActivityResponseDto": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Admin dashboard activity data",
+            "example": {
+              "activities": [
+                {
+                  "id": "012e3456-e89b-12d3-a456-426614174003",
+                  "type": "clinic_created",
+                  "status": "success",
+                  "description": "User created a new clinic",
+                  "metadata": {
+                    "clinicName": "VetCare Clinic"
+                  },
+                  "ipAddress": "192.168.1.1",
+                  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                  "createdAt": "2024-01-15T09:15:00.000Z",
+                  "user": {
+                    "id": "012e3456-e89b-12d3-a456-426614174004",
+                    "firstName": "John",
+                    "lastName": "Doe",
+                    "email": "john.doe@example.com",
+                    "role": "veterinarian"
+                  }
+                }
+              ],
+              "totalActivities": 150,
+              "activityTypes": {
+                "clinic_created": 25,
+                "user_register": 45,
+                "appointment_booking": 80
+              },
+              "recentActivityCount": 50
+            }
+          },
+          "message": {
+            "type": "string",
+            "description": "Success message",
+            "example": "Admin dashboard activities retrieved successfully"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "Response timestamp",
+            "example": "2024-01-15T10:30:00.000Z"
+          }
+        },
+        "required": [
+          "data",
+          "message",
+          "timestamp"
         ]
       },
       "CreateClinicDto": {

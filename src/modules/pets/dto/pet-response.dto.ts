@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Pet, PetSpecies, PetGender, PetSize } from '../entities/pet.entity';
+import { Pet } from '../entities/pet.entity';
 
 export class PetResponseDto {
   @ApiProperty({
@@ -32,20 +32,20 @@ export class PetResponseDto {
       is_active: true,
       created_at: '2023-01-15T10:30:00.000Z',
       updated_at: '2024-01-15T10:30:00.000Z',
-      owner_id: '456e7890-e89b-12d3-a456-426614174001'
-    }
+      owner_id: '456e7890-e89b-12d3-a456-426614174001',
+    },
   })
   data!: Pet;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet retrieved successfully'
+    example: 'Pet retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -64,7 +64,7 @@ export class PetsListResponseDto {
         weight: 65.5,
         size: 'large',
         is_active: true,
-        created_at: '2023-01-15T10:30:00.000Z'
+        created_at: '2023-01-15T10:30:00.000Z',
       },
       {
         id: '456e7890-e89b-12d3-a456-426614174001',
@@ -75,39 +75,39 @@ export class PetsListResponseDto {
         weight: 12.0,
         size: 'small',
         is_active: true,
-        created_at: '2023-02-20T14:15:00.000Z'
-      }
-    ]
+        created_at: '2023-02-20T14:15:00.000Z',
+      },
+    ],
   })
   data!: Pet[];
 
   @ApiProperty({
     description: 'Total number of pets',
-    example: 75
+    example: 75,
   })
   total!: number;
 
   @ApiProperty({
     description: 'Current page number',
-    example: 1
+    example: 1,
   })
   page!: number;
 
   @ApiProperty({
     description: 'Total number of pages',
-    example: 8
+    example: 8,
   })
   totalPages!: number;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pets retrieved successfully'
+    example: 'Pets retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -115,31 +115,31 @@ export class PetsListResponseDto {
 export class PetCreatedResponseDto {
   @ApiProperty({
     description: 'Created pet data',
-    type: Pet
+    type: Pet,
   })
   data!: Pet;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet created successfully'
+    example: 'Pet created successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Created pet ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Creation timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt!: string;
 }
@@ -147,37 +147,37 @@ export class PetCreatedResponseDto {
 export class PetUpdatedResponseDto {
   @ApiProperty({
     description: 'Updated pet data',
-    type: Pet
+    type: Pet,
   })
   data!: Pet;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet updated successfully'
+    example: 'Pet updated successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Updated pet ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Last update timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt!: string;
 
   @ApiProperty({
     description: 'Number of affected rows',
-    example: 1
+    example: 1,
   })
   affectedRows!: number;
 }
@@ -193,12 +193,12 @@ export class PetHealthSummaryResponseDto {
       weightHistory: [
         { date: '2023-01-15', weight: 60.0 },
         { date: '2023-06-15', weight: 62.5 },
-        { date: '2024-01-10', weight: 65.5 }
+        { date: '2024-01-10', weight: 65.5 },
       ],
       vaccinationStatus: {
         rabies: { status: 'up_to_date', nextDue: '2025-01-10' },
         dhpp: { status: 'up_to_date', nextDue: '2024-04-15' },
-        bordetella: { status: 'up_to_date', nextDue: '2024-07-15' }
+        bordetella: { status: 'up_to_date', nextDue: '2024-07-15' },
       },
       medicalAlerts: [],
       upcomingAppointments: [
@@ -206,10 +206,10 @@ export class PetHealthSummaryResponseDto {
           id: '789e0123-e89b-12d3-a456-426614174006',
           date: '2024-02-15T14:00:00.000Z',
           type: 'wellness_exam',
-          clinic: 'Borzolini Clinic'
-        }
-      ]
-    }
+          clinic: 'Borzolini Clinic',
+        },
+      ],
+    },
   })
   data!: {
     petId: string;
@@ -229,13 +229,13 @@ export class PetHealthSummaryResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet health summary retrieved successfully'
+    example: 'Pet health summary retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -254,7 +254,7 @@ export class PetVaccinationResponseDto {
           nextDue: '2025-01-10T10:00:00.000Z',
           status: 'up_to_date',
           clinic: 'Borzolini Clinic',
-          veterinarian: 'Dr. Smith'
+          veterinarian: 'Dr. Smith',
         },
         {
           id: 'vac_002',
@@ -263,17 +263,17 @@ export class PetVaccinationResponseDto {
           nextDue: '2024-04-15T10:00:00.000Z',
           status: 'up_to_date',
           clinic: 'Borzolini Clinic',
-          veterinarian: 'Dr. Smith'
-        }
+          veterinarian: 'Dr. Smith',
+        },
       ],
       upcomingVaccinations: [
         {
           name: 'DHPP',
           dueDate: '2024-04-15T10:00:00.000Z',
-          daysUntilDue: 90
-        }
-      ]
-    }
+          daysUntilDue: 90,
+        },
+      ],
+    },
   })
   data!: {
     petId: string;
@@ -296,13 +296,13 @@ export class PetVaccinationResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet vaccination records retrieved successfully'
+    example: 'Pet vaccination records retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -322,7 +322,7 @@ export class PetMedicalHistoryResponseDto {
           treatment: 'Annual vaccination and wellness check',
           veterinarian: 'Dr. Smith',
           clinic: 'Borzolini Clinic',
-          notes: 'Pet is in excellent health. Weight is stable.'
+          notes: 'Pet is in excellent health. Weight is stable.',
         },
         {
           id: 'med_002',
@@ -332,8 +332,8 @@ export class PetMedicalHistoryResponseDto {
           treatment: 'Topical treatment prescribed',
           veterinarian: 'Dr. Johnson',
           clinic: 'Borzolini Clinic',
-          notes: 'Follow up in 2 weeks if symptoms persist.'
-        }
+          notes: 'Follow up in 2 weeks if symptoms persist.',
+        },
       ],
       medications: [
         {
@@ -341,12 +341,12 @@ export class PetMedicalHistoryResponseDto {
           dosage: 'Monthly topical',
           startDate: '2024-01-01',
           endDate: '2024-12-31',
-          status: 'active'
-        }
+          status: 'active',
+        },
       ],
       allergies: ['None known'],
-      chronicConditions: []
-    }
+      chronicConditions: [],
+    },
   })
   data!: {
     petId: string;
@@ -374,13 +374,13 @@ export class PetMedicalHistoryResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet medical history retrieved successfully'
+    example: 'Pet medical history retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -397,18 +397,14 @@ export class PetBehavioralAssessmentResponseDto {
         withHumans: 'excellent',
         withOtherDogs: 'good',
         withCats: 'neutral',
-        withChildren: 'excellent'
+        withChildren: 'excellent',
       },
       trainingLevel: 'intermediate',
       commands: ['sit', 'stay', 'come', 'heel'],
       behavioralIssues: [],
-      recommendations: [
-        'Continue with positive reinforcement training',
-        'Maintain regular socialization',
-        'Consider advanced obedience classes'
-      ],
-      nextAssessment: '2024-07-15T10:30:00.000Z'
-    }
+      recommendations: ['Continue with positive reinforcement training', 'Maintain regular socialization', 'Consider advanced obedience classes'],
+      nextAssessment: '2024-07-15T10:30:00.000Z',
+    },
   })
   data!: {
     petId: string;
@@ -430,13 +426,13 @@ export class PetBehavioralAssessmentResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Pet behavioral assessment retrieved successfully'
+    example: 'Pet behavioral assessment retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
