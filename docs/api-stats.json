@@ -1,6 +1,6 @@
 {
-  "totalEndpoints": 109,
-  "totalControllers": 10,
+  "totalEndpoints": 112,
+  "totalControllers": 11,
   "tags": [
     "ai-health",
     "appointments",
@@ -10,16 +10,17 @@
     "health",
     "pets",
     "rate-limit-monitor",
+    "scheduled-tasks",
     "static-files",
     "users"
   ],
   "methods": {
-    "GET": 54,
-    "POST": 34,
+    "GET": 56,
+    "POST": 35,
     "PUT": 4,
     "DELETE": 9,
     "PATCH": 8
   },
-  "authEndpoints": 89,
+  "authEndpoints": 92,
   "publicEndpoints": 20
 }

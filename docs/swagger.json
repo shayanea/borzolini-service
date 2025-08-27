@@ -5583,6 +5583,226 @@
           }
         ]
       }
+    },
+    "/scheduled-tasks/cleanup/trigger": {
+      "post": {
+        "operationId": "triggerManualCleanup",
+        "summary": "Trigger manual cleanup (Admin only)",
+        "description": "Manually triggers the cleanup process to remove old records based on retention policies. This endpoint is protected and only accessible by administrators.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cleanup process triggered successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "totalDeleted": {
+                      "type": "number",
+                      "description": "Total number of records deleted"
+                    },
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "entity": {
+                            "type": "string",
+                            "description": "Name of the entity cleaned"
+                          },
+                          "deletedCount": {
+                            "type": "number",
+                            "description": "Number of records deleted"
+                          },
+                          "retentionDays": {
+                            "type": "number",
+                            "description": "Retention period in days"
+                          },
+                          "cutoffDate": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "success": {
+                            "type": "boolean",
+                            "description": "Whether cleanup was successful"
+                          },
+                          "error": {
+                            "type": "string",
+                            "description": "Error message if cleanup failed"
+                          }
+                        }
+                      }
+                    },
+                    "executionTime": {
+                      "type": "number",
+                      "description": "Execution time in milliseconds"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing JWT token"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "tags": [
+          "scheduled-tasks"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/scheduled-tasks/cleanup/stats": {
+      "get": {
+        "operationId": "getCleanupStats",
+        "summary": "Get cleanup statistics (Admin only)",
+        "description": "Retrieves statistics about the cleanup process including retention policies, next scheduled run, and historical data.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cleanup statistics retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lastRun": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Timestamp of the last cleanup run"
+                    },
+                    "nextScheduledRun": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp of the next scheduled cleanup run"
+                    },
+                    "retentionPolicies": {
+                      "type": "object",
+                      "properties": {
+                        "userActivity": {
+                          "type": "number",
+                          "description": "Retention days for user activities"
+                        },
+                        "aiHealthInsights": {
+                          "type": "number",
+                          "description": "Retention days for AI health insights"
+                        },
+                        "clinicReviews": {
+                          "type": "number",
+                          "description": "Retention days for clinic reviews"
+                        },
+                        "appointments": {
+                          "type": "number",
+                          "description": "Retention days for appointments"
+                        },
+                        "tempFiles": {
+                          "type": "number",
+                          "description": "Retention days for temporary files"
+                        }
+                      }
+                    },
+                    "totalRecordsDeleted": {
+                      "type": "number",
+                      "description": "Total number of records deleted across all cleanup runs"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing JWT token"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "tags": [
+          "scheduled-tasks"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
+    },
+    "/scheduled-tasks/cleanup/status": {
+      "get": {
+        "operationId": "getCleanupStatus",
+        "summary": "Get cleanup system status (Admin only)",
+        "description": "Retrieves the current status of the cleanup system including whether jobs are running, last execution time, and any errors.",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Cleanup system status retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "running",
+                        "idle",
+                        "error"
+                      ],
+                      "description": "Current status of the cleanup system"
+                    },
+                    "lastExecution": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Timestamp of the last execution"
+                    },
+                    "nextExecution": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Timestamp of the next scheduled execution"
+                    },
+                    "errorCount": {
+                      "type": "number",
+                      "description": "Number of errors in the last 24 hours"
+                    },
+                    "successCount": {
+                      "type": "number",
+                      "description": "Number of successful executions in the last 24 hours"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing JWT token"
+          },
+          "403": {
+            "description": "Forbidden - Admin access required"
+          }
+        },
+        "tags": [
+          "scheduled-tasks"
+        ],
+        "security": [
+          {
+            "bearer": []
+          }
+        ]
+      }
     }
   },
   "info": {

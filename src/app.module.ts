@@ -10,12 +10,14 @@ import { CommonModule } from './common/common.module';
 import { HealthModule } from './modules/health/health.module';
 // Core modules
 import { Module } from '@nestjs/common';
+import { PetsModule } from './modules/pets/pets.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
+import { SupabaseModule } from './common/supabase.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { SupabaseModule } from './common/supabase.module';
-import { getDatabaseConfig } from './config/database.config';
-import { PetsModule } from './modules/pets/pets.module';
 import { UsersModule } from './modules/users/users.module';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -46,6 +48,9 @@ import { UsersModule } from './modules/users/users.module';
       }),
     }),
 
+    // Scheduling for cron jobs and automated tasks
+    ScheduleModule.forRoot(),
+
     // Basic configuration only for now
 
     // Supabase integration
@@ -61,6 +66,7 @@ import { UsersModule } from './modules/users/users.module';
     PetsModule,
     AppointmentsModule,
     AiHealthModule,
+    ScheduledTasksModule,
     // TelemedicineModule,
     // SocialMediaModule,
     // PaymentsModule,
