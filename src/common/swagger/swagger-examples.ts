@@ -1,8 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { COMMON_DTO_EXAMPLES, USER_DTO_EXAMPLES } from './dto-examples';
 
 /**
  * Comprehensive Swagger Examples for API Documentation
  * This file contains detailed examples that can be used across your API endpoints
+ *
+ * DTO-specific examples are imported from dto-examples.ts to keep DTOs clean
  */
 
 // User Examples
@@ -10,62 +12,62 @@ export const USER_EXAMPLES = {
   CREATE_USER: {
     summary: 'Create User Example',
     value: {
-      email: 'john.doe@example.com',
-      password: 'securePassword123',
-      firstName: 'John',
-      lastName: 'Doe',
-      phone: '+1234567890',
-      role: 'patient',
-      address: '123 Main St',
-      city: 'New York',
-      country: 'USA',
-      postalCode: '10001',
-      dateOfBirth: '1990-01-01',
-      gender: 'male',
-      emergencyContactName: 'Jane Doe',
-      emergencyContactPhone: '+1234567891',
-      emergencyContactRelationship: 'spouse',
-      medicalHistory: 'No significant medical history',
-      allergies: 'None known',
-      medications: 'None'
-    }
+      email: USER_DTO_EXAMPLES.EMAIL,
+      password: USER_DTO_EXAMPLES.PASSWORD,
+      firstName: USER_DTO_EXAMPLES.FIRST_NAME,
+      lastName: USER_DTO_EXAMPLES.LAST_NAME,
+      phone: USER_DTO_EXAMPLES.PHONE,
+      role: USER_DTO_EXAMPLES.ROLE,
+      address: USER_DTO_EXAMPLES.ADDRESS,
+      city: USER_DTO_EXAMPLES.CITY,
+      country: USER_DTO_EXAMPLES.COUNTRY,
+      postalCode: USER_DTO_EXAMPLES.POSTAL_CODE,
+      dateOfBirth: USER_DTO_EXAMPLES.DATE_OF_BIRTH,
+      gender: USER_DTO_EXAMPLES.GENDER,
+      emergencyContactName: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_NAME,
+      emergencyContactPhone: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_PHONE,
+      emergencyContactRelationship: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_RELATIONSHIP,
+      medicalHistory: USER_DTO_EXAMPLES.MEDICAL_HISTORY,
+      allergies: USER_DTO_EXAMPLES.ALLERGIES,
+      medications: USER_DTO_EXAMPLES.MEDICATIONS,
+    },
   },
   USER_RESPONSE: {
     summary: 'User Response Example',
     value: {
       data: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: 'john.doe@example.com',
-        firstName: 'John',
-        lastName: 'Doe',
-        phone: '+1234567890',
-        role: 'patient',
+        id: COMMON_DTO_EXAMPLES.UUID,
+        email: USER_DTO_EXAMPLES.EMAIL,
+        firstName: USER_DTO_EXAMPLES.FIRST_NAME,
+        lastName: USER_DTO_EXAMPLES.LAST_NAME,
+        phone: USER_DTO_EXAMPLES.PHONE,
+        role: USER_DTO_EXAMPLES.ROLE,
         avatar: 'https://example.com/avatar.jpg',
-        dateOfBirth: '1990-01-01',
-        address: '123 Main St',
-        city: 'New York',
-        postalCode: '10001',
-        country: 'USA',
+        dateOfBirth: USER_DTO_EXAMPLES.DATE_OF_BIRTH,
+        address: USER_DTO_EXAMPLES.ADDRESS,
+        city: USER_DTO_EXAMPLES.CITY,
+        postalCode: USER_DTO_EXAMPLES.POSTAL_CODE,
+        country: USER_DTO_EXAMPLES.COUNTRY,
         preferredLanguage: 'en',
         timezone: 'America/New_York',
-        gender: 'male',
-        emergencyContactName: 'Jane Doe',
-        emergencyContactPhone: '+1234567891',
-        emergencyContactRelationship: 'spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
+        gender: USER_DTO_EXAMPLES.GENDER,
+        emergencyContactName: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_NAME,
+        emergencyContactPhone: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_PHONE,
+        emergencyContactRelationship: USER_DTO_EXAMPLES.EMERGENCY_CONTACT_RELATIONSHIP,
+        medicalHistory: USER_DTO_EXAMPLES.MEDICAL_HISTORY,
+        allergies: USER_DTO_EXAMPLES.ALLERGIES,
+        medications: USER_DTO_EXAMPLES.MEDICATIONS,
         isActive: true,
         isEmailVerified: true,
         isPhoneVerified: false,
-        lastLoginAt: '2024-01-15T10:30:00.000Z',
-        createdAt: '2024-01-01T00:00:00.000Z',
-        updatedAt: '2024-01-15T10:30:00.000Z'
+        lastLoginAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+        createdAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+        updatedAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
       },
       message: 'User retrieved successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
+  },
 };
 
 // Users List Examples
@@ -75,13 +77,13 @@ export const USERS_LIST_EXAMPLES = {
     value: {
       data: [
         {
-          id: '123e4567-e89b-12d3-a456-426614174000',
-          email: 'john.doe@example.com',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'patient',
+          id: COMMON_DTO_EXAMPLES.UUID,
+          email: USER_DTO_EXAMPLES.EMAIL,
+          firstName: USER_DTO_EXAMPLES.FIRST_NAME,
+          lastName: USER_DTO_EXAMPLES.LAST_NAME,
+          role: USER_DTO_EXAMPLES.ROLE,
           isActive: true,
-          createdAt: '2024-01-01T00:00:00.000Z'
+          createdAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
         },
         {
           id: '456e7890-e89b-12d3-a456-426614174001',
@@ -90,16 +92,16 @@ export const USERS_LIST_EXAMPLES = {
           lastName: 'Smith',
           role: 'veterinarian',
           isActive: true,
-          createdAt: '2024-01-02T00:00:00.000Z'
-        }
+          createdAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+        },
       ],
       total: 150,
       page: 1,
       totalPages: 15,
       message: 'Users retrieved successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
-  }
+      timestamp: '2024-01-15T10:30:00.000Z',
+    },
+  },
 };
 
 // Error Response Examples
@@ -108,15 +110,11 @@ export const ERROR_EXAMPLES = {
     summary: 'Validation Error Example',
     value: {
       statusCode: 400,
-      message: [
-        'email must be an email',
-        'password must be longer than or equal to 8 characters',
-        'firstName should not be empty'
-      ],
+      message: ['email must be an email', 'password must be longer than or equal to 8 characters', 'firstName should not be empty'],
       error: 'Bad Request',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users',
+    },
   },
   NOT_FOUND_ERROR: {
     summary: 'Not Found Error Example',
@@ -124,9 +122,9 @@ export const ERROR_EXAMPLES = {
       statusCode: 404,
       message: 'User not found',
       error: 'Not Found',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users/999e9999-e99b-99d3-a999-999999999999'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users/999e9999-e99b-99d3-a999-999999999999',
+    },
   },
   UNAUTHORIZED_ERROR: {
     summary: 'Unauthorized Error Example',
@@ -134,9 +132,9 @@ export const ERROR_EXAMPLES = {
       statusCode: 401,
       message: 'Unauthorized',
       error: 'Unauthorized',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users',
+    },
   },
   FORBIDDEN_ERROR: {
     summary: 'Forbidden Error Example',
@@ -144,9 +142,9 @@ export const ERROR_EXAMPLES = {
       statusCode: 403,
       message: 'Forbidden - Admin access required',
       error: 'Forbidden',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users',
+    },
   },
   CONFLICT_ERROR: {
     summary: 'Conflict Error Example',
@@ -154,9 +152,9 @@ export const ERROR_EXAMPLES = {
       statusCode: 409,
       message: 'User with this email already exists',
       error: 'Conflict',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users',
+    },
   },
   INTERNAL_SERVER_ERROR: {
     summary: 'Internal Server Error Example',
@@ -164,10 +162,10 @@ export const ERROR_EXAMPLES = {
       statusCode: 500,
       message: 'Internal server error',
       error: 'Internal Server Error',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      path: '/api/v1/users'
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      path: '/api/v1/users',
+    },
+  },
 };
 
 // Success Response Examples
@@ -176,45 +174,45 @@ export const SUCCESS_EXAMPLES = {
     summary: 'Created Response Example',
     value: {
       data: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: 'john.doe@example.com',
-        firstName: 'John',
-        lastName: 'Doe'
+        id: COMMON_DTO_EXAMPLES.UUID,
+        email: USER_DTO_EXAMPLES.EMAIL,
+        firstName: USER_DTO_EXAMPLES.FIRST_NAME,
+        lastName: USER_DTO_EXAMPLES.LAST_NAME,
       },
       message: 'User created successfully',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      createdAt: '2024-01-15T10:30:00.000Z'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      id: COMMON_DTO_EXAMPLES.UUID,
+      createdAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
   },
   UPDATED_RESPONSE: {
     summary: 'Updated Response Example',
     value: {
       data: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        firstName: 'John',
-        lastName: 'Smith'
+        id: COMMON_DTO_EXAMPLES.UUID,
+        firstName: USER_DTO_EXAMPLES.FIRST_NAME,
+        lastName: 'Smith',
       },
       message: 'User updated successfully',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      updatedAt: '2024-01-15T10:30:00.000Z',
-      affectedRows: 1
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      id: COMMON_DTO_EXAMPLES.UUID,
+      updatedAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      affectedRows: 1,
+    },
   },
   DELETED_RESPONSE: {
     summary: 'Deleted Response Example',
     value: {
       data: {
-        id: '123e4567-e89b-12d3-a456-426614174000'
+        id: COMMON_DTO_EXAMPLES.UUID,
       },
       message: 'User deleted successfully',
-      timestamp: '2024-01-15T10:30:00.000Z',
-      id: '123e4567-e89b-12d3-a456-426614174000',
-      deletedAt: '2024-01-15T10:30:00.000Z',
-      affectedRows: 1
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      id: COMMON_DTO_EXAMPLES.UUID,
+      deletedAt: COMMON_DTO_EXAMPLES.TIMESTAMP,
+      affectedRows: 1,
+    },
+  },
 };
 
 // Phone Verification Examples
@@ -222,15 +220,15 @@ export const PHONE_VERIFICATION_EXAMPLES = {
   REQUEST_VERIFICATION: {
     summary: 'Request Phone Verification Example',
     value: {
-      phone: '+1234567890'
-    }
+      phone: '+1234567890',
+    },
   },
   VERIFY_OTP: {
     summary: 'Verify OTP Example',
     value: {
       phone: '+1234567890',
-      otp: '123456'
-    }
+      otp: '123456',
+    },
   },
   VERIFICATION_RESPONSE: {
     summary: 'Phone Verification Response Example',
@@ -238,24 +236,24 @@ export const PHONE_VERIFICATION_EXAMPLES = {
       data: {
         message: 'OTP sent successfully',
         phone: '+1234567890',
-        expiresIn: '5 minutes'
+        expiresIn: '5 minutes',
       },
       message: 'Verification OTP sent successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
   },
   VERIFICATION_STATUS: {
     summary: 'Phone Verification Status Example',
     value: {
       data: {
-        phone: '+1234567890',
+        phone: USER_DTO_EXAMPLES.PHONE,
         isVerified: true,
-        verificationDate: '2024-01-10T15:30:00.000Z'
+        verificationDate: COMMON_DTO_EXAMPLES.TIMESTAMP,
       },
       message: 'Phone verification status retrieved successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
+  },
 };
 
 // Profile Completion Examples
@@ -264,23 +262,23 @@ export const PROFILE_COMPLETION_EXAMPLES = {
     summary: 'Profile Completion Response Example',
     value: {
       data: {
-        profileCompletionPercentage: 85
+        profileCompletionPercentage: 85,
       },
       message: 'Profile completion retrieved successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
   },
   PROFILE_COMPLETION_RECALCULATION: {
     summary: 'Profile Completion Recalculation Example',
     value: {
       data: {
         profileCompletionPercentage: 90,
-        message: 'Profile completion percentage updated based on new information'
+        message: 'Profile completion percentage updated based on new information',
       },
       message: 'Profile completion recalculated successfully',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
+  },
 };
 
 // Health Check Examples
@@ -297,13 +295,13 @@ export const HEALTH_CHECK_EXAMPLES = {
         services: {
           email: 'healthy',
           sms: 'healthy',
-          storage: 'healthy'
-        }
+          storage: 'healthy',
+        },
       },
       message: 'Service health check completed',
-      timestamp: '2024-01-15T10:30:00.000Z'
-    }
-  }
+      timestamp: COMMON_DTO_EXAMPLES.TIMESTAMP,
+    },
+  },
 };
 
 // Query Parameter Examples
@@ -313,12 +311,12 @@ export const QUERY_EXAMPLES = {
     value: {
       page: 1,
       limit: 10,
-      search: 'john',
-      role: 'patient',
+      search: USER_DTO_EXAMPLES.FIRST_NAME.toLowerCase(),
+      role: USER_DTO_EXAMPLES.ROLE,
       isActive: 'true',
       sortBy: 'createdAt',
-      sortOrder: 'DESC'
-    }
+      sortOrder: 'DESC',
+    },
   },
   FILTERING: {
     summary: 'Filtering Query Example',
@@ -326,11 +324,11 @@ export const QUERY_EXAMPLES = {
       search: 'veterinarian',
       role: 'veterinarian',
       isActive: 'true',
-      city: 'New York',
+      city: USER_DTO_EXAMPLES.CITY,
       dateFrom: '2024-01-01',
-      dateTo: '2024-01-31'
-    }
-  }
+      dateTo: '2024-01-31',
+    },
+  },
 };
 
 // Request Header Examples
@@ -338,17 +336,17 @@ export const HEADER_EXAMPLES = {
   AUTHENTICATION: {
     summary: 'Authentication Header Example',
     value: {
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
       'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    }
+      Accept: 'application/json',
+    },
   },
   CORS: {
     summary: 'CORS Headers Example',
     value: {
-      'Origin': 'http://localhost:3000',
+      Origin: 'http://localhost:3000',
       'Access-Control-Request-Method': 'POST',
-      'Access-Control-Request-Headers': 'Content-Type, Authorization'
-    }
-  }
+      'Access-Control-Request-Headers': 'Content-Type, Authorization',
+    },
+  },
 };

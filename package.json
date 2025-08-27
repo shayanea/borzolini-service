@@ -28,7 +28,8 @@
     "docs:generate": "ts-node src/scripts/generate-swagger.ts",
     "docs:serve": "nest start --watch & sleep 3 && open http://localhost:3001/api/docs",
     "generate-tokens": "ts-node scripts/generate-tokens.ts",
-    "tokens": "./scripts/generate-tokens.sh"
+    "tokens": "./scripts/generate-tokens.sh",
+    "dto:migrate": "ts-node src/common/swagger/migrate-dto-examples.ts"
   },
   "keywords": [
     "pet-clinic",
@@ -95,6 +96,7 @@
     "eslint": "^8.42.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "glob": "^10.3.10",
     "husky": "^8.0.3",
     "jest": "^29.5.0",
     "prettier": "^3.0.0",
