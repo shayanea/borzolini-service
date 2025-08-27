@@ -1,27 +1,16 @@
-import {
-  Injectable,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-  OnModuleInit,
-  Logger,
-} from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { JwtService } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
-import { User, UserRole } from "./entities/user.entity";
-import { UserPreferences } from "./entities/user-preferences.entity";
-import {
-  UserActivity,
-  ActivityType,
-  ActivityStatus,
-} from "./entities/user-activity.entity";
-import { CreateUserDto, UpdateUserDto } from "./dto/create-user.dto";
-import { UpdateUserPreferencesDto } from "./dto/user-preferences.dto";
-import { SmsService } from "../../common/sms.service";
-import { EmailService } from "../../common/email.service";
-import * as bcrypt from "bcryptjs";
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcryptjs';
+import { Repository } from 'typeorm';
+import { EmailService } from '../../common/email.service';
+import { SmsService } from '../../common/sms.service';
+import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
+import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
+import { ActivityStatus, ActivityType, UserActivity } from './entities/user-activity.entity';
+import { UserPreferences } from './entities/user-preferences.entity';
+import { User, UserRole } from './entities/user.entity';
 
 @Injectable()
 export class UsersService implements OnModuleInit {
@@ -38,20 +27,20 @@ export class UsersService implements OnModuleInit {
     private jwtService: JwtService,
     private configService: ConfigService,
     private smsService: SmsService,
-    private emailService: EmailService,
+    private emailService: EmailService
   ) {}
 
   async onModuleInit() {
-    this.logger.log("Initializing Users service...");
+    this.logger.log('Initializing Users service...');
 
     try {
       await this.validateDependencies();
       await this.validateConfiguration();
 
       this.isInitialized = true;
-      this.logger.log("Users service initialized successfully");
+      this.logger.log('Users service initialized successfully');
     } catch (error) {
-      this.logger.error("Failed to initialize Users service:", error);
+      this.logger.error('Failed to initialize Users service:', error);
       throw error;
     }
   }
@@ -59,31 +48,23 @@ export class UsersService implements OnModuleInit {
   private async validateDependencies(): Promise<void> {
     // Check if required services are ready
     if (!this.smsService.isServiceReady()) {
-      this.logger.warn(
-        "SMS service not ready, some functionality may be limited",
-      );
+      this.logger.warn('SMS service not ready, some functionality may be limited');
     }
 
     if (!this.emailService.isServiceReady()) {
-      this.logger.warn(
-        "Email service not ready, some functionality may be limited",
-      );
+      this.logger.warn('Email service not ready, some functionality may be limited');
     }
 
     // Check if repositories are available
-    if (
-      !this.userRepository ||
-      !this.userPreferencesRepository ||
-      !this.userActivityRepository
-    ) {
-      throw new Error("Required repositories not available");
+    if (!this.userRepository || !this.userPreferencesRepository || !this.userActivityRepository) {
+      throw new Error('Required repositories not available');
     }
 
-    this.logger.log("User service dependencies validated successfully");
+    this.logger.log('User service dependencies validated successfully');
   }
 
   private async validateConfiguration(): Promise<void> {
-    const requiredVars = ["JWT_SECRET", "BCRYPT_ROUNDS"];
+    const requiredVars = ['JWT_SECRET', 'BCRYPT_ROUNDS'];
     const missingVars: string[] = [];
 
     for (const varName of requiredVars) {
@@ -94,35 +75,33 @@ export class UsersService implements OnModuleInit {
     }
 
     if (missingVars.length > 0) {
-      throw new Error(
-        `Missing required environment variables: ${missingVars.join(", ")}`,
-      );
+      throw new Error(`Missing required environment variables: ${missingVars.join(', ')}`);
     }
 
     // Validate JWT secret
-    const jwtSecret = this.configService.get<string>("JWT_SECRET")!;
+    const jwtSecret = this.configService.get<string>('JWT_SECRET')!;
     if (jwtSecret.length < 32) {
-      throw new Error("JWT_SECRET must be at least 32 characters long");
+      throw new Error('JWT_SECRET must be at least 32 characters long');
     }
 
     // Validate bcrypt rounds
-    const bcryptRounds = this.configService.get<number>("BCRYPT_ROUNDS", 12);
+    const bcryptRounds = this.configService.get<number>('BCRYPT_ROUNDS', 12);
     if (bcryptRounds < 10 || bcryptRounds > 16) {
-      throw new Error("BCRYPT_ROUNDS must be between 10 and 16");
+      throw new Error('BCRYPT_ROUNDS must be between 10 and 16');
     }
 
-    this.logger.log("User service configuration validated successfully");
+    this.logger.log('User service configuration validated successfully');
   }
 
   private mapRoleToEnum(role: string): UserRole {
     switch (role) {
-      case "admin":
+      case 'admin':
         return UserRole.ADMIN;
-      case "veterinarian":
+      case 'veterinarian':
         return UserRole.VETERINARIAN;
-      case "staff":
+      case 'staff':
         return UserRole.STAFF;
-      case "patient":
+      case 'patient':
       default:
         return UserRole.PATIENT;
     }
@@ -130,42 +109,32 @@ export class UsersService implements OnModuleInit {
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     if (!this.isInitialized) {
-      throw new Error("Users service not initialized");
+      throw new Error('Users service not initialized');
     }
 
     const existingUser = await this.findByEmail(createUserDto.email);
     if (existingUser) {
-      throw new ConflictException("User with this email already exists");
+      throw new ConflictException('User with this email already exists');
     }
 
     // Validate phone number if provided
-    if (
-      createUserDto.phone &&
-      !this.smsService.validatePhoneNumber(createUserDto.phone)
-    ) {
-      throw new BadRequestException("Invalid phone number format");
+    if (createUserDto.phone && !this.smsService.validatePhoneNumber(createUserDto.phone)) {
+      throw new BadRequestException('Invalid phone number format');
     }
 
-    const saltRounds = parseInt(
-      this.configService.get("BCRYPT_ROUNDS") || "12",
-    );
-    const hashedPassword = await bcrypt.hash(
-      createUserDto.password,
-      saltRounds,
-    );
+    const saltRounds = parseInt(this.configService.get('BCRYPT_ROUNDS') || '12');
+    const hashedPassword = await bcrypt.hash(createUserDto.password, saltRounds);
 
     const user = this.userRepository.create({
       ...createUserDto,
       passwordHash: hashedPassword,
-      role: createUserDto.role
-        ? this.mapRoleToEnum(createUserDto.role)
-        : UserRole.PATIENT,
+      role: createUserDto.role ? this.mapRoleToEnum(createUserDto.role) : UserRole.PATIENT,
       isEmailVerified: false,
       isPhoneVerified: false,
       isActive: true,
       loginAttempts: 0,
       profileCompletionPercentage: 0,
-      accountStatus: "active",
+      accountStatus: 'active',
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -194,117 +163,105 @@ export class UsersService implements OnModuleInit {
           },
         },
         privacySettings: {
-          profileVisibility: "public",
+          profileVisibility: 'public',
           showPhone: true,
           showAddress: false,
           showEmail: false,
           allowContact: true,
         },
         communicationPreferences: {
-          preferredLanguage: "en",
-          preferredContactMethod: "email",
-          timezone: "UTC",
+          preferredLanguage: 'en',
+          preferredContactMethod: 'email',
+          timezone: 'UTC',
           quietHours: {
             enabled: false,
-            startTime: "22:00",
-            endTime: "08:00",
+            startTime: '22:00',
+            endTime: '08:00',
           },
         },
-        theme: "auto",
+        theme: 'auto',
         isActive: true,
-      }),
+      })
     );
 
     // Generate email verification token
-    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
+      throw new Error('JWT_SECRET is not configured');
     }
 
     // Send verification email if email service is ready
     if (this.emailService.isServiceReady()) {
       try {
-        const verificationToken = this.jwtService.sign(
-          { email: savedUser.email, type: "email_verification" },
-          { secret: jwtSecret, expiresIn: "24h" },
-        );
+        const verificationToken = this.jwtService.sign({ email: savedUser.email, type: 'email_verification' }, { secret: jwtSecret, expiresIn: '24h' });
 
-        await this.emailService.sendVerificationEmail(
-          savedUser.email,
-          savedUser.firstName,
-          verificationToken,
-        );
+        await this.emailService.sendVerificationEmail(savedUser.email, savedUser.firstName, verificationToken);
         this.logger.log(`Verification email sent to ${savedUser.email}`);
       } catch (error) {
-        this.logger.error(
-          `Failed to send verification email to ${savedUser.email}:`,
-          error,
-        );
+        this.logger.error(`Failed to send verification email to ${savedUser.email}:`, error);
         // Don't fail user creation if email fails
       }
     } else {
-      this.logger.warn("Email service not ready, skipping verification email");
+      this.logger.warn('Email service not ready, skipping verification email');
     }
 
     // Send welcome SMS if SMS service is ready and phone is provided
     if (this.smsService.isServiceReady() && savedUser.phone) {
       try {
-        const formattedPhone = this.smsService.formatPhoneNumber(
-          savedUser.phone,
-        );
-        await this.smsService.sendNotification(
-          formattedPhone,
-          `Welcome to Borzolini Clinic, ${savedUser.firstName}! Your account has been created successfully.`,
-        );
+        const formattedPhone = this.smsService.formatPhoneNumber(savedUser.phone);
+        await this.smsService.sendNotification(formattedPhone, `Welcome to Borzolini Clinic, ${savedUser.firstName}! Your account has been created successfully.`);
         this.logger.log(`Welcome SMS sent to ${formattedPhone}`);
       } catch (error) {
-        this.logger.error(
-          `Failed to send welcome SMS to ${savedUser.phone}:`,
-          error,
-        );
+        this.logger.error(`Failed to send welcome SMS to ${savedUser.phone}:`, error);
         // Don't fail user creation if SMS fails
       }
     } else if (savedUser.phone) {
-      this.logger.warn("SMS service not ready, skipping welcome SMS");
+      this.logger.warn('SMS service not ready, skipping welcome SMS');
     }
 
     // Log user creation activity
-    await this.logUserActivity(
-      savedUser.id,
-      ActivityType.REGISTER,
-      ActivityStatus.SUCCESS,
-      {
-        email: savedUser.email,
-        role: savedUser.role,
-        method: "email",
-      },
-    );
+    await this.logUserActivity(savedUser.id, ActivityType.REGISTER, ActivityStatus.SUCCESS, {
+      email: savedUser.email,
+      role: savedUser.role,
+      method: 'email',
+    });
 
     return savedUser;
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(userRole?: UserRole): Promise<User[]> {
+    // If no role specified, return all users (admin access)
+    if (!userRole) {
+      return this.userRepository.find({
+        select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt'],
+      });
+    }
+
+    // For veterinarians and staff, only show their own people and patients
+    if (userRole === UserRole.VETERINARIAN || userRole === UserRole.STAFF) {
+      return this.userRepository.find({
+        where: [
+          { role: UserRole.PATIENT }, // Can see all patients
+          { role: userRole }, // Can see people with same role
+        ],
+        select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt'],
+      });
+    }
+
+    // Admin can see all users
     return this.userRepository.find({
-      select: [
-        "id",
-        "email",
-        "firstName",
-        "lastName",
-        "role",
-        "isActive",
-        "createdAt",
-      ],
+      select: ['id', 'email', 'firstName', 'lastName', 'role', 'isActive', 'createdAt', 'accountStatus'],
     });
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ["preferences", "activities"],
+      relations: ['preferences', 'activities'],
     });
 
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     return user;
@@ -324,7 +281,7 @@ export class UsersService implements OnModuleInit {
     if (updateUserDto.email && updateUserDto.email !== user.email) {
       const existingUser = await this.findByEmail(updateUserDto.email);
       if (existingUser) {
-        throw new ConflictException("User with this email already exists");
+        throw new ConflictException('User with this email already exists');
       }
     }
 
@@ -334,8 +291,7 @@ export class UsersService implements OnModuleInit {
     });
 
     // Calculate and update profile completion percentage
-    const profileCompletionPercentage =
-      await this.calculateProfileCompletion(updatedUser);
+    const profileCompletionPercentage = await this.calculateProfileCompletion(updatedUser);
     await this.userRepository.update(id, { profileCompletionPercentage });
 
     // Remove password hash from response
@@ -356,11 +312,7 @@ export class UsersService implements OnModuleInit {
     await this.userRepository.save(user);
   }
 
-  async updateRefreshToken(
-    userId: string,
-    refreshToken: string,
-    expiresAt: Date,
-  ): Promise<void> {
+  async updateRefreshToken(userId: string, refreshToken: string, expiresAt: Date): Promise<void> {
     const user = await this.findOne(userId);
     user.refreshToken = refreshToken;
     user.refreshTokenExpiresAt = expiresAt;
@@ -368,9 +320,9 @@ export class UsersService implements OnModuleInit {
   }
 
   async verifyEmail(token: string): Promise<void> {
-    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
+      throw new Error('JWT_SECRET is not configured');
     }
 
     try {
@@ -378,21 +330,18 @@ export class UsersService implements OnModuleInit {
         secret: jwtSecret,
       });
 
-      if (payload.type !== "email_verification") {
-        throw new BadRequestException("Invalid token type");
+      if (payload.type !== 'email_verification') {
+        throw new BadRequestException('Invalid token type');
       }
 
       const user = await this.findOne(payload.sub);
 
       if (user.emailVerificationToken !== token) {
-        throw new BadRequestException("Invalid verification token");
+        throw new BadRequestException('Invalid verification token');
       }
 
-      if (
-        user.emailVerificationExpiresAt &&
-        user.emailVerificationExpiresAt < new Date()
-      ) {
-        throw new BadRequestException("Verification token expired");
+      if (user.emailVerificationExpiresAt && user.emailVerificationExpiresAt < new Date()) {
+        throw new BadRequestException('Verification token expired');
       }
 
       user.isEmailVerified = true;
@@ -403,29 +352,26 @@ export class UsersService implements OnModuleInit {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException("Invalid or expired verification token");
+      throw new BadRequestException('Invalid or expired verification token');
     }
   }
 
   async resendVerificationEmail(email: string): Promise<void> {
     const user = await this.findByEmail(email);
     if (!user) {
-      throw new NotFoundException("User not found");
+      throw new NotFoundException('User not found');
     }
 
     if (user.isEmailVerified) {
-      throw new BadRequestException("Email is already verified");
+      throw new BadRequestException('Email is already verified');
     }
 
-    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
+      throw new Error('JWT_SECRET is not configured');
     }
 
-    const emailVerificationToken = this.jwtService.sign(
-      { type: "email_verification" },
-      { secret: jwtSecret, expiresIn: "24h" },
-    );
+    const emailVerificationToken = this.jwtService.sign({ type: 'email_verification' }, { secret: jwtSecret, expiresIn: '24h' });
 
     await this.userRepository.update(user.id, {
       emailVerificationToken,
@@ -437,12 +383,12 @@ export class UsersService implements OnModuleInit {
     // Find user by phone number
     const user = await this.findByPhone(phone);
     if (!user) {
-      throw new NotFoundException("User with this phone number not found");
+      throw new NotFoundException('User with this phone number not found');
     }
 
     // Check if phone is already verified
     if (user.isPhoneVerified) {
-      throw new BadRequestException("Phone number is already verified");
+      throw new BadRequestException('Phone number is already verified');
     }
 
     // Generate 6-digit OTP
@@ -462,69 +408,44 @@ export class UsersService implements OnModuleInit {
 
     if (!smsResult.success) {
       // If SMS fails, still log the OTP for development/testing
-      this.logger.warn(
-        `SMS failed for ${phone}, OTP logged for development: ${otp}`,
-        undefined,
-        {
-          service: "UsersService",
-          method: "sendPhoneVerificationOtp",
-          phone,
-        },
-      );
+      this.logger.warn(`SMS failed for ${phone}, OTP logged for development: ${otp}`, undefined, {
+        service: 'UsersService',
+        method: 'sendPhoneVerificationOtp',
+        phone,
+      });
     }
 
     // Log the verification request activity
-    await this.logUserActivity(
-      user.id,
-      ActivityType.PHONE_VERIFICATION,
-      ActivityStatus.PENDING,
-      { phone, otpExpiry, smsSuccess: smsResult.success },
-      undefined,
-      undefined,
-    );
+    await this.logUserActivity(user.id, ActivityType.PHONE_VERIFICATION, ActivityStatus.PENDING, { phone, otpExpiry, smsSuccess: smsResult.success }, undefined, undefined);
   }
 
   async verifyPhone(phone: string, otp: string): Promise<void> {
     // Find user by phone number
     const user = await this.findByPhone(phone);
     if (!user) {
-      throw new NotFoundException("User with this phone number not found");
+      throw new NotFoundException('User with this phone number not found');
     }
 
     // Check if OTP exists
     if (!user.phoneVerificationOTP) {
-      throw new BadRequestException(
-        "No verification OTP found. Please request a new one.",
-      );
+      throw new BadRequestException('No verification OTP found. Please request a new one.');
     }
 
     // Check if OTP has expired
-    if (
-      user.phoneVerificationExpiresAt &&
-      user.phoneVerificationExpiresAt < new Date()
-    ) {
+    if (user.phoneVerificationExpiresAt && user.phoneVerificationExpiresAt < new Date()) {
       // Clear expired OTP
       await this.userRepository.update(user.id, {
         phoneVerificationOTP: null as any,
         phoneVerificationExpiresAt: null as any,
       });
-      throw new BadRequestException(
-        "Verification OTP has expired. Please request a new one.",
-      );
+      throw new BadRequestException('Verification OTP has expired. Please request a new one.');
     }
 
     // Verify OTP
     if (user.phoneVerificationOTP !== otp) {
       // Log failed attempt
-      await this.logUserActivity(
-        user.id,
-        ActivityType.PHONE_VERIFICATION,
-        ActivityStatus.FAILED,
-        { phone, reason: "Invalid OTP" },
-        undefined,
-        undefined,
-      );
-      throw new BadRequestException("Invalid verification OTP");
+      await this.logUserActivity(user.id, ActivityType.PHONE_VERIFICATION, ActivityStatus.FAILED, { phone, reason: 'Invalid OTP' }, undefined, undefined);
+      throw new BadRequestException('Invalid verification OTP');
     }
 
     // Mark phone as verified and clear OTP
@@ -535,19 +456,11 @@ export class UsersService implements OnModuleInit {
     });
 
     // Log successful verification
-    await this.logUserActivity(
-      user.id,
-      ActivityType.PHONE_VERIFICATION,
-      ActivityStatus.SUCCESS,
-      { phone },
-      undefined,
-      undefined,
-    );
+    await this.logUserActivity(user.id, ActivityType.PHONE_VERIFICATION, ActivityStatus.SUCCESS, { phone }, undefined, undefined);
 
     // Recalculate profile completion since phone verification affects it
     const updatedUser = await this.findOne(user.id);
-    const profileCompletionPercentage =
-      await this.calculateProfileCompletion(updatedUser);
+    const profileCompletionPercentage = await this.calculateProfileCompletion(updatedUser);
     await this.userRepository.update(user.id, { profileCompletionPercentage });
   }
 
@@ -567,22 +480,17 @@ export class UsersService implements OnModuleInit {
     // Find user by phone number
     const user = await this.findByPhone(phone);
     if (!user) {
-      throw new NotFoundException("User with this phone number not found");
+      throw new NotFoundException('User with this phone number not found');
     }
 
     // Check if phone is already verified
     if (user.isPhoneVerified) {
-      throw new BadRequestException("Phone number is already verified");
+      throw new BadRequestException('Phone number is already verified');
     }
 
     // Check if there's a recent OTP request (prevent spam)
-    if (
-      user.phoneVerificationExpiresAt &&
-      user.phoneVerificationExpiresAt > new Date(Date.now() - 60 * 1000)
-    ) {
-      throw new BadRequestException(
-        "Please wait at least 1 minute before requesting a new OTP",
-      );
+    if (user.phoneVerificationExpiresAt && user.phoneVerificationExpiresAt > new Date(Date.now() - 60 * 1000)) {
+      throw new BadRequestException('Please wait at least 1 minute before requesting a new OTP');
     }
 
     // Generate new OTP
@@ -600,26 +508,15 @@ export class UsersService implements OnModuleInit {
 
     if (!smsResult.success) {
       // If SMS fails, still log the OTP for development/testing
-      this.logger.warn(
-        `SMS failed for ${phone}, OTP resent logged for development: ${otp}`,
-        undefined,
-        {
-          service: "UsersService",
-          method: "resendPhoneVerification",
-          phone,
-        },
-      );
+      this.logger.warn(`SMS failed for ${phone}, OTP resent logged for development: ${otp}`, undefined, {
+        service: 'UsersService',
+        method: 'resendPhoneVerification',
+        phone,
+      });
     }
 
     // Log the resend activity
-    await this.logUserActivity(
-      user.id,
-      ActivityType.PHONE_VERIFICATION,
-      ActivityStatus.PENDING,
-      { phone, otpExpiry, action: "resend", smsSuccess: smsResult.success },
-      undefined,
-      undefined,
-    );
+    await this.logUserActivity(user.id, ActivityType.PHONE_VERIFICATION, ActivityStatus.PENDING, { phone, otpExpiry, action: 'resend', smsSuccess: smsResult.success }, undefined, undefined);
   }
 
   /**
@@ -627,12 +524,10 @@ export class UsersService implements OnModuleInit {
    * @param phone Phone number to check
    * @returns Promise<{ isValid: boolean; expiresAt: Date | null }>
    */
-  async checkPhoneVerificationStatus(
-    phone: string,
-  ): Promise<{ isValid: boolean; expiresAt: Date | null }> {
+  async checkPhoneVerificationStatus(phone: string): Promise<{ isValid: boolean; expiresAt: Date | null }> {
     const user = await this.findByPhone(phone);
     if (!user) {
-      throw new NotFoundException("User with this phone number not found");
+      throw new NotFoundException('User with this phone number not found');
     }
 
     if (!user.phoneVerificationOTP || !user.phoneVerificationExpiresAt) {
@@ -649,15 +544,12 @@ export class UsersService implements OnModuleInit {
       return; // Don't reveal if user exists
     }
 
-    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
+      throw new Error('JWT_SECRET is not configured');
     }
 
-    const resetToken = this.jwtService.sign(
-      { sub: user.id, type: "password_reset" },
-      { secret: jwtSecret, expiresIn: "1h" },
-    );
+    const resetToken = this.jwtService.sign({ sub: user.id, type: 'password_reset' }, { secret: jwtSecret, expiresIn: '1h' });
 
     await this.userRepository.update(user.id, {
       passwordResetToken: resetToken,
@@ -666,9 +558,9 @@ export class UsersService implements OnModuleInit {
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    const jwtSecret = this.configService.get<string>("JWT_SECRET");
+    const jwtSecret = this.configService.get<string>('JWT_SECRET');
     if (!jwtSecret) {
-      throw new Error("JWT_SECRET is not configured");
+      throw new Error('JWT_SECRET is not configured');
     }
 
     try {
@@ -676,21 +568,18 @@ export class UsersService implements OnModuleInit {
         secret: jwtSecret,
       });
 
-      if (payload.type !== "password_reset") {
-        throw new BadRequestException("Invalid token type");
+      if (payload.type !== 'password_reset') {
+        throw new BadRequestException('Invalid token type');
       }
 
       const user = await this.findOne(payload.sub);
 
       if (user.passwordResetToken !== token) {
-        throw new BadRequestException("Invalid reset token");
+        throw new BadRequestException('Invalid reset token');
       }
 
-      if (
-        user.passwordResetExpiresAt &&
-        user.passwordResetExpiresAt < new Date()
-      ) {
-        throw new BadRequestException("Reset token expired");
+      if (user.passwordResetExpiresAt && user.passwordResetExpiresAt < new Date()) {
+        throw new BadRequestException('Reset token expired');
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -705,19 +594,15 @@ export class UsersService implements OnModuleInit {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException("Invalid or expired reset token");
+      throw new BadRequestException('Invalid or expired reset token');
     }
   }
 
-  async changePassword(
-    userId: string,
-    currentPassword: string,
-    newPassword: string,
-  ): Promise<void> {
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     const user = await this.findOne(userId);
 
     if (!(await bcrypt.compare(currentPassword, user.passwordHash))) {
-      throw new BadRequestException("Current password is incorrect");
+      throw new BadRequestException('Current password is incorrect');
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 12);
@@ -767,14 +652,7 @@ export class UsersService implements OnModuleInit {
 
   async handleLogout(userId: string): Promise<void> {
     // Log logout activity
-    await this.logUserActivity(
-      userId,
-      ActivityType.LOGOUT,
-      ActivityStatus.SUCCESS,
-      {},
-      undefined,
-      undefined,
-    );
+    await this.logUserActivity(userId, ActivityType.LOGOUT, ActivityStatus.SUCCESS, {}, undefined, undefined);
   }
 
   async getUserPreferences(userId: string): Promise<UserPreferences> {
@@ -783,16 +661,13 @@ export class UsersService implements OnModuleInit {
     });
 
     if (!preferences) {
-      throw new NotFoundException("User preferences not found");
+      throw new NotFoundException('User preferences not found');
     }
 
     return preferences;
   }
 
-  async updateUserPreferences(
-    userId: string,
-    updatePreferencesDto: UpdateUserPreferencesDto,
-  ): Promise<UserPreferences> {
+  async updateUserPreferences(userId: string, updatePreferencesDto: UpdateUserPreferencesDto): Promise<UserPreferences> {
     const preferences = await this.getUserPreferences(userId);
 
     const updatedPreferences = await this.userPreferencesRepository.save({
@@ -803,13 +678,10 @@ export class UsersService implements OnModuleInit {
     return updatedPreferences;
   }
 
-  async getUserActivities(
-    userId: string,
-    limit: number = 50,
-  ): Promise<UserActivity[]> {
+  async getUserActivities(userId: string, limit: number = 50): Promise<UserActivity[]> {
     return this.userActivityRepository.find({
       where: { userId },
-      order: { createdAt: "DESC" },
+      order: { createdAt: 'DESC' },
       take: limit,
     });
   }
@@ -822,36 +694,26 @@ export class UsersService implements OnModuleInit {
         acc[activity.type] = (acc[activity.type] || 0) + 1;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number>
     );
 
     return {
       totalActivities: activities.length,
       activityCounts,
       lastActivity: activities.length > 0 ? activities[0]?.createdAt : null,
-      mostCommonActivity:
-        Object.entries(activityCounts).reduce((a, b) =>
-          (activityCounts[a[0]] || 0) > (activityCounts[b[0]] || 0) ? a : b,
-        )?.[0] || null,
+      mostCommonActivity: Object.entries(activityCounts).reduce((a, b) => ((activityCounts[a[0]] || 0) > (activityCounts[b[0]] || 0) ? a : b))?.[0] || null,
     };
   }
 
-  async logUserActivity(
-    userId: string,
-    type: ActivityType,
-    status: ActivityStatus,
-    metadata: any,
-    ipAddress?: string,
-    userAgent?: string,
-  ): Promise<void> {
+  async logUserActivity(userId: string, type: ActivityType, status: ActivityStatus, metadata: any, ipAddress?: string, userAgent?: string): Promise<void> {
     const activity = this.userActivityRepository.create({
       userId,
       type,
       status,
       description: type,
       metadata,
-      ipAddress: ipAddress || "unknown",
-      userAgent: userAgent || "unknown",
+      ipAddress: ipAddress || 'unknown',
+      userAgent: userAgent || 'unknown',
       createdAt: new Date(),
     });
 
@@ -866,43 +728,38 @@ export class UsersService implements OnModuleInit {
   private async calculateProfileCompletion(user: User): Promise<number> {
     // Define field weights and categories
     const requiredFields = [
-      { field: "firstName" as keyof User, weight: 10 },
-      { field: "lastName" as keyof User, weight: 10 },
-      { field: "email" as keyof User, weight: 15 },
-      { field: "phone" as keyof User, weight: 10 },
-      { field: "dateOfBirth" as keyof User, weight: 8 },
-      { field: "address" as keyof User, weight: 8 },
-      { field: "city" as keyof User, weight: 5 },
-      { field: "country" as keyof User, weight: 5 },
+      { field: 'firstName' as keyof User, weight: 10 },
+      { field: 'lastName' as keyof User, weight: 10 },
+      { field: 'email' as keyof User, weight: 15 },
+      { field: 'phone' as keyof User, weight: 10 },
+      { field: 'dateOfBirth' as keyof User, weight: 8 },
+      { field: 'address' as keyof User, weight: 8 },
+      { field: 'city' as keyof User, weight: 5 },
+      { field: 'country' as keyof User, weight: 5 },
     ];
 
     const importantFields = [
-      { field: "gender" as keyof User, weight: 5 },
-      { field: "emergencyContactName" as keyof User, weight: 8 },
-      { field: "emergencyContactPhone" as keyof User, weight: 8 },
-      { field: "emergencyContactRelationship" as keyof User, weight: 3 },
-      { field: "avatar" as keyof User, weight: 3 },
+      { field: 'gender' as keyof User, weight: 5 },
+      { field: 'emergencyContactName' as keyof User, weight: 8 },
+      { field: 'emergencyContactPhone' as keyof User, weight: 8 },
+      { field: 'emergencyContactRelationship' as keyof User, weight: 3 },
+      { field: 'avatar' as keyof User, weight: 3 },
     ];
 
     const medicalFields = [
-      { field: "medicalHistory" as keyof User, weight: 3 },
-      { field: "allergies" as keyof User, weight: 3 },
-      { field: "medications" as keyof User, weight: 3 },
+      { field: 'medicalHistory' as keyof User, weight: 3 },
+      { field: 'allergies' as keyof User, weight: 3 },
+      { field: 'medications' as keyof User, weight: 3 },
     ];
 
     const insuranceFields = [
-      { field: "insuranceProvider" as keyof User, weight: 2 },
-      { field: "insurancePolicyNumber" as keyof User, weight: 2 },
-      { field: "insuranceGroupNumber" as keyof User, weight: 2 },
-      { field: "insuranceExpiryDate" as keyof User, weight: 2 },
+      { field: 'insuranceProvider' as keyof User, weight: 2 },
+      { field: 'insurancePolicyNumber' as keyof User, weight: 2 },
+      { field: 'insuranceGroupNumber' as keyof User, weight: 2 },
+      { field: 'insuranceExpiryDate' as keyof User, weight: 2 },
     ];
 
-    const allFields = [
-      ...requiredFields,
-      ...importantFields,
-      ...medicalFields,
-      ...insuranceFields,
-    ];
+    const allFields = [...requiredFields, ...importantFields, ...medicalFields, ...insuranceFields];
     let totalScore = 0;
     let maxPossibleScore = 0;
 
@@ -914,21 +771,18 @@ export class UsersService implements OnModuleInit {
       const value = user[field];
       if (value) {
         // Check if the field has meaningful content
-        if (typeof value === "string" && value.trim().length > 0) {
+        if (typeof value === 'string' && value.trim().length > 0) {
           totalScore += weight;
-        } else if (typeof value === "object" && value !== null) {
+        } else if (typeof value === 'object' && value !== null) {
           totalScore += weight;
-        } else if (typeof value === "boolean" || typeof value === "number") {
+        } else if (typeof value === 'boolean' || typeof value === 'number') {
           totalScore += weight;
         }
       }
     }
 
     // Calculate percentage and ensure it's between 0 and 100
-    const percentage =
-      maxPossibleScore > 0
-        ? Math.round((totalScore / maxPossibleScore) * 100)
-        : 0;
+    const percentage = maxPossibleScore > 0 ? Math.round((totalScore / maxPossibleScore) * 100) : 0;
     return Math.min(Math.max(percentage, 0), 100);
   }
 
@@ -939,8 +793,7 @@ export class UsersService implements OnModuleInit {
    */
   async recalculateProfileCompletion(userId: string): Promise<number> {
     const user = await this.findOne(userId);
-    const profileCompletionPercentage =
-      await this.calculateProfileCompletion(user);
+    const profileCompletionPercentage = await this.calculateProfileCompletion(user);
 
     await this.userRepository.update(userId, { profileCompletionPercentage });
 
@@ -961,15 +814,13 @@ export class UsersService implements OnModuleInit {
 
     for (const user of users) {
       try {
-        const profileCompletionPercentage =
-          await this.calculateProfileCompletion(user);
+        const profileCompletionPercentage = await this.calculateProfileCompletion(user);
         await this.userRepository.update(user.id, {
           profileCompletionPercentage,
         });
         updated++;
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push(`Failed to update user ${user.id}: ${errorMessage}`);
       }
     }

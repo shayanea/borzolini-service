@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request as ExpressRequest } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -44,51 +44,98 @@ export class UsersController {
 
   @Get()
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({ summary: 'Get all users (Staff/Vets/Admins only)' })
+  @ApiOperation({ summary: 'Get users based on role permissions (Admin: all users, Staff/Vets: own people and patients only)' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  async findAll() {
-    return this.usersService.findAll();
+  async findAll(@Request() req: AuthenticatedRequest) {
+    // Pass the current user's role to filter results appropriately
+    return this.usersService.findAll(req.user.role as UserRole);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID (Staff/Vets/Admins can view any user, Patients can only view themselves)' })
+  @ApiOperation({ summary: 'Get user by ID (Role-based access: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves)' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async findOne(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    // Staff, vets, and admins can view any user
-    if ([UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role as UserRole)) {
+    const currentUserRole = req.user.role as UserRole;
+
+    // Admin can view any user
+    if (currentUserRole === UserRole.ADMIN) {
       return this.usersService.findOne(id);
     }
 
     // Patients can only view their own profile
-    if (req.user.id !== id) {
-      throw new ForbiddenException('You can only view your own profile');
+    if (currentUserRole === UserRole.PATIENT) {
+      if (req.user.id !== id) {
+        throw new ForbiddenException('You can only view your own profile');
+      }
+      return this.usersService.findOne(id);
+    }
+
+    // Staff and veterinarians can only view their own people and patients
+    if (currentUserRole === UserRole.VETERINARIAN || currentUserRole === UserRole.STAFF) {
+      const targetUser = await this.usersService.findOne(id);
+
+      // Can view patients (any patient)
+      if (targetUser.role === UserRole.PATIENT) {
+        return targetUser;
+      }
+
+      // Can view people with same role (other staff/vets)
+      if (targetUser.role === currentUserRole) {
+        return targetUser;
+      }
+
+      // Cannot view admins or other role types
+      throw new ForbiddenException('You can only view patients and users with the same role as you');
     }
 
     return this.usersService.findOne(id);
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update user (Staff/Vets/Admins can update any user, Patients can only update themselves)' })
+  @ApiOperation({ summary: 'Update user (Role-based access: Admin can update any user, Staff/Vets can only update own people and patients, Patients can only update themselves)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto, @Request() req: AuthenticatedRequest) {
-    // Staff, vets, and admins can update any user
-    if ([UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role as UserRole)) {
+    const currentUserRole = req.user.role as UserRole;
+
+    // Admin can update any user
+    if (currentUserRole === UserRole.ADMIN) {
       return this.usersService.update(id, updateUserDto);
     }
 
     // Patients can only update their own profile
-    if (req.user.id !== id) {
-      throw new ForbiddenException('You can only update your own profile');
+    if (currentUserRole === UserRole.PATIENT) {
+      if (req.user.id !== id) {
+        throw new ForbiddenException('You can only update your own profile');
+      }
+      return this.usersService.update(id, updateUserDto);
+    }
+
+    // Staff and veterinarians can only update their own people and patients
+    if (currentUserRole === UserRole.VETERINARIAN || currentUserRole === UserRole.STAFF) {
+      const targetUser = await this.usersService.findOne(id);
+
+      // Can update patients (any patient)
+      if (targetUser.role === UserRole.PATIENT) {
+        return this.usersService.update(id, updateUserDto);
+      }
+
+      // Can update people with same role (other staff/vets)
+      if (targetUser.role === currentUserRole) {
+        return this.usersService.update(id, updateUserDto);
+      }
+
+      // Cannot update admins or other role types
+      throw new ForbiddenException('You can only update patients and users with the same role as you');
     }
 
     return this.usersService.update(id, updateUserDto);
@@ -113,14 +160,42 @@ export class UsersController {
 
   @Get('search/email')
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({ summary: 'Search user by email (Staff/Vets/Admins only)' })
+  @ApiOperation({ summary: 'Search user by email (Role-based access: Admin can search any user, Staff/Vets can only search own people and patients)' })
   @ApiQuery({ name: 'email', description: 'Email to search for' })
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  async findByEmail(@Query('email') email: string) {
-    return this.usersService.findByEmail(email);
+  async findByEmail(@Query('email') email: string, @Request() req: AuthenticatedRequest) {
+    const currentUserRole = req.user.role as UserRole;
+    const targetUser = await this.usersService.findByEmail(email);
+
+    if (!targetUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Admin can search any user
+    if (currentUserRole === UserRole.ADMIN) {
+      return targetUser;
+    }
+
+    // Staff and veterinarians can only search for their own people and patients
+    if (currentUserRole === UserRole.VETERINARIAN || currentUserRole === UserRole.STAFF) {
+      // Can search patients (any patient)
+      if (targetUser.role === UserRole.PATIENT) {
+        return targetUser;
+      }
+
+      // Can search people with same role (other staff/vets)
+      if (targetUser.role === currentUserRole) {
+        return targetUser;
+      }
+
+      // Cannot search admins or other role types
+      throw new ForbiddenException('You can only search for patients and users with the same role as you');
+    }
+
+    return targetUser;
   }
 
   @Get('profile/me')
