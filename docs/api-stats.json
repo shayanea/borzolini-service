@@ -1,23 +1,25 @@
 {
-  "totalEndpoints": 99,
-  "totalControllers": 8,
+  "totalEndpoints": 102,
+  "totalControllers": 10,
   "tags": [
     "ai-health",
     "appointments",
     "auth",
     "clinics",
     "file-upload",
+    "health",
     "pets",
+    "rate-limit-monitor",
     "static-files",
     "users"
   ],
   "methods": {
-    "GET": 49,
+    "GET": 52,
     "POST": 31,
     "PUT": 4,
     "DELETE": 9,
     "PATCH": 6
   },
-  "authEndpoints": 75,
-  "publicEndpoints": 24
+  "authEndpoints": 82,
+  "publicEndpoints": 20
 }
