@@ -30,6 +30,12 @@ A professional NestJS backend for managing pet clinics, telemedicine consultatio
 - **Content Management** - Social media content scheduling
 - **Brand Building** - Visual trust and authenticity
 
+### Analytics & Monitoring
+
+- **Privacy-Focused Analytics** - Umami integration for GDPR-compliant tracking
+- **Performance Monitoring** - API usage and response time tracking
+- **Business Intelligence** - User behavior and clinic performance insights
+
 ## 🛠 Tech Stack
 
 - **Framework**: NestJS 10+ with TypeScript
@@ -56,6 +62,7 @@ src/
 │   ├── telemedicine/ # Video consultations
 │   ├── ai-health/    # AI health insights
 │   ├── social-media/ # Instagram integration
+│   ├── analytics/    # Privacy-focused analytics tracking
 │   └── payments/     # Payment processing
 └── main.ts           # Application entry point
 ```

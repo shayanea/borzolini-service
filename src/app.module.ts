@@ -1,6 +1,7 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AiHealthModule } from './modules/ai-health/ai-health.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 // Feature modules
 import { AuthModule } from './modules/auth/auth.module';
@@ -58,6 +59,9 @@ import { getDatabaseConfig } from './config/database.config';
 
     // Health check module
     HealthModule,
+
+    // Analytics module
+    AnalyticsModule,
 
     // Feature modules
     AuthModule,

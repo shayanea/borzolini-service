@@ -1,46 +1,36 @@
+version: '3'
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: borzolini_postgres
-    environment:
-      POSTGRES_DB: borzolini_clinic
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_INITDB_ARGS: '--encoding=UTF-8 --lc-collate=C --lc-ctype=C'
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
     ports:
-      - '5432:5432'
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./src/database/init:/docker-entrypoint-initdb.d
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d borzolini_clinic']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: borzolini_pgadmin
+      - '4000:3000'
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@borzolini.com
-      PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-    ports:
-      - '5050:80'
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      DATABASE_URL: postgresql://umami:umami@db:5432/umami
+      DATABASE_TYPE: postgresql
+      HASH_SALT: borzolini-clinic-analytics-2024
     depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
+      - db
+    restart: always
+    networks:
+      - umami-network
+
+  db:
+    image: postgres:15-alpine
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: umami
+    volumes:
+      - umami-db-data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - umami-network
 
 volumes:
-  postgres_data:
-    driver: local
-  pgadmin_data:
-    driver: local
+  umami-db-data:
 
 networks:
-  default:
-    name: borzolini_network
+  umami-network:
+    driver: bridge
