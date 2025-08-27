@@ -2,6 +2,8 @@ import { ConflictException, Injectable, Logger, NotFoundException, OnModuleInit 
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Not, Repository } from 'typeorm';
+import { ActivityStatus, ActivityType } from '../users/entities/user-activity.entity';
+import { UsersService } from '../users/users.service';
 import { CreateClinicServiceDto } from './dto/create-clinic-service.dto';
 import { CreateClinicStaffDto } from './dto/create-clinic-staff.dto';
 import { CreateClinicDto } from './dto/create-clinic.dto';
@@ -47,7 +49,8 @@ export class ClinicsService implements OnModuleInit {
     private readonly clinicReviewRepository: Repository<ClinicReview>,
     @InjectRepository(ClinicPhoto)
     private readonly clinicPhotoRepository: Repository<ClinicPhoto>,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private readonly usersService: UsersService
   ) {}
 
   async onModuleInit() {
@@ -93,7 +96,7 @@ export class ClinicsService implements OnModuleInit {
     this.logger.log('Clinics service configuration validated successfully');
   }
 
-  async create(createClinicDto: CreateClinicDto): Promise<Clinic> {
+  async create(createClinicDto: CreateClinicDto, userId?: string): Promise<Clinic> {
     if (!this.isInitialized) {
       throw new Error('Clinics service not initialized');
     }
@@ -114,6 +117,17 @@ export class ClinicsService implements OnModuleInit {
     const savedClinic = await this.clinicRepository.save(clinic);
 
     this.logger.log(`Created clinic: ${savedClinic.name} in ${savedClinic.city}`);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.CLINIC_CREATED, ActivityStatus.SUCCESS, {
+        clinicId: savedClinic.id,
+        clinicName: savedClinic.name,
+        clinicCity: savedClinic.city,
+        clinicData: createClinicDto,
+      });
+    }
+
     return savedClinic;
   }
 
@@ -223,7 +237,7 @@ export class ClinicsService implements OnModuleInit {
     });
   }
 
-  async update(id: string, updateClinicDto: UpdateClinicDto): Promise<Clinic> {
+  async update(id: string, updateClinicDto: UpdateClinicDto, userId?: string): Promise<Clinic> {
     const clinic = await this.findOne(id);
 
     // Check if updating name/city combination would create a conflict
@@ -246,16 +260,48 @@ export class ClinicsService implements OnModuleInit {
       }
     }
 
+    const originalData = { ...clinic };
     Object.assign(clinic, updateClinicDto);
-    return await this.clinicRepository.save(clinic);
+    const updatedClinic = await this.clinicRepository.save(clinic);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.CLINIC_UPDATED, ActivityStatus.SUCCESS, {
+        clinicId: clinic.id,
+        clinicName: clinic.name,
+        clinicCity: clinic.city,
+        originalData,
+        updatedData: updateClinicDto,
+        changes: Object.keys(updateClinicDto),
+      });
+    }
+
+    return updatedClinic;
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, userId?: string): Promise<void> {
     const clinic = await this.findOne(id);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.CLINIC_DELETED, ActivityStatus.SUCCESS, {
+        clinicId: clinic.id,
+        clinicName: clinic.name,
+        clinicCity: clinic.city,
+        clinicData: {
+          name: clinic.name,
+          city: clinic.city,
+          address: clinic.address,
+          phone: clinic.phone,
+          email: clinic.email,
+        },
+      });
+    }
+
     await this.clinicRepository.remove(clinic);
   }
 
-  async addStaff(createClinicStaffDto: CreateClinicStaffDto): Promise<ClinicStaff> {
+  async addStaff(createClinicStaffDto: CreateClinicStaffDto, userId?: string): Promise<ClinicStaff> {
     // Check if user is already staff at this clinic
     const existingStaff = await this.clinicStaffRepository.findOne({
       where: {
@@ -278,10 +324,24 @@ export class ClinicsService implements OnModuleInit {
     }
 
     const staff = this.clinicStaffRepository.create(createClinicStaffDto);
-    return await this.clinicStaffRepository.save(staff);
+    const savedStaff = await this.clinicStaffRepository.save(staff);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.STAFF_ADDED, ActivityStatus.SUCCESS, {
+        clinicId: createClinicStaffDto.clinic_id,
+        clinicName: clinic.name,
+        staffUserId: createClinicStaffDto.user_id,
+        staffRole: createClinicStaffDto.role,
+        staffSpecialization: createClinicStaffDto.specialization,
+        staffData: createClinicStaffDto,
+      });
+    }
+
+    return savedStaff;
   }
 
-  async removeStaff(clinicId: string, userId: string): Promise<void> {
+  async removeStaff(clinicId: string, userId: string, adminUserId?: string): Promise<void> {
     const staff = await this.clinicStaffRepository.findOne({
       where: {
         clinic_id: clinicId,
@@ -293,10 +353,34 @@ export class ClinicsService implements OnModuleInit {
       throw new NotFoundException('Staff member not found');
     }
 
+    // Get clinic info for logging
+    const clinic = await this.clinicRepository.findOne({
+      where: { id: clinicId },
+    });
+
+    // Log user activity if adminUserId is provided
+    if (adminUserId) {
+      await this.usersService.logUserActivity(adminUserId, ActivityType.STAFF_REMOVED, ActivityStatus.SUCCESS, {
+        clinicId,
+        clinicName: clinic?.name || 'Unknown',
+        removedStaffUserId: userId,
+        removedStaffRole: staff.role,
+        removedStaffSpecialization: staff.specialization,
+        staffData: {
+          role: staff.role,
+          specialization: staff.specialization,
+          licenseNumber: staff.license_number,
+          experienceYears: staff.experience_years,
+          hireDate: staff.hire_date,
+          terminationDate: staff.termination_date,
+        },
+      });
+    }
+
     await this.clinicStaffRepository.remove(staff);
   }
 
-  async addService(createClinicServiceDto: CreateClinicServiceDto): Promise<ClinicService> {
+  async addService(createClinicServiceDto: CreateClinicServiceDto, userId?: string): Promise<ClinicService> {
     // Check if service with same name already exists at this clinic
     const existingService = await this.clinicServiceRepository.findOne({
       where: {
@@ -319,10 +403,24 @@ export class ClinicsService implements OnModuleInit {
     }
 
     const service = this.clinicServiceRepository.create(createClinicServiceDto);
-    return await this.clinicServiceRepository.save(service);
+    const savedService = await this.clinicServiceRepository.save(service);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.SERVICE_ADDED, ActivityStatus.SUCCESS, {
+        clinicId: createClinicServiceDto.clinic_id,
+        clinicName: clinic.name,
+        serviceId: savedService.id,
+        serviceName: savedService.name,
+        serviceCategory: savedService.category,
+        serviceData: createClinicServiceDto,
+      });
+    }
+
+    return savedService;
   }
 
-  async updateService(id: string, updateServiceDto: Partial<CreateClinicServiceDto>): Promise<ClinicService> {
+  async updateService(id: string, updateServiceDto: Partial<CreateClinicServiceDto>, userId?: string): Promise<ClinicService> {
     const service = await this.clinicServiceRepository.findOne({
       where: { id },
     });
@@ -331,17 +429,57 @@ export class ClinicsService implements OnModuleInit {
       throw new NotFoundException(`Service with ID ${id} not found`);
     }
 
+    const originalData = { ...service };
     Object.assign(service, updateServiceDto);
-    return await this.clinicServiceRepository.save(service);
+    const updatedService = await this.clinicServiceRepository.save(service);
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.SERVICE_UPDATED, ActivityStatus.SUCCESS, {
+        serviceId: service.id,
+        serviceName: service.name,
+        clinicId: service.clinic_id,
+        originalData,
+        updatedData: updateServiceDto,
+        changes: Object.keys(updateServiceDto),
+      });
+    }
+
+    return updatedService;
   }
 
-  async removeService(id: string): Promise<void> {
+  async removeService(id: string, userId?: string): Promise<void> {
     const service = await this.clinicServiceRepository.findOne({
       where: { id },
     });
 
     if (!service) {
       throw new NotFoundException(`Service with ID ${id} not found`);
+    }
+
+    // Get clinic info for logging
+    const clinic = await this.clinicRepository.findOne({
+      where: { id: service.clinic_id },
+    });
+
+    // Log user activity if userId is provided
+    if (userId) {
+      await this.usersService.logUserActivity(userId, ActivityType.SERVICE_DELETED, ActivityStatus.SUCCESS, {
+        serviceId: service.id,
+        serviceName: service.name,
+        serviceCategory: service.category,
+        clinicId: service.clinic_id,
+        clinicName: clinic?.name || 'Unknown',
+        serviceData: {
+          name: service.name,
+          description: service.description,
+          category: service.category,
+          durationMinutes: service.duration_minutes,
+          price: service.price,
+          currency: service.currency,
+          requiresAppointment: service.requires_appointment,
+        },
+      });
     }
 
     await this.clinicServiceRepository.remove(service);
@@ -496,5 +634,133 @@ export class ClinicsService implements OnModuleInit {
     const totalPages = Math.ceil(total / limit);
 
     return { clinics, total, page, totalPages };
+  }
+
+  // Clinic verification and status management methods with logging
+  async verifyClinic(clinicId: string, userId: string): Promise<Clinic> {
+    const clinic = await this.findOne(clinicId);
+
+    if (clinic.is_verified) {
+      throw new ConflictException('Clinic is already verified');
+    }
+
+    clinic.is_verified = true;
+    const updatedClinic = await this.clinicRepository.save(clinic);
+
+    // Log verification activity
+    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_VERIFIED, ActivityStatus.SUCCESS, {
+      clinicId: clinic.id,
+      clinicName: clinic.name,
+      clinicCity: clinic.city,
+      verificationDate: new Date(),
+    });
+
+    return updatedClinic;
+  }
+
+  async activateClinic(clinicId: string, userId: string): Promise<Clinic> {
+    const clinic = await this.findOne(clinicId);
+
+    if (clinic.is_active) {
+      throw new ConflictException('Clinic is already active');
+    }
+
+    clinic.is_active = true;
+    const updatedClinic = await this.clinicRepository.save(clinic);
+
+    // Log activation activity
+    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_ACTIVATED, ActivityStatus.SUCCESS, {
+      clinicId: clinic.id,
+      clinicName: clinic.name,
+      clinicCity: clinic.city,
+      activationDate: new Date(),
+    });
+
+    return updatedClinic;
+  }
+
+  async deactivateClinic(clinicId: string, userId: string): Promise<Clinic> {
+    const clinic = await this.findOne(clinicId);
+
+    if (!clinic.is_active) {
+      throw new ConflictException('Clinic is already inactive');
+    }
+
+    clinic.is_active = false;
+    const updatedClinic = await this.clinicRepository.save(clinic);
+
+    // Log deactivation activity
+    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_DEACTIVATED, ActivityStatus.SUCCESS, {
+      clinicId: clinic.id,
+      clinicName: clinic.name,
+      clinicCity: clinic.city,
+      deactivationDate: new Date(),
+    });
+
+    return updatedClinic;
+  }
+
+  async updateStaffStatus(staffId: string, isActive: boolean, userId: string): Promise<ClinicStaff> {
+    const staff = await this.clinicStaffRepository.findOne({
+      where: { id: staffId },
+      relations: ['clinic'],
+    });
+
+    if (!staff) {
+      throw new NotFoundException('Staff member not found');
+    }
+
+    if (staff.is_active === isActive) {
+      throw new ConflictException(`Staff member is already ${isActive ? 'active' : 'inactive'}`);
+    }
+
+    staff.is_active = isActive;
+    const updatedStaff = await this.clinicStaffRepository.save(staff);
+
+    // Log status change activity
+    const activityType = isActive ? ActivityType.STAFF_ACTIVATED : ActivityType.STAFF_DEACTIVATED;
+    await this.usersService.logUserActivity(userId, activityType, ActivityStatus.SUCCESS, {
+      staffId: staff.id,
+      staffUserId: staff.user_id,
+      staffRole: staff.role,
+      clinicId: staff.clinic_id,
+      clinicName: staff.clinic?.name || 'Unknown',
+      statusChange: isActive ? 'activated' : 'deactivated',
+      changeDate: new Date(),
+    });
+
+    return updatedStaff;
+  }
+
+  async updateServiceStatus(serviceId: string, isActive: boolean, userId: string): Promise<ClinicService> {
+    const service = await this.clinicServiceRepository.findOne({
+      where: { id: serviceId },
+      relations: ['clinic'],
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    if (service.is_active === isActive) {
+      throw new ConflictException(`Service is already ${isActive ? 'active' : 'inactive'}`);
+    }
+
+    service.is_active = isActive;
+    const updatedService = await this.clinicServiceRepository.save(service);
+
+    // Log status change activity
+    const activityType = isActive ? ActivityType.SERVICE_ACTIVATED : ActivityType.SERVICE_DEACTIVATED;
+    await this.usersService.logUserActivity(userId, activityType, ActivityStatus.SUCCESS, {
+      serviceId: service.id,
+      serviceName: service.name,
+      serviceCategory: service.category,
+      clinicId: service.clinic_id,
+      clinicName: service.clinic?.name || 'Unknown',
+      statusChange: isActive ? 'activated' : 'deactivated',
+      changeDate: new Date(),
+    });
+
+    return updatedService;
   }
 }
