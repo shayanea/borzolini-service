@@ -5,10 +5,11 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
+import { FindUsersDto } from './dto/find-users.dto';
 import { PhoneVerificationStatusDto, RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
-import { FindUsersDto } from './dto/find-users.dto';
 import { UserRole } from './entities/user.entity';
+import { UsersResponseService } from './users-response.service';
 import { UsersService } from './users.service';
 
 // Define the user type from JWT payload
@@ -30,7 +31,10 @@ interface AuthenticatedRequest extends ExpressRequest {
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly usersResponseService: UsersResponseService
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN)
@@ -46,8 +50,8 @@ export class UsersController {
   @Get()
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({ summary: 'Get users with filtering, pagination, and sorting (Admin: all users, Staff/Vets: own people and patients only)' })
-  @ApiResponse({ 
-    status: 200, 
+  @ApiResponse({
+    status: 200,
     description: 'Users retrieved successfully',
     schema: {
       type: 'object',
@@ -55,16 +59,13 @@ export class UsersController {
         users: { type: 'array', items: { $ref: '#/components/schemas/User' } },
         total: { type: 'number' },
         page: { type: 'number' },
-        totalPages: { type: 'number' }
-      }
-    }
+        totalPages: { type: 'number' },
+      },
+    },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
-  async findAll(
-    @Request() req: AuthenticatedRequest,
-    @Query() query: FindUsersDto
-  ) {
+  async findAll(@Request() req: AuthenticatedRequest, @Query() query: FindUsersDto) {
     // Pass the current user's role and query parameters to filter results appropriately
     return this.usersService.findAll(req.user.role as UserRole, query);
   }
@@ -413,11 +414,12 @@ export class UsersController {
     type: PhoneVerificationStatusDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async checkPhoneVerificationStatus(@Query('phone') phone: string): Promise<PhoneVerificationStatusDto> {
+  async checkPhoneVerificationStatus(@Query('phone') phone: string) {
     const status = await this.usersService.checkPhoneVerificationStatus(phone);
-    return {
+    const data = {
       phone,
       ...status,
     };
+    return this.usersResponseService.standardizePhoneVerificationStatusResponse(data, 'Phone verification status retrieved successfully');
   }
 }

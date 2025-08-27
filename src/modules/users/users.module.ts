@@ -11,6 +11,7 @@ import { UserPreferences } from "./entities/user-preferences.entity";
 import { UsersController } from "./users.controller";
 import { UsersSeeder } from "./users.seeder";
 import { UsersService } from "./users.service";
+import { UsersResponseService } from "./users-response.service";
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { UsersService } from "./users.service";
     }),
   ],
   controllers: [UsersController],
-  providers: [UsersService, UsersSeeder, EmailService, SmsService],
+  providers: [UsersService, UsersSeeder, EmailService, SmsService, UsersResponseService],
   exports: [UsersService, UsersSeeder],
 })
 export class UsersModule {}
