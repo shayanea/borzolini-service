@@ -20,8 +20,15 @@ async function bootstrap() {
 
   // Enable CORS for frontend integration
   app.enableCors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    origin: [
+      process.env.FRONTEND_URL || "http://localhost:3000",
+      process.env.ADMIN_FRONTEND_URL || "http://localhost:3002",
+      // Additional development origins for flexibility
+      "http://localhost:3002",
+    ],
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   });
 
   // Global validation pipe
