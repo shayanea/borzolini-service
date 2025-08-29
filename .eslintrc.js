@@ -51,5 +51,12 @@ module.exports = {
         'no-console': 'off',
       },
     },
+    {
+      // Allow console logs in test files and scripts
+      files: ['**/*.test.ts', '**/test-*.ts', '**/test/**/*.ts'],
+      rules: {
+        'no-console': 'off',
+      },
+    },
   ],
 };

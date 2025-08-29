@@ -9,7 +9,7 @@ pnpm lint
 
 # Run TypeScript type checking
 echo "🔧 Running TypeScript type check..."
-pnpm build --dry-run
+pnpm tsc --noEmit
 
 # Run tests if they exist
 if [ -f "package.json" ] && grep -q "\"test\":" package.json; then
