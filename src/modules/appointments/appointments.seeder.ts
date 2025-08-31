@@ -7,7 +7,7 @@ import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Pet } from '../pets/entities/pet.entity';
 import { User } from '../users/entities/user.entity';
-import { UsersService } from '../users/users.service';
+
 import { AppointmentStatus, AppointmentType } from './entities/appointment.entity';
 
 interface AppointmentData {
@@ -41,7 +41,7 @@ export class AppointmentsSeeder {
     @InjectRepository(Pet)
     private readonly petRepository: Repository<Pet>,
     @InjectRepository(User)
-    private readonly usersService: UsersService
+    private readonly userRepository: Repository<User>
   ) {}
 
   async seed(): Promise<void> {
@@ -83,8 +83,7 @@ export class AppointmentsSeeder {
       const pets = await this.petRepository.find({ where: { is_active: true } });
       const staff = await this.clinicStaffRepository.find({ where: { is_active: true } });
       const services = await this.clinicServiceRepository.find({ where: { is_active: true } });
-      const allUsersResult = await this.usersService.findAll();
-      const users = allUsersResult.users;
+      const users = await this.userRepository.find();
 
       if (clinics.length === 0 || pets.length === 0 || staff.length === 0 || services.length === 0) {
         this.logger.warn('Insufficient data for appointment creation');
@@ -113,6 +112,7 @@ export class AppointmentsSeeder {
         status: AppointmentStatus.CONFIRMED,
         scheduled_date: '2024-01-15T10:00:00Z',
         duration_minutes: 45,
+
         notes: 'Annual wellness checkup, check vaccination status',
         is_telemedicine: false,
       },
