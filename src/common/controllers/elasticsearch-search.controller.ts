@@ -83,7 +83,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to search pets',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -150,7 +150,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to search appointments',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -208,7 +208,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to search users',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -266,7 +266,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to search clinics',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -333,7 +333,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to search health records',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -365,7 +365,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to perform global search',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -398,7 +398,7 @@ export class ElasticsearchSearchController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to get search suggestions',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

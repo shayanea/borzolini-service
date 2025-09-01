@@ -1,177 +1,173 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 400
+    example: 400,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message or array of validation errors',
     oneOf: [
       { type: 'string', example: 'Bad Request' },
-      { 
-        type: 'array', 
+      {
+        type: 'array',
         items: { type: 'string' },
-        example: ['email must be an email', 'password must be longer than or equal to 8 characters']
-      }
-    ]
+        example: ['email must be an email', 'password must be longer than or equal to 8 characters'],
+      },
+    ],
   })
   message!: string | string[];
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Bad Request'
+    example: 'Bad Request',
   })
   error!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Request path that caused the error',
     example: '/api/v1/users',
-    required: false
+    required: false,
   })
   path?: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Additional error details',
     required: false,
     example: {
       field: 'email',
       value: 'invalid-email',
-      constraint: 'isEmail'
-    }
+      constraint: 'isEmail',
+    },
   })
-  details?: any;
+  details?: Record<string, unknown>;
 }
 
 export class ValidationErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 400
+    example: 400,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Array of validation error messages',
     type: [String],
-    example: [
-      'email must be an email',
-      'password must be longer than or equal to 8 characters',
-      'firstName should not be empty'
-    ]
+    example: ['email must be an email', 'password must be longer than or equal to 8 characters', 'firstName should not be empty'],
   })
   message!: string[];
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Bad Request'
+    example: 'Bad Request',
   })
   error!: string;
 }
 
 export class NotFoundErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 404
+    example: 404,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message',
-    example: 'User not found'
+    example: 'User not found',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Not Found'
+    example: 'Not Found',
   })
   error!: string;
 }
 
 export class UnauthorizedErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 401
+    example: 401,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message',
-    example: 'Unauthorized'
+    example: 'Unauthorized',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Unauthorized'
+    example: 'Unauthorized',
   })
   error!: string;
 }
 
 export class ForbiddenErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 403
+    example: 403,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message',
-    example: 'Forbidden - Admin access required'
+    example: 'Forbidden - Admin access required',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Forbidden'
+    example: 'Forbidden',
   })
   error!: string;
 }
 
 export class ConflictErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 409
+    example: 409,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message',
-    example: 'User with this email already exists'
+    example: 'User with this email already exists',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Conflict'
+    example: 'Conflict',
   })
   error!: string;
 }
 
 export class InternalServerErrorResponseDto extends ErrorResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'HTTP status code',
-    example: 500
+    example: 500,
   })
   statusCode!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error message',
-    example: 'Internal server error'
+    example: 'Internal server error',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Error type',
-    example: 'Internal Server Error'
+    example: 'Internal Server Error',
   })
   error!: string;
 }

@@ -6,19 +6,19 @@ import { ElasticsearchService as NestElasticsearchService } from '@nestjs/elasti
 
 export interface SearchQuery {
   index: string;
-  query: any;
+  query: Record<string, unknown>;
   size?: number;
   from?: number;
-  sort?: any[];
-  aggs?: any;
-  highlight?: any;
+  sort?: Array<Record<string, unknown>>;
+  aggs?: Record<string, unknown>;
+  highlight?: Record<string, unknown>;
   source?: string[] | boolean;
 }
 
 export interface IndexDocumentOptions {
   index: string;
   id?: string;
-  document: any;
+  document: Record<string, unknown>;
   refresh?: boolean;
 }
 
@@ -27,7 +27,7 @@ export interface BulkOperation {
   create?: { _index: string; _id?: string };
   update?: { _index: string; _id: string };
   delete?: { _index: string; _id: string };
-  doc?: any;
+  doc?: Record<string, unknown>;
   doc_as_upsert?: boolean;
 }
 
@@ -35,10 +35,10 @@ export interface BulkResponse {
   took: number;
   errors: boolean;
   items: Array<{
-    index?: { _index: string; _id: string; status: number; error?: any } | undefined;
-    create?: { _index: string; _id: string; status: number; error?: any } | undefined;
-    update?: { _index: string; _id: string; status: number; error?: any } | undefined;
-    delete?: { _index: string; _id: string; status: number; error?: any } | undefined;
+    index?: { _index: string; _id: string; status: number; error?: Record<string, unknown> } | undefined;
+    create?: { _index: string; _id: string; status: number; error?: Record<string, unknown> } | undefined;
+    update?: { _index: string; _id: string; status: number; error?: Record<string, unknown> } | undefined;
+    delete?: { _index: string; _id: string; status: number; error?: Record<string, unknown> } | undefined;
   }>;
 }
 
@@ -283,7 +283,7 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     try {
       const { index, query, size = 10, from = 0, sort, aggs, highlight, source } = searchQuery;
 
-      const body: any = {
+      const body: Record<string, unknown> = {
         index,
         body: {
           query,
@@ -292,10 +292,10 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
         },
       };
 
-      if (sort) body.body.sort = sort;
-      if (aggs) body.body.aggs = aggs;
-      if (highlight) body.body.highlight = highlight;
-      if (source !== undefined) body.body._source = source;
+      if (sort) (body.body as any).sort = sort;
+      if (aggs) (body.body as any).aggs = aggs;
+      if (highlight) (body.body as any).highlight = highlight;
+      if (source !== undefined) (body.body as any)._source = source;
 
       const response = await this.client.search(body);
       return response;
@@ -336,11 +336,11 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
       const transformedResponse: BulkResponse = {
         took: response.took,
         errors: response.errors,
-        items: response.items.map((item: any) => {
+        items: response.items.map((item: Record<string, unknown>) => {
           const operation = item.index || item.create || item.update || item.delete;
           if (operation) {
             return {
-              index: { _index: operation._index, _id: operation._id || '', status: operation.status, error: operation.error },
+              index: { _index: (operation as any)._index, _id: (operation as any)._id || '', status: (operation as any).status, error: (operation as any).error },
               create: undefined,
               update: undefined,
               delete: undefined,
@@ -432,12 +432,12 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
   async getServiceStatus(): Promise<{
     enabled: boolean;
     connected: boolean;
-    clusterHealth?: any;
+    clusterHealth?: Record<string, unknown>;
   }> {
     const status: {
       enabled: boolean;
       connected: boolean;
-      clusterHealth?: any;
+      clusterHealth?: Record<string, unknown>;
     } = {
       enabled: this.isEnabled,
       connected: false,

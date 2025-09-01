@@ -63,7 +63,7 @@ export class ElasticsearchHealthController {
         status: 'error',
         timestamp: new Date().toISOString(),
         message: 'Failed to retrieve Elasticsearch health status',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -99,7 +99,7 @@ export class ElasticsearchHealthController {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         message: 'Failed to retrieve cluster health information',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -135,7 +135,7 @@ export class ElasticsearchHealthController {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         message: 'Failed to retrieve indices information',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

@@ -6,7 +6,7 @@ import { UsersService } from '../../modules/users/users.service';
  * Interface for activity logging data
  */
 export interface ActivityLogData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 /**

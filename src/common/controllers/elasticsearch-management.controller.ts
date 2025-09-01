@@ -46,7 +46,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to create indices',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -70,7 +70,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to get indices list',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -99,7 +99,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to delete index ${indexName}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -123,7 +123,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to delete all indices',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -166,7 +166,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: 'Failed to sync clinic data',
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -245,7 +245,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to sync index ${indexName}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -270,7 +270,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to get sync status for index ${indexName}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -284,7 +284,7 @@ export class ElasticsearchManagementController {
     status: 200,
     description: 'Document synced successfully',
   })
-  async syncDocument(@Param('indexName') indexName: string, @Param('documentId') documentId: string, @Body() document: any, @Res() res: Response) {
+  async syncDocument(@Param('indexName') indexName: string, @Param('documentId') documentId: string, @Body() document: Record<string, unknown>, @Res() res: Response) {
     try {
       const success = await this.elasticsearchSyncService.syncDocument(indexName, document, documentId, { refresh: true });
 
@@ -304,7 +304,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to sync document ${documentId}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -337,7 +337,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to delete document ${documentId}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }
@@ -351,7 +351,7 @@ export class ElasticsearchManagementController {
     status: 200,
     description: 'Document updated successfully',
   })
-  async updateDocument(@Param('indexName') indexName: string, @Param('documentId') documentId: string, @Body() document: any, @Res() res: Response) {
+  async updateDocument(@Param('indexName') indexName: string, @Param('documentId') documentId: string, @Body() document: Record<string, unknown>, @Res() res: Response) {
     try {
       const success = await this.elasticsearchSyncService.updateDocument(indexName, documentId, document, { refresh: true });
 
@@ -371,7 +371,7 @@ export class ElasticsearchManagementController {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
         status: 'error',
         message: `Failed to update document ${documentId}`,
-        error: (error as any).message,
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

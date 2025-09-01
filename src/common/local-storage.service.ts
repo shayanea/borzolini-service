@@ -1,8 +1,8 @@
-import { Injectable, Logger, BadRequestException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-import * as fs from "fs";
-import * as path from "path";
-import * as crypto from "crypto";
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface FileUploadResult {
   url: string;
@@ -10,7 +10,7 @@ export interface FileUploadResult {
   size: number;
   contentType: string;
   originalName: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown> | FileMetadata;
 }
 
 export interface FileMetadata {
@@ -31,29 +31,26 @@ export class LocalStorageService {
   private readonly allowedMimeTypes: string[];
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUploadDir = this.configService.get(
-      "LOCAL_STORAGE_PATH",
-      "./uploads",
-    );
-    this.maxFileSize = this.configService.get("MAX_FILE_SIZE", 5 * 1024 * 1024); // 5MB default
+    this.baseUploadDir = this.configService.get('LOCAL_STORAGE_PATH', './uploads');
+    this.maxFileSize = this.configService.get('MAX_FILE_SIZE', 5 * 1024 * 1024); // 5MB default
     this.allowedMimeTypes = [
       // Images
-      "image/jpeg",
-      "image/png",
-      "image/gif",
-      "image/webp",
-      "image/svg+xml",
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+      'image/svg+xml',
       // Documents
-      "application/pdf",
-      "text/plain",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      'application/pdf',
+      'text/plain',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       // Archives
-      "application/zip",
-      "application/x-rar-compressed",
-      "application/x-7z-compressed",
+      'application/zip',
+      'application/x-rar-compressed',
+      'application/x-7z-compressed',
     ];
 
     // Ensure upload directory exists
@@ -63,12 +60,7 @@ export class LocalStorageService {
   /**
    * Upload file to local storage
    */
-  async uploadFile(
-    file: Express.Multer.File,
-    category: string,
-    subcategory?: string,
-    metadata?: Record<string, any>,
-  ): Promise<FileUploadResult> {
+  async uploadFile(file: Express.Multer.File, category: string, subcategory?: string, metadata?: Record<string, unknown>): Promise<FileUploadResult> {
     try {
       // Validate file
       this.validateFile(file);
@@ -91,10 +83,10 @@ export class LocalStorageService {
         originalName: file.originalname,
         contentType: file.mimetype,
         size: file.size,
-        uploadedBy: "clinic-api",
+        uploadedBy: 'clinic-api',
         uploadedAt: new Date(),
         category,
-        tags: metadata?.tags || [],
+        tags: metadata?.tags as string[] || [],
       };
 
       // Save metadata
@@ -117,8 +109,7 @@ export class LocalStorageService {
         },
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`File upload failed: ${errorMessage}`);
       throw new BadRequestException(`File upload failed: ${errorMessage}`);
     }
@@ -148,8 +139,7 @@ export class LocalStorageService {
       this.logger.log(`File deleted successfully: ${filePath}`);
       return true;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`File deletion failed: ${errorMessage}`);
       return false;
     }
@@ -166,11 +156,10 @@ export class LocalStorageService {
         return null;
       }
 
-      const metadataContent = fs.readFileSync(metadataPath, "utf8");
+      const metadataContent = fs.readFileSync(metadataPath, 'utf8');
       return JSON.parse(metadataContent);
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to get file metadata: ${errorMessage}`);
       return null;
     }
@@ -179,16 +168,9 @@ export class LocalStorageService {
   /**
    * List files in a directory
    */
-  async listFiles(
-    category: string,
-    subcategory?: string,
-  ): Promise<FileUploadResult[]> {
+  async listFiles(category: string, subcategory?: string): Promise<FileUploadResult[]> {
     try {
-      const dirPath = path.join(
-        this.baseUploadDir,
-        category,
-        subcategory || "",
-      );
+      const dirPath = path.join(this.baseUploadDir, category, subcategory || '');
 
       if (!fs.existsSync(dirPath)) {
         return [];
@@ -198,9 +180,9 @@ export class LocalStorageService {
       const fileResults: FileUploadResult[] = [];
 
       for (const file of files) {
-        if (file.endsWith(".json")) continue; // Skip metadata files
+        if (file.endsWith('.json')) continue; // Skip metadata files
 
-        const filePath = path.join(category, subcategory || "", file);
+        const filePath = path.join(category, subcategory || '', file);
         const metadata = await this.getFileMetadata(filePath);
 
         if (metadata) {
@@ -217,8 +199,7 @@ export class LocalStorageService {
 
       return fileResults;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to list files: ${errorMessage}`);
       return [];
     }
@@ -251,8 +232,7 @@ export class LocalStorageService {
         metadata,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to get file info: ${errorMessage}`);
       return null;
     }
@@ -261,23 +241,15 @@ export class LocalStorageService {
   /**
    * Copy file to new location
    */
-  async copyFile(
-    sourcePath: string,
-    newCategory: string,
-    newSubcategory?: string,
-  ): Promise<FileUploadResult | null> {
+  async copyFile(sourcePath: string, newCategory: string, newSubcategory?: string): Promise<FileUploadResult | null> {
     try {
       const sourceInfo = await this.getFileInfo(sourcePath);
       if (!sourceInfo) {
-        throw new Error("Source file not found");
+        throw new Error('Source file not found');
       }
 
       const newFileName = this.generateUniqueFileName(sourceInfo.originalName);
-      const newPath = this.buildFilePath(
-        newCategory,
-        newFileName,
-        newSubcategory,
-      );
+      const newPath = this.buildFilePath(newCategory, newFileName, newSubcategory);
       const newFullPath = path.join(this.baseUploadDir, newPath);
 
       // Ensure directory exists
@@ -289,13 +261,13 @@ export class LocalStorageService {
 
       // Copy and update metadata
       const newMetadata: FileMetadata = {
-        originalName: sourceInfo.metadata.originalName,
-        contentType: sourceInfo.metadata.contentType,
-        size: sourceInfo.metadata.size,
-        uploadedBy: sourceInfo.metadata.uploadedBy,
+        originalName: (sourceInfo.metadata as any).originalName,
+        contentType: (sourceInfo.metadata as any).contentType,
+        size: (sourceInfo.metadata as any).size,
+        uploadedBy: (sourceInfo.metadata as any).uploadedBy,
         uploadedAt: new Date(),
         category: newCategory,
-        tags: [...(sourceInfo.metadata.tags || []), "copied"],
+        tags: [...((sourceInfo.metadata as any).tags || []), 'copied'],
       };
 
       await this.saveMetadata(newPath, newMetadata);
@@ -311,8 +283,7 @@ export class LocalStorageService {
         metadata: newMetadata,
       };
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`File copy failed: ${errorMessage}`);
       return null;
     }
@@ -330,8 +301,7 @@ export class LocalStorageService {
       const stats = await this.calculateStorageStats(this.baseUploadDir);
       return stats;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to get storage stats: ${errorMessage}`);
       return { totalFiles: 0, totalSize: 0, categories: {} };
     }
@@ -360,8 +330,7 @@ export class LocalStorageService {
       this.logger.log(`Cleanup completed: ${deletedCount} old files deleted`);
       return deletedCount;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Cleanup failed: ${errorMessage}`);
       return 0;
     }
@@ -371,36 +340,28 @@ export class LocalStorageService {
 
   private validateFile(file: Express.Multer.File): void {
     if (!file) {
-      throw new BadRequestException("No file provided");
+      throw new BadRequestException('No file provided');
     }
 
     if (file.size > this.maxFileSize) {
-      throw new BadRequestException(
-        `File size ${file.size} bytes exceeds maximum allowed size ${this.maxFileSize} bytes`,
-      );
+      throw new BadRequestException(`File size ${file.size} bytes exceeds maximum allowed size ${this.maxFileSize} bytes`);
     }
 
     if (!this.allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException(
-        `File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(", ")}`,
-      );
+      throw new BadRequestException(`File type ${file.mimetype} is not allowed. Allowed types: ${this.allowedMimeTypes.join(', ')}`);
     }
   }
 
   private generateUniqueFileName(originalName: string): string {
     const timestamp = Date.now();
-    const randomString = crypto.randomBytes(8).toString("hex");
+    const randomString = crypto.randomBytes(8).toString('hex');
     const extension = path.extname(originalName);
     const nameWithoutExt = path.basename(originalName, extension);
 
     return `${timestamp}-${randomString}-${nameWithoutExt}${extension}`;
   }
 
-  private buildFilePath(
-    category: string,
-    fileName: string,
-    subcategory?: string,
-  ): string {
+  private buildFilePath(category: string, fileName: string, subcategory?: string): string {
     const parts = [category];
     if (subcategory) {
       parts.push(subcategory);
@@ -434,10 +395,7 @@ export class LocalStorageService {
     });
   }
 
-  private async saveMetadata(
-    filePath: string,
-    metadata: FileMetadata,
-  ): Promise<void> {
+  private async saveMetadata(filePath: string, metadata: FileMetadata): Promise<void> {
     const metadataPath = this.getMetadataPath(filePath);
     const metadataDir = path.dirname(metadataPath);
 
@@ -461,10 +419,7 @@ export class LocalStorageService {
   }
 
   private generateLocalUrl(filePath: string): string {
-    const baseUrl = this.configService.get(
-      "FRONTEND_URL",
-      "http://localhost:3000",
-    );
+    const baseUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
     return `${baseUrl}/api/v1/files/${filePath}`;
   }
 
@@ -500,7 +455,7 @@ export class LocalStorageService {
             size: categoryStats.totalSize,
           };
         }
-      } else if (!item.endsWith(".json")) {
+      } else if (!item.endsWith('.json')) {
         stats.totalFiles++;
         stats.totalSize += itemStat.size;
       }
@@ -525,7 +480,7 @@ export class LocalStorageService {
       if (itemStat.isDirectory()) {
         const subFiles = await this.getAllFiles(itemPath);
         files.push(...subFiles.map((f) => path.join(item, f)));
-      } else if (!item.endsWith(".json")) {
+      } else if (!item.endsWith('.json')) {
         files.push(item);
       }
     }

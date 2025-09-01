@@ -12,7 +12,7 @@ export class RateLimitInterceptor {
 
   constructor(private readonly rateLimitMonitorService: RateLimitMonitorService) {}
 
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle().pipe(
       catchError((error) => {
         if (error instanceof ThrottlerException) {

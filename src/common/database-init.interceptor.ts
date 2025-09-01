@@ -1,19 +1,13 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-  OnModuleInit,
-} from "@nestjs/common";
-import { Observable } from "rxjs";
-import { DataSource } from "typeorm";
-import { DatabaseService } from "./database.service";
+import { CallHandler, ExecutionContext, Injectable, NestInterceptor, OnModuleInit } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { DataSource } from 'typeorm';
+import { DatabaseService } from './database.service';
 
 @Injectable()
 export class DatabaseInitInterceptor implements NestInterceptor, OnModuleInit {
   constructor(
     private readonly dataSource: DataSource,
-    private readonly databaseService: DatabaseService,
+    private readonly databaseService: DatabaseService
   ) {}
 
   async onModuleInit() {
@@ -26,9 +20,7 @@ export class DatabaseInitInterceptor implements NestInterceptor, OnModuleInit {
     // Test the connection
     const isHealthy = await this.databaseService.testConnection();
     if (!isHealthy) {
-      throw new Error(
-        "Database connection health check failed during initialization",
-      );
+      throw new Error('Database connection health check failed during initialization');
     }
   }
 
@@ -46,10 +38,10 @@ export class DatabaseInitInterceptor implements NestInterceptor, OnModuleInit {
       await new Promise((resolve) => setTimeout(resolve, retryDelay));
     }
 
-    throw new Error("TypeORM failed to initialize within expected timeframe");
+    throw new Error('TypeORM failed to initialize within expected timeframe');
   }
 
-  intercept(_context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(_context: ExecutionContext, next: CallHandler): Observable<unknown> {
     return next.handle();
   }
 }

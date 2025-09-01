@@ -21,7 +21,7 @@ export interface StatusChangeOptions<T> {
   statusField: keyof T;
   conflictMessage: string;
   activityType?: string;
-  activityData?: Record<string, any>;
+  activityData?: Record<string, unknown>;
 }
 
 /**
@@ -84,7 +84,7 @@ export class ValidationUtils {
    * @param fieldName - Name of the field for error message
    * @throws BadRequestException if value is empty
    */
-  static validateRequiredField(value: any, fieldName: string): void {
+  static validateRequiredField(value: unknown, fieldName: string): void {
     if (value === null || value === undefined || value === '') {
       throw new BadRequestException(`${fieldName} is required`);
     }

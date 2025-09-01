@@ -42,11 +42,11 @@ export class QueryUtils {
    * @param date - Optional date to filter by
    * @returns Where condition object
    */
-  static createWhereCondition<T extends Record<string, any>>(baseWhere: T, dateField: string = 'scheduled_date', date?: Date): T & { [key: string]: any } {
-    const where: T & { [key: string]: any } = { ...baseWhere };
+  static createWhereCondition<T extends Record<string, unknown>>(baseWhere: T, dateField: string = 'scheduled_date', date?: Date): T & { [key: string]: unknown } {
+    const where: T & { [key: string]: unknown } = { ...baseWhere };
 
     if (date) {
-      (where as any)[dateField] = DateUtils.createDayBetweenCondition(date);
+      (where as Record<string, unknown>)[dateField] = DateUtils.createDayBetweenCondition(date);
     }
 
     return where;

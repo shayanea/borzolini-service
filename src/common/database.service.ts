@@ -1,9 +1,9 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { DataSource } from "typeorm";
-import { ConfigService } from "@nestjs/config";
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 
 export interface DatabaseHealth {
-  status: "healthy" | "degraded" | "unhealthy";
+  status: 'healthy' | 'degraded' | 'unhealthy';
   message: string;
   timestamp: Date;
   connectionCount: number;
@@ -19,10 +19,10 @@ export class DatabaseService implements OnModuleInit {
   constructor(private configService: ConfigService) {}
 
   async onModuleInit() {
-    this.logger.log("Initializing database service...");
+    this.logger.log('Initializing database service...');
     await this.waitForDatabaseConnection();
     this.isInitialized = true;
-    this.logger.log("Database service initialized successfully");
+    this.logger.log('Database service initialized successfully');
   }
 
   /**
@@ -40,25 +40,18 @@ export class DatabaseService implements OnModuleInit {
 
         // Check if we can get the data source
         if (this.dataSource?.isInitialized) {
-          this.logger.log("Database connection established");
+          this.logger.log('Database connection established');
           return;
         }
 
         retryCount++;
-        this.logger.warn(
-          `Database connection not ready, retrying... (${retryCount}/${maxRetries})`,
-        );
+        this.logger.warn(`Database connection not ready, retrying... (${retryCount}/${maxRetries})`);
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       } catch (error) {
-        this.logger.error(
-          `Database connection attempt ${retryCount + 1} failed:`,
-          error,
-        );
+        this.logger.error(`Database connection attempt ${retryCount + 1} failed:`, error);
         retryCount++;
         if (retryCount >= maxRetries) {
-          throw new Error(
-            "Failed to establish database connection after maximum retries",
-          );
+          throw new Error('Failed to establish database connection after maximum retries');
         }
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
@@ -70,7 +63,7 @@ export class DatabaseService implements OnModuleInit {
    */
   setDataSource(dataSource: DataSource) {
     this.dataSource = dataSource;
-    this.logger.log("Data source set successfully");
+    this.logger.log('Data source set successfully');
   }
 
   /**
@@ -79,8 +72,8 @@ export class DatabaseService implements OnModuleInit {
   async checkHealth(): Promise<DatabaseHealth> {
     if (!this.isInitialized) {
       return {
-        status: "unhealthy",
-        message: "Database service not initialized",
+        status: 'unhealthy',
+        message: 'Database service not initialized',
         timestamp: new Date(),
         connectionCount: 0,
         isConnected: false,
@@ -90,8 +83,8 @@ export class DatabaseService implements OnModuleInit {
     try {
       if (!this.dataSource?.isInitialized) {
         return {
-          status: "unhealthy",
-          message: "Database connection not established",
+          status: 'unhealthy',
+          message: 'Database connection not established',
           timestamp: new Date(),
           connectionCount: 0,
           isConnected: false,
@@ -99,21 +92,21 @@ export class DatabaseService implements OnModuleInit {
       }
 
       // Test connection with a simple query
-      await this.dataSource.query("SELECT 1 as test");
+      await this.dataSource.query('SELECT 1 as test');
       const connectionCount = (this.dataSource as any).driver?.pool?.size || 0;
 
       return {
-        status: "healthy",
-        message: "Database connection is healthy",
+        status: 'healthy',
+        message: 'Database connection is healthy',
         timestamp: new Date(),
         connectionCount,
         isConnected: true,
       };
     } catch (error) {
-      this.logger.error("Database health check failed:", error);
+      this.logger.error('Database health check failed:', error);
       return {
-        status: "unhealthy",
-        message: `Database health check failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+        status: 'unhealthy',
+        message: `Database health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         connectionCount: 0,
         isConnected: false,
@@ -128,42 +121,33 @@ export class DatabaseService implements OnModuleInit {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const health = await this.checkHealth();
-        if (health.status === "healthy") {
-          this.logger.log(
-            `Database connection test successful on attempt ${attempt}`,
-          );
+        if (health.status === 'healthy') {
+          this.logger.log(`Database connection test successful on attempt ${attempt}`);
           return true;
         }
 
         if (attempt < maxRetries) {
-          this.logger.warn(
-            `Database connection test failed on attempt ${attempt}, retrying...`,
-          );
+          this.logger.warn(`Database connection test failed on attempt ${attempt}, retrying...`);
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       } catch (error) {
-        this.logger.error(
-          `Database connection test attempt ${attempt} failed:`,
-          error,
-        );
+        this.logger.error(`Database connection test attempt ${attempt} failed:`, error);
         if (attempt < maxRetries) {
           await new Promise((resolve) => setTimeout(resolve, 2000));
         }
       }
     }
 
-    this.logger.error(
-      "Database connection test failed after all retry attempts",
-    );
+    this.logger.error('Database connection test failed after all retry attempts');
     return false;
   }
 
   /**
    * Get database connection statistics
    */
-  async getConnectionStats(): Promise<any> {
+  async getConnectionStats(): Promise<Record<string, unknown>> {
     if (!this.dataSource?.isInitialized) {
-      return { error: "Database not connected" };
+      return { error: 'Database not connected' };
     }
 
     try {
@@ -172,9 +156,9 @@ export class DatabaseService implements OnModuleInit {
 
       return {
         isConnected: this.dataSource.isInitialized,
-        database: this.configService.get("SUPABASE_DB_NAME"),
-        host: this.configService.get("SUPABASE_DB_HOST"),
-        port: this.configService.get("SUPABASE_DB_PORT"),
+        database: this.configService.get('SUPABASE_DB_NAME'),
+        host: this.configService.get('SUPABASE_DB_HOST'),
+        port: this.configService.get('SUPABASE_DB_PORT'),
         poolSize: pool?.size || 0,
         maxPoolSize: pool?.max || 0,
         minPoolSize: pool?.min || 0,
@@ -183,9 +167,9 @@ export class DatabaseService implements OnModuleInit {
         waitingConnections: pool?.waiting || 0,
       };
     } catch (error) {
-      this.logger.error("Failed to get connection stats:", error);
+      this.logger.error('Failed to get connection stats:', error);
       return {
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -196,9 +180,9 @@ export class DatabaseService implements OnModuleInit {
   generateSlug(input: string): string {
     return input
       .toLowerCase()
-      .replace(/[^a-z0-9 -]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-")
+      .replace(/[^a-z0-9 -]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
       .trim();
   }
 
@@ -207,10 +191,10 @@ export class DatabaseService implements OnModuleInit {
    */
   sanitizeInput(input: string): string {
     return input
-      .replace(/[;'"\\]/g, "")
-      .replace(/--/g, "")
-      .replace(/\/\*/g, "")
-      .replace(/\*\//g, "");
+      .replace(/[;'"\\]/g, '')
+      .replace(/--/g, '')
+      .replace(/\/\*/g, '')
+      .replace(/\*\//g, '');
   }
 
   /**
@@ -232,7 +216,7 @@ export class DatabaseService implements OnModuleInit {
    */
   async executeTransaction<T>(operation: () => Promise<T>): Promise<T> {
     if (!this.dataSource?.isInitialized) {
-      throw new Error("Database not connected");
+      throw new Error('Database not connected');
     }
 
     const queryRunner = this.dataSource.createQueryRunner();

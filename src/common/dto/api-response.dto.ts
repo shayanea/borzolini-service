@@ -1,176 +1,176 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ApiResponseDto<T = any> {
-  @ApiProperty({ 
+export class ApiResponseDto<T = unknown> {
+  @ApiProperty({
     description: 'Response data',
-    example: 'Response data will be here'
+    example: 'Response data will be here',
   })
   data!: T;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Success message',
-    example: 'Operation completed successfully'
+    example: 'Operation completed successfully',
   })
   message!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Response timestamp in ISO format',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Request ID for tracking',
     example: 'req_123e4567-e89b-12d3-a456-426614174000',
-    required: false
+    required: false,
   })
   requestId?: string;
 }
 
-export class PaginatedApiResponseDto<T = any> extends ApiResponseDto<T[]> {
-  @ApiProperty({ 
+export class PaginatedApiResponseDto<T = unknown> extends ApiResponseDto<T[]> {
+  @ApiProperty({
     description: 'Array of items',
-    type: 'array'
+    type: 'array',
   })
   data!: T[];
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Total number of items',
-    example: 150
+    example: 150,
   })
   total!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Current page number',
-    example: 1
+    example: 1,
   })
   page!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Number of items per page',
-    example: 10
+    example: 10,
   })
   limit!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Total number of pages',
-    example: 15
+    example: 15,
   })
   totalPages!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Whether there are more pages',
-    example: true
+    example: true,
   })
   hasNextPage!: boolean;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Whether there are previous pages',
-    example: false
+    example: false,
   })
   hasPrevPage!: boolean;
 }
 
 export class SuccessResponseDto extends ApiResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Success status',
-    example: true
+    example: true,
   })
   success!: boolean;
 }
 
 export class CreatedResponseDto extends ApiResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Created resource ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Creation timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt!: string;
 }
 
 export class UpdatedResponseDto extends ApiResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Updated resource ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Last update timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Number of affected rows',
-    example: 1
+    example: 1,
   })
   affectedRows!: number;
 }
 
 export class DeletedResponseDto extends ApiResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Deleted resource ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Deletion timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   deletedAt!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Number of affected rows',
-    example: 1
+    example: 1,
   })
   affectedRows!: number;
 }
 
 export class HealthCheckResponseDto extends ApiResponseDto {
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Service status',
-    example: 'healthy'
+    example: 'healthy',
   })
   status!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Service uptime in seconds',
-    example: 86400
+    example: 86400,
   })
   uptime!: number;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Environment',
-    example: 'development'
+    example: 'development',
   })
   environment!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'API version',
-    example: '1.0.0'
+    example: '1.0.0',
   })
   version!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'Database connection status',
-    example: 'connected'
+    example: 'connected',
   })
   database!: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     description: 'External services status',
     example: {
       email: 'healthy',
       sms: 'healthy',
-      storage: 'healthy'
-    }
+      storage: 'healthy',
+    },
   })
   services!: Record<string, string>;
 }
