@@ -7,12 +7,13 @@ import { ClinicStaff } from './entities/clinic-staff.entity';
 import { ClinicsController } from './clinics.controller';
 import { ClinicsSeeder } from './clinics.seeder';
 import { ClinicsService } from './clinics.service';
+import { CommonModule } from '../../common/common.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Clinic, ClinicStaff, ClinicService, ClinicReview, ClinicPhoto, ClinicOperatingHours]), UsersModule],
+  imports: [TypeOrmModule.forFeature([Clinic, ClinicStaff, ClinicService, ClinicReview, ClinicPhoto, ClinicOperatingHours]), UsersModule, CommonModule],
   controllers: [ClinicsController],
   providers: [ClinicsService, ClinicsSeeder],
   exports: [ClinicsService, ClinicsSeeder],

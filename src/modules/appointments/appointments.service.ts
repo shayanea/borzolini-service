@@ -1,6 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, LessThan, MoreThan, Not, Repository } from 'typeorm';
+import { QueryUtils, ValidationUtils } from '../../common/utils';
 
 import { ClinicService } from '../clinics/entities/clinic-service.entity';
 import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
@@ -281,54 +282,32 @@ export class AppointmentsService {
   }
 
   async findByClinic(clinicId: string, date?: Date): Promise<Appointment[]> {
-    const where: any = { clinic_id: clinicId };
+    const where = QueryUtils.createWhereCondition({ clinic_id: clinicId }, 'scheduled_date', date);
 
-    if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+    const findOptions = QueryUtils.createFindOptions<Appointment>(where, ['pet', 'staff', 'service'], 'scheduled_date', 'ASC');
 
-      where.scheduled_date = Between(startOfDay, endOfDay);
-    }
-
-    const appointments = await this.appointmentRepository.find({
-      where,
-      relations: ['pet', 'staff', 'service'],
-      order: { scheduled_date: 'ASC' },
-    });
-
-    return appointments;
+    return this.appointmentRepository.find(findOptions);
   }
 
   async findByStaff(staffId: string, date?: Date): Promise<Appointment[]> {
-    const where: any = { staff_id: staffId };
+    const where = QueryUtils.createWhereCondition({ staff_id: staffId }, 'scheduled_date', date);
 
-    if (date) {
-      const startOfDay = new Date(date);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(date);
-      endOfDay.setHours(23, 59, 59, 999);
+    const findOptions = QueryUtils.createFindOptions<Appointment>(where, ['pet', 'clinic', 'service'], 'scheduled_date', 'ASC');
 
-      where.scheduled_date = Between(startOfDay, endOfDay);
-    }
-
-    const appointments = await this.appointmentRepository.find({
-      where,
-      relations: ['pet', 'clinic', 'service'],
-      order: { scheduled_date: 'ASC' },
-    });
-
-    return appointments;
+    return this.appointmentRepository.find(findOptions);
   }
 
   async update(id: string, updateAppointmentDto: UpdateAppointmentDto, userId: string, userRole: string): Promise<Appointment> {
     const appointment = await this.findOne(id);
 
     // Check permissions
-    if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
-      throw new BadRequestException('You can only update your own appointments');
-    }
+    ValidationUtils.checkPermission({
+      userId,
+      userRole,
+      ownerId: appointment.owner_id,
+      allowedRoles: ['admin', 'veterinarian', 'staff'],
+      resourceName: 'appointments',
+    });
 
     // Handle date conversion
     if (updateAppointmentDto.scheduled_date) {

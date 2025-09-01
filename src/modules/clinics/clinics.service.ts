@@ -2,6 +2,7 @@ import { ConflictException, Injectable, Logger, NotFoundException, OnModuleInit 
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Not, Repository } from 'typeorm';
+import { ActivityLoggerUtils, ValidationUtils } from '../../common/utils';
 import { ActivityStatus, ActivityType } from '../users/entities/user-activity.entity';
 import { UsersService } from '../users/users.service';
 import { CreateClinicServiceDto } from './dto/create-clinic-service.dto';
@@ -50,7 +51,8 @@ export class ClinicsService implements OnModuleInit {
     @InjectRepository(ClinicPhoto)
     private readonly clinicPhotoRepository: Repository<ClinicPhoto>,
     private configService: ConfigService,
-    private readonly usersService: UsersService
+    private readonly usersService: UsersService,
+    private readonly activityLogger: ActivityLoggerUtils
   ) {}
 
   async onModuleInit() {
@@ -592,68 +594,38 @@ export class ClinicsService implements OnModuleInit {
     return { clinics, total, page, totalPages };
   }
 
-  // Clinic verification and status management methods with logging
-  async verifyClinic(clinicId: string, userId: string): Promise<Clinic> {
+  // Generic method for changing clinic status with logging
+  private async changeClinicStatus(clinicId: string, userId: string, statusField: keyof Clinic, targetStatus: boolean, activityType: ActivityType, conflictMessage: string, additionalLogData: Record<string, any> = {}): Promise<Clinic> {
     const clinic = await this.findOne(clinicId);
 
-    if (clinic.is_verified) {
-      throw new ConflictException('Clinic is already verified');
-    }
-
-    clinic.is_verified = true;
-    const updatedClinic = await this.clinicRepository.save(clinic);
-
-    // Log verification activity
-    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_VERIFIED, ActivityStatus.SUCCESS, {
-      clinicId: clinic.id,
-      clinicName: clinic.name,
-      clinicCity: clinic.city,
-      verificationDate: new Date(),
+    ValidationUtils.validateStatusChange({
+      entity: clinic,
+      currentStatus: clinic[statusField] as boolean,
+      targetStatus,
+      statusField,
+      conflictMessage,
     });
 
+    (clinic as any)[statusField] = targetStatus;
+    const updatedClinic = await this.clinicRepository.save(clinic);
+
+    // Log activity
+    await this.activityLogger.logClinicActivity(clinic.id, clinic.name, clinic.city, activityType, userId, additionalLogData);
+
     return updatedClinic;
+  }
+
+  // Clinic verification and status management methods with logging
+  async verifyClinic(clinicId: string, userId: string): Promise<Clinic> {
+    return this.changeClinicStatus(clinicId, userId, 'is_verified', true, ActivityType.CLINIC_VERIFIED, 'Clinic is already verified', { verificationDate: new Date() });
   }
 
   async activateClinic(clinicId: string, userId: string): Promise<Clinic> {
-    const clinic = await this.findOne(clinicId);
-
-    if (clinic.is_active) {
-      throw new ConflictException('Clinic is already active');
-    }
-
-    clinic.is_active = true;
-    const updatedClinic = await this.clinicRepository.save(clinic);
-
-    // Log activation activity
-    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_ACTIVATED, ActivityStatus.SUCCESS, {
-      clinicId: clinic.id,
-      clinicName: clinic.name,
-      clinicCity: clinic.city,
-      activationDate: new Date(),
-    });
-
-    return updatedClinic;
+    return this.changeClinicStatus(clinicId, userId, 'is_active', true, ActivityType.CLINIC_ACTIVATED, 'Clinic is already active', { activationDate: new Date() });
   }
 
   async deactivateClinic(clinicId: string, userId: string): Promise<Clinic> {
-    const clinic = await this.findOne(clinicId);
-
-    if (!clinic.is_active) {
-      throw new ConflictException('Clinic is already inactive');
-    }
-
-    clinic.is_active = false;
-    const updatedClinic = await this.clinicRepository.save(clinic);
-
-    // Log deactivation activity
-    await this.usersService.logUserActivity(userId, ActivityType.CLINIC_DEACTIVATED, ActivityStatus.SUCCESS, {
-      clinicId: clinic.id,
-      clinicName: clinic.name,
-      clinicCity: clinic.city,
-      deactivationDate: new Date(),
-    });
-
-    return updatedClinic;
+    return this.changeClinicStatus(clinicId, userId, 'is_active', false, ActivityType.CLINIC_DEACTIVATED, 'Clinic is already inactive', { deactivationDate: new Date() });
   }
 
   async updateStaffStatus(staffId: string, isActive: boolean, userId: string): Promise<ClinicStaff> {
