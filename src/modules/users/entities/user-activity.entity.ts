@@ -35,6 +35,11 @@ export enum ActivityType {
   SERVICE_DELETED = 'service_deleted',
   SERVICE_ACTIVATED = 'service_activated',
   SERVICE_DEACTIVATED = 'service_deactivated',
+  // Review Management Activities
+  REVIEW_UPDATED = 'review_updated',
+  REVIEW_DELETED = 'review_deleted',
+  REVIEW_VERIFIED = 'review_verified',
+  REVIEW_UNVERIFIED = 'review_unverified',
 }
 
 export enum ActivityStatus {
@@ -143,6 +148,15 @@ export class UserActivity {
         return 'User activated clinic service';
       case ActivityType.SERVICE_DEACTIVATED:
         return 'User deactivated clinic service';
+      // Review Management Activities
+      case ActivityType.REVIEW_UPDATED:
+        return 'User updated a clinic review';
+      case ActivityType.REVIEW_DELETED:
+        return 'User deleted a clinic review';
+      case ActivityType.REVIEW_VERIFIED:
+        return 'User verified a clinic review';
+      case ActivityType.REVIEW_UNVERIFIED:
+        return 'User unverified a clinic review';
       default:
         return this.description || 'Activity performed';
     }

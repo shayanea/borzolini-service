@@ -575,4 +575,129 @@ export class ClinicsController {
   async updateServiceStatus(@Param('id') serviceId: string, @Body() statusData: { isActive: boolean }, @Request() req: any): Promise<ClinicService> {
     return await this.clinicsService.updateServiceStatus(serviceId, statusData.isActive, req.user?.id);
   }
+
+  // Admin Review Management Endpoints
+  @Get('reviews')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all reviews with filtering and pagination (Admin only)' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'clinicId', required: false, description: 'Filter by clinic ID' })
+  @ApiQuery({ name: 'isVerified', required: false, description: 'Filter by verification status' })
+  @ApiQuery({ name: 'isReported', required: false, description: 'Filter by reported status' })
+  @ApiQuery({ name: 'sortBy', required: false, description: 'Sort field', example: 'created_at' })
+  @ApiQuery({ name: 'sortOrder', required: false, description: 'Sort order', example: 'DESC' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reviews retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        reviews: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/ClinicReview' },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async getAllReviews(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('clinicId') clinicId?: string,
+    @Query('isVerified') isVerified?: boolean,
+    @Query('isReported') isReported?: boolean,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC'
+  ) {
+    const options = {
+      ...(page && { page }),
+      ...(limit && { limit }),
+      ...(clinicId && { clinicId }),
+      ...(isVerified !== undefined && { isVerified }),
+      ...(isReported !== undefined && { isReported }),
+      ...(sortBy && { sortBy }),
+      ...(sortOrder && { sortOrder }),
+    };
+
+    return await this.clinicsService.getAllReviews(options);
+  }
+
+  @Patch('reviews/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update a review (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Review ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Review updated successfully',
+    type: ClinicReview,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  async updateReview(@Param('id') reviewId: string, @Body() updateData: { rating?: number; title?: string; comment?: string; is_verified?: boolean }, @Request() req: any): Promise<ClinicReview> {
+    return await this.clinicsService.updateReview(reviewId, updateData, req.user?.id);
+  }
+
+  @Delete('reviews/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a review (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Review ID' })
+  @ApiResponse({ status: 204, description: 'Review deleted successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteReview(@Param('id') reviewId: string, @Request() req: any): Promise<void> {
+    await this.clinicsService.deleteReview(reviewId, req.user?.id);
+  }
+
+  @Post('reviews/:id/verify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify a review (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Review ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Review verified successfully',
+    type: ClinicReview,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  @ApiResponse({ status: 409, description: 'Review already verified' })
+  async verifyReview(@Param('id') reviewId: string, @Request() req: any): Promise<ClinicReview> {
+    return await this.clinicsService.verifyReview(reviewId, req.user?.id);
+  }
+
+  @Post('reviews/:id/unverify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unverify a review (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Review ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Review unverified successfully',
+    type: ClinicReview,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  @ApiResponse({ status: 409, description: 'Review already unverified' })
+  async unverifyReview(@Param('id') reviewId: string, @Request() req: any): Promise<ClinicReview> {
+    return await this.clinicsService.unverifyReview(reviewId, req.user?.id);
+  }
 }

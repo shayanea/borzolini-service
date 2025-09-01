@@ -691,4 +691,165 @@ export class ClinicsService implements OnModuleInit {
 
     return updatedService;
   }
+
+  // Admin Review Management Methods
+  async getAllReviews(
+    options: { page?: number; limit?: number; clinicId?: string; isVerified?: boolean; isReported?: boolean; sortBy?: string; sortOrder?: 'ASC' | 'DESC' } = {}
+  ): Promise<{ reviews: ClinicReview[]; total: number; page: number; totalPages: number }> {
+    const { page = 1, limit = 10, clinicId, isVerified, isReported, sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.clinicReviewRepository.createQueryBuilder('review').leftJoinAndSelect('review.clinic', 'clinic').leftJoinAndSelect('review.user', 'user');
+
+    // Apply filters
+    if (clinicId) {
+      queryBuilder.andWhere('review.clinic_id = :clinicId', { clinicId });
+    }
+    if (isVerified !== undefined) {
+      queryBuilder.andWhere('review.is_verified = :isVerified', { isVerified });
+    }
+    if (isReported !== undefined) {
+      queryBuilder.andWhere('review.is_reported = :isReported', { isReported });
+    }
+
+    // Apply sorting
+    queryBuilder.orderBy(`review.${sortBy}`, sortOrder);
+
+    // Apply pagination
+    queryBuilder.skip(skip).take(limit);
+
+    const [reviews, total] = await queryBuilder.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+
+    return { reviews, total, page, totalPages };
+  }
+
+  async updateReview(reviewId: string, updateData: { rating?: number; title?: string; comment?: string; is_verified?: boolean }, userId: string): Promise<ClinicReview> {
+    const review = await this.clinicReviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['clinic', 'user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    const originalData = { ...review };
+    Object.assign(review, updateData);
+    const updatedReview = await this.clinicReviewRepository.save(review);
+
+    // Update clinic rating if rating was changed
+    if (updateData.rating !== undefined && updateData.rating !== originalData.rating) {
+      await this.updateClinicRating(review.clinic_id);
+    }
+
+    // Log user activity
+    await this.usersService.logUserActivity(userId, ActivityType.REVIEW_UPDATED, ActivityStatus.SUCCESS, {
+      reviewId: review.id,
+      clinicId: review.clinic_id,
+      clinicName: review.clinic?.name || 'Unknown',
+      userId: review.user_id,
+      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      originalData,
+      updatedData: updateData,
+      changes: Object.keys(updateData),
+    });
+
+    return updatedReview;
+  }
+
+  async deleteReview(reviewId: string, userId: string): Promise<void> {
+    const review = await this.clinicReviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['clinic', 'user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    const clinicId = review.clinic_id;
+
+    // Log user activity before deletion
+    await this.usersService.logUserActivity(userId, ActivityType.REVIEW_DELETED, ActivityStatus.SUCCESS, {
+      reviewId: review.id,
+      clinicId: review.clinic_id,
+      clinicName: review.clinic?.name || 'Unknown',
+      userId: review.user_id,
+      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      reviewData: {
+        rating: review.rating,
+        title: review.title,
+        comment: review.comment,
+        isVerified: review.is_verified,
+        isReported: review.is_reported,
+        helpfulCount: review.is_helpful_count,
+      },
+    });
+
+    await this.clinicReviewRepository.remove(review);
+
+    // Update clinic rating after deletion
+    await this.updateClinicRating(clinicId);
+  }
+
+  async verifyReview(reviewId: string, userId: string): Promise<ClinicReview> {
+    const review = await this.clinicReviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['clinic', 'user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (review.is_verified) {
+      throw new ConflictException('Review is already verified');
+    }
+
+    review.is_verified = true;
+    const updatedReview = await this.clinicReviewRepository.save(review);
+
+    // Log user activity
+    await this.usersService.logUserActivity(userId, ActivityType.REVIEW_VERIFIED, ActivityStatus.SUCCESS, {
+      reviewId: review.id,
+      clinicId: review.clinic_id,
+      clinicName: review.clinic?.name || 'Unknown',
+      userId: review.user_id,
+      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      verificationDate: new Date(),
+    });
+
+    return updatedReview;
+  }
+
+  async unverifyReview(reviewId: string, userId: string): Promise<ClinicReview> {
+    const review = await this.clinicReviewRepository.findOne({
+      where: { id: reviewId },
+      relations: ['clinic', 'user'],
+    });
+
+    if (!review) {
+      throw new NotFoundException('Review not found');
+    }
+
+    if (!review.is_verified) {
+      throw new ConflictException('Review is already unverified');
+    }
+
+    review.is_verified = false;
+    const updatedReview = await this.clinicReviewRepository.save(review);
+
+    // Log user activity
+    await this.usersService.logUserActivity(userId, ActivityType.REVIEW_UNVERIFIED, ActivityStatus.SUCCESS, {
+      reviewId: review.id,
+      clinicId: review.clinic_id,
+      clinicName: review.clinic?.name || 'Unknown',
+      userId: review.user_id,
+      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      unverificationDate: new Date(),
+    });
+
+    return updatedReview;
+  }
 }
