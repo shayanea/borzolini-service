@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -164,7 +164,7 @@ export class PetsController {
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiParam({ name: 'userId', description: 'User ID to fetch pets for' })
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  async findPetsByUserId(@Param('userId') userId: string): Promise<Pet[]> {
+  async findPetsByUserId(@Param('userId', ParseUUIDPipe) userId: string): Promise<Pet[]> {
     return this.petsService.findByOwner(userId);
   }
 
@@ -245,12 +245,12 @@ export class PetsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async findOne(@Param('id') id: string, @Request() req: any): Promise<Pet> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any): Promise<Pet> {
     const pet = await this.petsService.findOne(id);
 
     // Check if user owns the pet or is admin/staff
     if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new Error('Access denied');
+      throw new ForbiddenException('Access denied: You can only access your own pets');
     }
 
     return pet;
@@ -273,12 +273,12 @@ export class PetsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async update(@Param('id') id: string, @Body() updatePetDto: UpdatePetDto, @Request() req: any): Promise<Pet> {
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePetDto: UpdatePetDto, @Request() req: any): Promise<Pet> {
     const pet = await this.petsService.findOne(id);
 
     // Check if user owns the pet or is admin/staff
     if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new Error('Access denied');
+      throw new ForbiddenException('Access denied: You can only access your own pets');
     }
 
     return this.petsService.update(id, updatePetDto);
@@ -293,12 +293,12 @@ export class PetsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async remove(@Param('id') id: string, @Request() req: any): Promise<{ message: string }> {
+  async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any): Promise<{ message: string }> {
     const pet = await this.petsService.findOne(id);
 
     // Check if user owns the pet or is admin/staff
     if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new Error('Access denied');
+      throw new ForbiddenException('Access denied: You can only access your own pets');
     }
 
     await this.petsService.remove(id);
@@ -322,7 +322,7 @@ export class PetsController {
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
   @Roles(UserRole.ADMIN)
-  async hardRemove(@Param('id') id: string): Promise<{ message: string }> {
+  async hardRemove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
     await this.petsService.hardRemove(id);
     return { message: 'Pet permanently deleted successfully' };
   }

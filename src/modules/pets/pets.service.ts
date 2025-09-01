@@ -1,11 +1,11 @@
-import { Injectable, NotFoundException, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
-import { Pet, PetSpecies, PetGender, PetSize } from "./entities/pet.entity";
-import { CreatePetDto } from "./dto/create-pet.dto";
-import { UpdatePetDto } from "./dto/update-pet.dto";
-import { User } from "../users/entities/user.entity";
+import { User } from '../users/entities/user.entity';
+import { CreatePetDto } from './dto/create-pet.dto';
+import { UpdatePetDto } from './dto/update-pet.dto';
+import { Pet, PetGender, PetSize, PetSpecies } from './entities/pet.entity';
 
 export interface PetFilters {
   species?: PetSpecies | undefined;
@@ -35,7 +35,7 @@ export class PetsService {
     @InjectRepository(Pet)
     private readonly petRepository: Repository<Pet>,
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>
   ) {}
 
   async create(createPetDto: CreatePetDto, ownerId: string): Promise<Pet> {
@@ -69,47 +69,45 @@ export class PetsService {
     return savedPet;
   }
 
-  async findAll(
-    filters?: PetFilters,
-    page: number = 1,
-    limit: number = 10,
-    sortBy: string = 'created_at',
-    sortOrder: 'ASC' | 'DESC' = 'DESC',
-  ): Promise<{ pets: Pet[]; total: number; page: number; totalPages: number }> {
+  async findAll(filters?: PetFilters, page: number = 1, limit: number = 10, sortBy: string = 'created_at', sortOrder: 'ASC' | 'DESC' = 'DESC'): Promise<{ pets: Pet[]; total: number; page: number; totalPages: number }> {
     const where: any = { is_active: true };
 
     // Apply filters
     if (filters?.species) where.species = filters.species;
     if (filters?.gender) where.gender = filters.gender;
     if (filters?.size) where.size = filters.size;
-    if (filters?.is_spayed_neutered !== undefined)
-      where.is_spayed_neutered = filters.is_spayed_neutered;
-    if (filters?.is_vaccinated !== undefined)
-      where.is_vaccinated = filters.is_vaccinated;
+    if (filters?.is_spayed_neutered !== undefined) where.is_spayed_neutered = filters.is_spayed_neutered;
+    if (filters?.is_vaccinated !== undefined) where.is_vaccinated = filters.is_vaccinated;
     if (filters?.owner_id) where.owner_id = filters.owner_id;
 
-    // Build query
-    let query = this.petRepository
-      .createQueryBuilder("pet")
-      .leftJoinAndSelect("pet.owner", "owner")
-      .where(where);
+    // Validate sortBy parameter against allowed columns
+    const allowedSortColumns = ['created_at', 'updated_at', 'name', 'species', 'gender', 'size', 'date_of_birth', 'weight', 'is_spayed_neutered', 'is_vaccinated'];
+    const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
 
-    // Apply search filter
+    // Build count query
+    let countQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner').where(where);
+
+    // Apply search filter to count query
     if (filters?.search) {
-      query = query.andWhere(
-        "(pet.name ILIKE :search OR pet.breed ILIKE :search OR pet.color ILIKE :search)",
-        { search: `%${filters.search}%` },
-      );
+      countQuery = countQuery.andWhere('(pet.name ILIKE :search OR pet.breed ILIKE :search OR pet.color ILIKE :search)', { search: `%${filters.search}%` });
     }
 
     // Get total count
-    const total = await query.getCount();
+    const total = await countQuery.getCount();
+
+    // Build data query (separate from count query)
+    let dataQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner').where(where);
+
+    // Apply search filter to data query
+    if (filters?.search) {
+      dataQuery = dataQuery.andWhere('(pet.name ILIKE :search OR pet.breed ILIKE :search OR pet.color ILIKE :search)', { search: `%${filters.search}%` });
+    }
 
     // Apply sorting
-    query = query.orderBy(`pet.${sortBy}`, sortOrder);
+    dataQuery = dataQuery.orderBy(`pet.${validSortBy}`, sortOrder);
 
     // Apply pagination
-    const pets = await query
+    const pets = await dataQuery
       .skip((page - 1) * limit)
       .take(limit)
       .getMany();
@@ -125,9 +123,11 @@ export class PetsService {
   }
 
   async findOne(id: string): Promise<Pet> {
+    this.validateUUID(id);
+
     const pet = await this.petRepository.findOne({
       where: { id, is_active: true },
-      relations: ["owner", "appointments"],
+      relations: ['owner', 'appointments'],
     });
 
     if (!pet) {
@@ -140,28 +140,25 @@ export class PetsService {
   async findByOwner(ownerId: string): Promise<Pet[]> {
     const pets = await this.petRepository.find({
       where: { owner_id: ownerId, is_active: true },
-      relations: ["appointments"],
-      order: { created_at: "DESC" },
+      relations: ['appointments'],
+      order: { created_at: 'DESC' },
     });
 
     return pets;
   }
 
   async update(id: string, updatePetDto: UpdatePetDto): Promise<Pet> {
+    this.validateUUID(id);
     const pet = await this.findOne(id);
 
     // Handle date conversion
     if (updatePetDto.date_of_birth) {
-      (updatePetDto as any).date_of_birth = new Date(
-        updatePetDto.date_of_birth,
-      );
+      (updatePetDto as any).date_of_birth = new Date(updatePetDto.date_of_birth);
     }
 
     // Calculate size based on weight if weight is updated
     if (updatePetDto.weight && !updatePetDto.size) {
-      (updatePetDto as any).size = this.calculateSizeFromWeight(
-        updatePetDto.weight,
-      );
+      (updatePetDto as any).size = this.calculateSizeFromWeight(updatePetDto.weight);
     }
 
     Object.assign(pet, updatePetDto);
@@ -172,6 +169,7 @@ export class PetsService {
   }
 
   async remove(id: string): Promise<void> {
+    this.validateUUID(id);
     const pet = await this.findOne(id);
 
     // Soft delete by setting is_active to false
@@ -182,6 +180,7 @@ export class PetsService {
   }
 
   async hardRemove(id: string): Promise<void> {
+    this.validateUUID(id);
     const pet = await this.findOne(id);
     await this.petRepository.remove(pet);
 
@@ -265,24 +264,24 @@ export class PetsService {
   async getPetsBySpecies(species: PetSpecies): Promise<Pet[]> {
     return this.petRepository.find({
       where: { species, is_active: true },
-      relations: ["owner"],
-      order: { name: "ASC" },
+      relations: ['owner'],
+      order: { name: 'ASC' },
     });
   }
 
   async getPetsNeedingVaccination(): Promise<Pet[]> {
     return this.petRepository.find({
       where: { is_vaccinated: false, is_active: true },
-      relations: ["owner"],
-      order: { created_at: "ASC" },
+      relations: ['owner'],
+      order: { created_at: 'ASC' },
     });
   }
 
   async getPetsNeedingSpayNeuter(): Promise<Pet[]> {
     return this.petRepository.find({
       where: { is_spayed_neutered: false, is_active: true },
-      relations: ["owner"],
-      order: { created_at: "ASC" },
+      relations: ['owner'],
+      order: { created_at: 'ASC' },
     });
   }
 
@@ -294,33 +293,31 @@ export class PetsService {
     return PetSize.GIANT;
   }
 
-  async validatePetData(
-    petData: CreatePetDto,
-  ): Promise<{ isValid: boolean; errors: string[] }> {
+  async validatePetData(petData: CreatePetDto): Promise<{ isValid: boolean; errors: string[] }> {
     const errors: string[] = [];
 
     // Validate date of birth is not in the future
     if (petData.date_of_birth) {
       const birthDate = new Date(petData.date_of_birth);
       if (birthDate > new Date()) {
-        errors.push("Date of birth cannot be in the future");
+        errors.push('Date of birth cannot be in the future');
       }
     }
 
     // Validate weight is reasonable
     if (petData.weight !== undefined) {
       if (petData.weight < 0) {
-        errors.push("Weight cannot be negative");
+        errors.push('Weight cannot be negative');
       }
       if (petData.weight > 1000) {
-        errors.push("Weight seems unreasonably high");
+        errors.push('Weight seems unreasonably high');
       }
     }
 
     // Validate microchip number format (basic validation)
     if (petData.microchip_number) {
       if (!/^\d{9,15}$/.test(petData.microchip_number)) {
-        errors.push("Microchip number should be 9-15 digits");
+        errors.push('Microchip number should be 9-15 digits');
       }
     }
 
@@ -328,5 +325,12 @@ export class PetsService {
       isValid: errors.length === 0,
       errors,
     };
+  }
+
+  private validateUUID(id: string): void {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      throw new BadRequestException(`Invalid UUID format: ${id}`);
+    }
   }
 }
