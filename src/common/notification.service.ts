@@ -1,19 +1,41 @@
 import { Injectable, Logger } from '@nestjs/common';
+
 import { EmailService } from './email.service';
+import { SettingsConfigService } from '../modules/settings/settings-config.service';
 
 @Injectable()
 export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
-  constructor(private emailService: EmailService) {}
+  constructor(
+    private emailService: EmailService,
+    private settingsConfigService: SettingsConfigService
+  ) {}
 
   /**
    * Send appointment reminder notification
    */
   async sendAppointmentReminder(userId: string, appointmentData: Record<string, unknown>): Promise<void> {
     try {
-      // Send email reminder
-      await this.emailService.sendAppointmentReminder(appointmentData.userEmail as string, appointmentData);
+      // Check if notifications are enabled
+      const notificationsEnabled = await this.settingsConfigService.areNotificationsEnabled();
+      if (!notificationsEnabled) {
+        this.logger.log('Notifications are disabled, skipping appointment reminder');
+        return;
+      }
+
+      // Send email reminder if enabled
+      const emailEnabled = await this.settingsConfigService.areEmailNotificationsEnabled();
+      if (emailEnabled) {
+        await this.emailService.sendAppointmentReminder(appointmentData.userEmail as string, appointmentData);
+      }
+
+      // Send SMS reminder if enabled
+      const smsEnabled = await this.settingsConfigService.areSmsNotificationsEnabled();
+      if (smsEnabled && appointmentData.userPhone) {
+        // TODO: Implement SMS sending with actual SMS service
+        this.logger.log(`SMS reminder would be sent to ${appointmentData.userPhone}`);
+      }
 
       // TODO: Send push notification
       // TODO: Send in-app notification
@@ -37,8 +59,25 @@ export class NotificationService {
    */
   async sendHealthAlert(userId: string, alertData: Record<string, unknown>): Promise<void> {
     try {
-      // Send email alert
-      await this.emailService.sendHealthAlert(alertData.userEmail as string, alertData);
+      // Check if notifications are enabled
+      const notificationsEnabled = await this.settingsConfigService.areNotificationsEnabled();
+      if (!notificationsEnabled) {
+        this.logger.log('Notifications are disabled, skipping health alert');
+        return;
+      }
+
+      // Send email alert if enabled
+      const emailEnabled = await this.settingsConfigService.areEmailNotificationsEnabled();
+      if (emailEnabled) {
+        await this.emailService.sendHealthAlert(alertData.userEmail as string, alertData);
+      }
+
+      // Send SMS alert if enabled
+      const smsEnabled = await this.settingsConfigService.areSmsNotificationsEnabled();
+      if (smsEnabled && alertData.userPhone) {
+        // TODO: Implement SMS sending with actual SMS service
+        this.logger.log(`SMS health alert would be sent to ${alertData.userPhone}`);
+      }
 
       // TODO: Send push notification
       // TODO: Send in-app notification

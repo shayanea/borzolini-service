@@ -6,6 +6,7 @@ import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
 import { EmailService } from '../../common/email.service';
 import { SmsService } from '../../common/sms.service';
+import { SettingsConfigService } from '../settings/settings-config.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
@@ -28,7 +29,8 @@ export class UsersService implements OnModuleInit {
     private jwtService: JwtService,
     private configService: ConfigService,
     private smsService: SmsService,
-    private emailService: EmailService
+    private emailService: EmailService,
+    private settingsConfigService: SettingsConfigService
   ) {}
 
   async onModuleInit() {
@@ -958,5 +960,38 @@ export class UsersService implements OnModuleInit {
     }
 
     return { updated, errors };
+  }
+
+  /**
+   * Check if user's password has expired based on settings
+   */
+  async checkPasswordExpiry(userId: string): Promise<{ isExpired: boolean; daysSinceUpdate: number; maxDays: number }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: ['passwordUpdatedAt'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const passwordExpiryDays = await this.settingsConfigService.getPasswordExpiry();
+    const daysSinceUpdate = user.passwordUpdatedAt ? Math.floor((Date.now() - user.passwordUpdatedAt.getTime()) / (1000 * 60 * 60 * 24)) : 999; // If never updated, consider expired
+
+    return {
+      isExpired: daysSinceUpdate > passwordExpiryDays,
+      daysSinceUpdate,
+      maxDays: passwordExpiryDays,
+    };
+  }
+
+  /**
+   * Get users with expired passwords
+   */
+  async getUsersWithExpiredPasswords(): Promise<User[]> {
+    const passwordExpiryDays = await this.settingsConfigService.getPasswordExpiry();
+    const expiryDate = new Date(Date.now() - passwordExpiryDays * 24 * 60 * 60 * 1000);
+
+    return await this.userRepository.createQueryBuilder('user').where('user.passwordUpdatedAt IS NULL OR user.passwordUpdatedAt < :expiryDate', { expiryDate }).andWhere('user.is_active = :isActive', { isActive: true }).getMany();
   }
 }

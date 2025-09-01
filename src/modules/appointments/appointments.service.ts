@@ -7,6 +7,7 @@ import { ClinicService } from '../clinics/entities/clinic-service.entity';
 import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Pet } from '../pets/entities/pet.entity';
+import { SettingsConfigService } from '../settings/settings-config.service';
 import { User } from '../users/entities/user.entity';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
@@ -56,7 +57,8 @@ export class AppointmentsService {
     @InjectRepository(ClinicStaff)
     private readonly staffRepository: Repository<ClinicStaff>,
     @InjectRepository(ClinicService)
-    private readonly serviceRepository: Repository<ClinicService>
+    private readonly serviceRepository: Repository<ClinicService>,
+    private readonly settingsConfigService: SettingsConfigService
   ) {}
 
   async create(createAppointmentDto: CreateAppointmentDto, ownerId: string): Promise<Appointment> {
@@ -110,8 +112,14 @@ export class AppointmentsService {
 
     // Check for scheduling conflicts
     const scheduledDate = new Date(createAppointmentDto.scheduled_date);
-    const duration = createAppointmentDto.duration_minutes || 30;
+    const duration = createAppointmentDto.duration_minutes || (await this.settingsConfigService.getDefaultAppointmentDuration());
     const endTime = new Date(scheduledDate.getTime() + duration * 60000);
+
+    // Validate booking lead time
+    const bookingValidation = await this.settingsConfigService.canBookAppointment(scheduledDate);
+    if (!bookingValidation.canBook) {
+      throw new BadRequestException(bookingValidation.reason);
+    }
 
     const conflicts = await this.appointmentRepository.find({
       where: [
@@ -369,6 +377,14 @@ export class AppointmentsService {
     // Check permissions
     if (appointment.owner_id !== userId && !['admin', 'veterinarian', 'staff'].includes(userRole)) {
       throw new BadRequestException('You can only cancel your own appointments');
+    }
+
+    // Check cancellation policy (only for non-admin users)
+    if (!['admin', 'veterinarian', 'staff'].includes(userRole)) {
+      const cancellationValidation = await this.settingsConfigService.canCancelAppointment(appointment.scheduled_date);
+      if (!cancellationValidation.canCancel) {
+        throw new BadRequestException(cancellationValidation.reason);
+      }
     }
 
     // Cancel appointment

@@ -14,6 +14,7 @@ import { Module } from '@nestjs/common';
 import { PetsModule } from './modules/pets/pets.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
+import { SettingsModule } from './modules/settings/settings.module';
 import { SupabaseModule } from './common/supabase.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -71,6 +72,7 @@ import { getDatabaseConfig } from './config/database.config';
     AppointmentsModule,
     AiHealthModule,
     ScheduledTasksModule,
+    SettingsModule,
     // TelemedicineModule,
     // SocialMediaModule,
     // PaymentsModule,

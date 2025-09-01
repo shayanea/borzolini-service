@@ -749,7 +749,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
       originalData,
       updatedData: updateData,
       changes: Object.keys(updateData),
@@ -776,7 +776,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
       reviewData: {
         rating: review.rating,
         title: review.title,
@@ -816,7 +816,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
       verificationDate: new Date(),
     });
 
@@ -846,7 +846,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: review.user?.firstName + ' ' + review.user?.lastName || 'Unknown',
+      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
       unverificationDate: new Date(),
     });
 
