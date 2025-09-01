@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ClinicAppointment } from '../clinics/entities/clinic-appointment.entity';
 import { ClinicService } from '../clinics/entities/clinic-service.entity';
 import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { Pet } from '../pets/entities/pet.entity';
 import { User } from '../users/entities/user.entity';
-
-import { AppointmentStatus, AppointmentType } from './entities/appointment.entity';
+import { Appointment, AppointmentPriority, AppointmentStatus, AppointmentType } from './entities/appointment.entity';
 
 interface AppointmentData {
   clinic_name: string;
@@ -30,8 +28,8 @@ export class AppointmentsSeeder {
   private readonly logger = new Logger(AppointmentsSeeder.name);
 
   constructor(
-    @InjectRepository(ClinicAppointment)
-    private readonly appointmentRepository: Repository<ClinicAppointment>,
+    @InjectRepository(Appointment)
+    private readonly appointmentRepository: Repository<Appointment>,
     @InjectRepository(Clinic)
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(ClinicStaff)
@@ -98,7 +96,7 @@ export class AppointmentsSeeder {
     }
   }
 
-  private async createSampleAppointments(requiredData: { clinics: Clinic[]; pets: Pet[]; staff: ClinicStaff[]; services: ClinicService[]; users: User[] }): Promise<ClinicAppointment[]> {
+  private async createSampleAppointments(requiredData: { clinics: Clinic[]; pets: Pet[]; staff: ClinicStaff[]; services: ClinicService[]; users: User[] }): Promise<Appointment[]> {
     const { clinics, pets, staff, services, users } = requiredData;
     const appointmentData: AppointmentData[] = [
       // Wellness appointments
@@ -287,7 +285,7 @@ export class AppointmentsSeeder {
       },
     ];
 
-    const appointments: ClinicAppointment[] = [];
+    const appointments: Appointment[] = [];
     for (const data of appointmentData) {
       try {
         // Find the required entities
@@ -303,7 +301,7 @@ export class AppointmentsSeeder {
         }
 
         // Create appointment data
-        const appointmentDataToSave = {
+        const appointmentDataToSave: Partial<Appointment> = {
           clinic_id: clinic.id,
           pet_id: pet.id,
           owner_id: owner.id,
@@ -311,22 +309,26 @@ export class AppointmentsSeeder {
           service_id: service.id,
           appointment_type: data.appointment_type,
           status: data.status,
+          priority: AppointmentPriority.NORMAL,
           scheduled_date: new Date(data.scheduled_date),
           duration_minutes: data.duration_minutes,
           notes: data.notes,
+          prescriptions: [],
+          payment_status: 'pending',
           is_telemedicine: data.is_telemedicine,
-          address: data.address || null,
+          is_home_visit: data.address ? true : false,
+          ...(data.address && { home_visit_address: data.address }),
+          reminder_settings: {},
+          is_active: true,
         };
 
-        const appointment = this.appointmentRepository.create(appointmentDataToSave as any);
+        const appointment = this.appointmentRepository.create(appointmentDataToSave);
         const savedAppointment = await this.appointmentRepository.save(appointment);
-        // Handle case where save returns an array
-        if (Array.isArray(savedAppointment)) {
-          if (savedAppointment[0]) {
-            appointments.push(savedAppointment[0]);
-          }
-        } else {
-          appointments.push(savedAppointment);
+
+        // Ensure we're working with a single appointment, not an array
+        const appointmentToAdd = Array.isArray(savedAppointment) ? savedAppointment[0] : savedAppointment;
+        if (appointmentToAdd) {
+          appointments.push(appointmentToAdd);
         }
 
         this.logger.log(`Created appointment: ${data.pet_name} - ${data.appointment_type} at ${clinic.name}`);

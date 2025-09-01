@@ -39,6 +39,9 @@ export class ClinicsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all clinics with filtering and pagination' })
   @ApiQuery({
     name: 'name',

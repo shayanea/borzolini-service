@@ -135,79 +135,35 @@ export class ClinicsService implements OnModuleInit {
     const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'DESC' } = options;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.clinicRepository
-      .createQueryBuilder('clinic')
-      .leftJoinAndSelect('clinic.staff', 'staff')
-      .leftJoinAndSelect('clinic.clinic_services', 'services')
-      .leftJoinAndSelect('clinic.photos', 'photos')
-      .leftJoinAndSelect('clinic.operating_hours_detail', 'hours');
+    try {
+      this.logger.log(`Finding clinics with filters: ${JSON.stringify(filters)}, options: ${JSON.stringify(options)}`);
 
-    // Apply filters
-    if (filters.name) {
-      queryBuilder.andWhere('clinic.name ILIKE :name', {
-        name: `%${filters.name}%`,
-      });
+      // Test basic repository functionality
+      const totalCount = await this.clinicRepository.count();
+      this.logger.log(`Total clinics in database: ${totalCount}`);
+
+      // Try a simple query first without joins to debug
+      const queryBuilder = this.clinicRepository.createQueryBuilder('clinic');
+
+      // Apply sorting
+      queryBuilder.orderBy(`clinic.${sortBy}`, sortOrder);
+
+      // Apply pagination
+      queryBuilder.skip(skip).take(limit);
+
+      const [clinics, total] = await queryBuilder.getManyAndCount();
+
+      this.logger.log(`Found ${total} clinics, returning ${clinics.length} clinics`);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return { clinics, total, page, totalPages };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Error in findAll method: ${errorMessage}`, errorStack);
+      throw error;
     }
-
-    if (filters.city) {
-      queryBuilder.andWhere('clinic.city ILIKE :city', {
-        city: `%${filters.city}%`,
-      });
-    }
-
-    if (filters.state) {
-      queryBuilder.andWhere('clinic.state ILIKE :state', {
-        state: `%${filters.state}%`,
-      });
-    }
-
-    if (filters.is_verified !== undefined) {
-      queryBuilder.andWhere('clinic.is_verified = :is_verified', {
-        is_verified: filters.is_verified,
-      });
-    }
-
-    if (filters.is_active !== undefined) {
-      queryBuilder.andWhere('clinic.is_active = :is_active', {
-        is_active: filters.is_active,
-      });
-    }
-
-    if (filters.services && filters.services.length > 0) {
-      queryBuilder.andWhere('clinic.services @> :services', {
-        services: JSON.stringify(filters.services),
-      });
-    }
-
-    if (filters.specializations && filters.specializations.length > 0) {
-      queryBuilder.andWhere('clinic.specializations @> :specializations', {
-        specializations: JSON.stringify(filters.specializations),
-      });
-    }
-
-    if (filters.rating_min !== undefined) {
-      queryBuilder.andWhere('clinic.rating >= :rating_min', {
-        rating_min: filters.rating_min,
-      });
-    }
-
-    if (filters.rating_max !== undefined) {
-      queryBuilder.andWhere('clinic.rating <= :rating_max', {
-        rating_max: filters.rating_max,
-      });
-    }
-
-    // Apply sorting
-    queryBuilder.orderBy(`clinic.${sortBy}`, sortOrder);
-
-    // Apply pagination
-    queryBuilder.skip(skip).take(limit);
-
-    const [clinics, total] = await queryBuilder.getManyAndCount();
-
-    const totalPages = Math.ceil(total / limit);
-
-    return { clinics, total, page, totalPages };
   }
 
   async findOne(id: string): Promise<Clinic> {

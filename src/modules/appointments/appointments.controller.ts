@@ -8,7 +8,7 @@ import { UserRole } from '../users/entities/user.entity';
 import { AppointmentFilters, AppointmentsService, AppointmentStats, TimeSlot } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
-import { Appointment, AppointmentPriority, AppointmentStatus, AppointmentType } from './entities/appointment.entity';
+import { Appointment, AppointmentStatus, AppointmentType } from './entities/appointment.entity';
 
 @ApiTags('appointments')
 @Controller('appointments')
@@ -40,6 +40,7 @@ export class AppointmentsController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Get all appointments',
     description: 'Retrieve all appointments with optional filtering and pagination',
@@ -72,12 +73,6 @@ export class AppointmentsController {
     required: false,
     enum: AppointmentType,
     description: 'Filter by appointment type',
-  })
-  @ApiQuery({
-    name: 'priority',
-    required: false,
-    enum: AppointmentPriority,
-    description: 'Filter by appointment priority',
   })
   @ApiQuery({
     name: 'clinic_id',
@@ -122,12 +117,6 @@ export class AppointmentsController {
     description: 'Filter by telemedicine appointments',
   })
   @ApiQuery({
-    name: 'is_home_visit',
-    required: false,
-    type: Boolean,
-    description: 'Filter by home visit appointments',
-  })
-  @ApiQuery({
     name: 'search',
     required: false,
     type: String,
@@ -149,11 +138,10 @@ export class AppointmentsController {
   })
   async findAll(
     @Request() req: any,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('status') status?: AppointmentStatus,
     @Query('type') type?: AppointmentType,
-    @Query('priority') priority?: AppointmentPriority,
     @Query('clinic_id') clinic_id?: string,
     @Query('staff_id') staff_id?: string,
     @Query('pet_id') pet_id?: string,
@@ -161,7 +149,6 @@ export class AppointmentsController {
     @Query('date_from') date_from?: string,
     @Query('date_to') date_to?: string,
     @Query('is_telemedicine') is_telemedicine?: boolean,
-    @Query('is_home_visit') is_home_visit?: boolean,
     @Query('search') search?: string,
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC'
@@ -174,19 +161,21 @@ export class AppointmentsController {
     const filters: AppointmentFilters = {
       status,
       type,
-      priority,
       clinic_id,
       staff_id,
       pet_id,
-      owner_id: owner_id || req.user.id,
+      // Only set owner_id for non-admin users or when explicitly filtering
+      owner_id: req.user.role === UserRole.ADMIN ? owner_id : owner_id || req.user.id,
       date_from: date_from ? new Date(date_from) : undefined,
       date_to: date_to ? new Date(date_to) : undefined,
       is_telemedicine,
-      is_home_visit,
       search,
     };
 
-    return this.appointmentsService.findAll(filters, page, limit, sortBy, sortOrder);
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+
+    return this.appointmentsService.findAll(filters, pageNum, limitNum, sortBy, sortOrder);
   }
 
   @Get('my-appointments')
@@ -492,6 +481,6 @@ export class AppointmentsController {
     };
 
     const result = await this.appointmentsService.findAll(filters, 1, 1000);
-    return result.appointments.filter((apt) => apt.isUpcoming);
+    return result.appointments.filter((apt) => apt.scheduled_date > new Date());
   }
 }
