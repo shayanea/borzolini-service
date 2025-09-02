@@ -355,38 +355,45 @@ export class ClinicsService implements OnModuleInit {
   }
 
   async listStaff(clinicId: string, filters: ClinicStaffFilters = {}, options: StaffSearchOptions = {}): Promise<{ staff: ClinicStaff[]; total: number; page: number; totalPages: number }> {
-    const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'DESC' } = options;
-    const skip = (page - 1) * limit;
+    // Coerce pagination/sorting defensively to avoid NaN reaching the DB
+    const pageNum = Number.isFinite(Number(options.page)) && Number(options.page) > 0 ? Number(options.page) : 1;
+    const limitNum = Number.isFinite(Number(options.limit)) && Number(options.limit) > 0 ? Number(options.limit) : 10;
+    const sortByField = options.sortBy && typeof options.sortBy === 'string' ? options.sortBy : 'created_at';
+    const sortOrderVal: 'ASC' | 'DESC' = options.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+    const skip = (pageNum - 1) * limitNum;
 
-    const queryBuilder = this.clinicStaffRepository.createQueryBuilder('staff').leftJoinAndSelect('staff.user', 'user').where('staff.clinic_id = :clinicId', { clinicId });
+    const queryBuilder = this.clinicStaffRepository
+      .createQueryBuilder('staff')
+      .leftJoinAndSelect('staff.user', 'user')
+      .where('staff.clinic_id = :clinicId', { clinicId });
 
-    if (filters.role) {
+    if (filters.role && Object.values(StaffRole).includes(filters.role)) {
       queryBuilder.andWhere('staff.role = :role', { role: filters.role });
     }
-    if (filters.is_active !== undefined) {
+    if (typeof filters.is_active === 'boolean') {
       queryBuilder.andWhere('staff.is_active = :isActive', { isActive: filters.is_active });
     }
     if (filters.specialization) {
       queryBuilder.andWhere('staff.specialization ILIKE :spec', { spec: `%${filters.specialization}%` });
     }
-    if (filters.experience_min !== undefined) {
-      queryBuilder.andWhere('staff.experience_years >= :expMin', { expMin: filters.experience_min });
+    if (Number.isFinite(Number(filters.experience_min))) {
+      queryBuilder.andWhere('staff.experience_years >= :expMin', { expMin: Number(filters.experience_min) });
     }
-    if (filters.experience_max !== undefined) {
-      queryBuilder.andWhere('staff.experience_years <= :expMax', { expMax: filters.experience_max });
+    if (Number.isFinite(Number(filters.experience_max))) {
+      queryBuilder.andWhere('staff.experience_years <= :expMax', { expMax: Number(filters.experience_max) });
     }
     if (filters.search) {
       // Basic search on user name fields if available
       queryBuilder.andWhere('(user.firstName ILIKE :q OR user.lastName ILIKE :q OR staff.bio ILIKE :q)', { q: `%${filters.search}%` });
     }
 
-    queryBuilder.orderBy(`staff.${sortBy}`, sortOrder);
-    queryBuilder.skip(skip).take(limit);
+    queryBuilder.orderBy(`staff.${sortByField}` as any, sortOrderVal);
+    queryBuilder.skip(skip).take(limitNum);
 
     const [staff, total] = await queryBuilder.getManyAndCount();
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / limitNum);
 
-    return { staff, total, page, totalPages };
+    return { staff, total, page: pageNum, totalPages };
   }
 
   async addService(createClinicServiceDto: CreateClinicServiceDto, userId?: string): Promise<ClinicService> {
