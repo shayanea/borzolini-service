@@ -260,7 +260,7 @@ export class UsersController {
 
     // Admin can update any user
     if (currentUserRole === UserRole.ADMIN) {
-      return this.usersService.update(id, updateUserDto);
+      return this.usersService.update(id, updateUserDto, currentUserRole);
     }
 
     // Patients can only update their own profile
@@ -268,7 +268,7 @@ export class UsersController {
       if (req.user.id !== id) {
         throw new ForbiddenException('You can only update your own profile');
       }
-      return this.usersService.update(id, updateUserDto);
+      return this.usersService.update(id, updateUserDto, currentUserRole);
     }
 
     // Staff and veterinarians can only update their own people and patients
@@ -277,19 +277,19 @@ export class UsersController {
 
       // Can update patients (any patient)
       if (targetUser.role === UserRole.PATIENT) {
-        return this.usersService.update(id, updateUserDto);
+        return this.usersService.update(id, updateUserDto, currentUserRole);
       }
 
       // Can update people with same role (other staff/vets)
       if (targetUser.role === currentUserRole) {
-        return this.usersService.update(id, updateUserDto);
+        return this.usersService.update(id, updateUserDto, currentUserRole);
       }
 
       // Cannot update admins or other role types
       throw new ForbiddenException('You can only update patients and users with the same role as you');
     }
 
-    return this.usersService.update(id, updateUserDto);
+    return this.usersService.update(id, updateUserDto, currentUserRole);
   }
 
   @Delete(':id')
@@ -378,7 +378,7 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateOwnProfile(@Request() req: AuthenticatedRequest, @Body() updateUserDto: UpdateUserDto) {
     // Users can only update their own profile
-    return this.usersService.update(req.user.id, updateUserDto);
+    return this.usersService.update(req.user.id, updateUserDto, req.user.role as UserRole);
   }
 
   @Get('preferences/me')

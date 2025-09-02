@@ -681,7 +681,8 @@ Authorization: Bearer <access_token>
   "phone": "+1234567890",
   "address": "123 Main St",
   "city": "New York",
-  "country": "USA"
+  "country": "USA",
+  "role": "veterinarian"
 }
 ```
 

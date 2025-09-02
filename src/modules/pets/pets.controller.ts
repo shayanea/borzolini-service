@@ -136,7 +136,8 @@ export class PetsController {
       is_spayed_neutered,
       is_vaccinated,
       search,
-      owner_id: owner_id || req.user.id,
+      // Only filter by owner_id if explicitly provided or if user is not admin
+      owner_id: owner_id || (req.user.role !== UserRole.ADMIN ? req.user.id : undefined),
     };
 
     return this.petsService.findAll(filters, page, limit, sortBy, sortOrder);
