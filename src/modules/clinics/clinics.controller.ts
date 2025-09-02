@@ -283,6 +283,67 @@ export class ClinicsController {
   }
 
   // Staff Management
+  @Get(':id/staff')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List staff members for a clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiQuery({ name: 'role', required: false, description: 'Filter by staff role' })
+  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'specialization', required: false, description: 'Filter by specialization (ILIKE match)' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search in staff bio or user name' })
+  @ApiQuery({ name: 'experience_min', required: false, description: 'Minimum experience (years)' })
+  @ApiQuery({ name: 'experience_max', required: false, description: 'Maximum experience (years)' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 10 })
+  @ApiQuery({ name: 'sort_by', required: false, description: 'Sort field', example: 'created_at' })
+  @ApiQuery({ name: 'sort_order', required: false, description: 'Sort order', example: 'DESC' })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff list retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        staff: { type: 'array', items: { $ref: '#/components/schemas/ClinicStaff' } },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+    },
+  })
+  async listClinicStaff(
+    @Param('id') clinicId: string,
+    @Query('role') role?: string,
+    @Query('is_active') isActive?: boolean,
+    @Query('specialization') specialization?: string,
+    @Query('search') search?: string,
+    @Query('experience_min') experienceMin?: number,
+    @Query('experience_max') experienceMax?: number,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('sort_by') sortBy?: string,
+    @Query('sort_order') sortOrder?: 'ASC' | 'DESC'
+  ) {
+    const filters = {
+      ...(role && { role }),
+      ...(isActive !== undefined && { is_active: isActive }),
+      ...(specialization && { specialization }),
+      ...(search && { search }),
+      ...(experienceMin !== undefined && { experience_min: experienceMin }),
+      ...(experienceMax !== undefined && { experience_max: experienceMax }),
+    } as any;
+
+    const options = {
+      ...(page && { page }),
+      ...(limit && { limit }),
+      ...(sortBy && { sortBy }),
+      ...(sortOrder && { sortOrder }),
+    } as any;
+
+    return await this.clinicsService.listStaff(clinicId, filters, options);
+  }
+
   @Post(':id/staff')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)

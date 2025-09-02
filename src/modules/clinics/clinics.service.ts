@@ -12,7 +12,7 @@ import { UpdateClinicDto } from './dto/update-clinic.dto';
 import { ClinicPhoto, PhotoCategory } from './entities/clinic-photo.entity';
 import { ClinicReview } from './entities/clinic-review.entity';
 import { ClinicService } from './entities/clinic-service.entity';
-import { ClinicStaff } from './entities/clinic-staff.entity';
+import { ClinicStaff, StaffRole } from './entities/clinic-staff.entity';
 import { Clinic } from './entities/clinic.entity';
 
 export interface ClinicFilters {
@@ -28,6 +28,22 @@ export interface ClinicFilters {
 }
 
 export interface ClinicSearchOptions {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+export interface ClinicStaffFilters {
+  role?: StaffRole;
+  is_active?: boolean;
+  specialization?: string;
+  search?: string;
+  experience_min?: number;
+  experience_max?: number;
+}
+
+export interface StaffSearchOptions {
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -336,6 +352,41 @@ export class ClinicsService implements OnModuleInit {
     }
 
     await this.clinicStaffRepository.remove(staff);
+  }
+
+  async listStaff(clinicId: string, filters: ClinicStaffFilters = {}, options: StaffSearchOptions = {}): Promise<{ staff: ClinicStaff[]; total: number; page: number; totalPages: number }> {
+    const { page = 1, limit = 10, sortBy = 'created_at', sortOrder = 'DESC' } = options;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.clinicStaffRepository.createQueryBuilder('staff').leftJoinAndSelect('staff.user', 'user').where('staff.clinic_id = :clinicId', { clinicId });
+
+    if (filters.role) {
+      queryBuilder.andWhere('staff.role = :role', { role: filters.role });
+    }
+    if (filters.is_active !== undefined) {
+      queryBuilder.andWhere('staff.is_active = :isActive', { isActive: filters.is_active });
+    }
+    if (filters.specialization) {
+      queryBuilder.andWhere('staff.specialization ILIKE :spec', { spec: `%${filters.specialization}%` });
+    }
+    if (filters.experience_min !== undefined) {
+      queryBuilder.andWhere('staff.experience_years >= :expMin', { expMin: filters.experience_min });
+    }
+    if (filters.experience_max !== undefined) {
+      queryBuilder.andWhere('staff.experience_years <= :expMax', { expMax: filters.experience_max });
+    }
+    if (filters.search) {
+      // Basic search on user name fields if available
+      queryBuilder.andWhere('(user.firstName ILIKE :q OR user.lastName ILIKE :q OR staff.bio ILIKE :q)', { q: `%${filters.search}%` });
+    }
+
+    queryBuilder.orderBy(`staff.${sortBy}`, sortOrder);
+    queryBuilder.skip(skip).take(limit);
+
+    const [staff, total] = await queryBuilder.getManyAndCount();
+    const totalPages = Math.ceil(total / limit);
+
+    return { staff, total, page, totalPages };
   }
 
   async addService(createClinicServiceDto: CreateClinicServiceDto, userId?: string): Promise<ClinicService> {
@@ -749,7 +800,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
+      userName: `${review.user?.firstName} ${review.user?.lastName}` || 'Unknown',
       originalData,
       updatedData: updateData,
       changes: Object.keys(updateData),
@@ -776,7 +827,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
+      userName: `${review.user?.firstName} ${review.user?.lastName}` || 'Unknown',
       reviewData: {
         rating: review.rating,
         title: review.title,
@@ -816,7 +867,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
+      userName: `${review.user?.firstName} ${review.user?.lastName}` || 'Unknown',
       verificationDate: new Date(),
     });
 
@@ -846,7 +897,7 @@ export class ClinicsService implements OnModuleInit {
       clinicId: review.clinic_id,
       clinicName: review.clinic?.name || 'Unknown',
       userId: review.user_id,
-      userName: `${review.user?.firstName  } ${  review.user?.lastName}` || 'Unknown',
+      userName: `${review.user?.firstName} ${review.user?.lastName}` || 'Unknown',
       unverificationDate: new Date(),
     });
 
