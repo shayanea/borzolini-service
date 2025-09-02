@@ -89,6 +89,20 @@ export class HealthController {
     return this.healthService.getDatabaseInfo();
   }
 
+  @Get('detailed')
+  @ApiOperation({
+    summary: 'Get detailed health information',
+    description: 'Provides an expanded health payload including DB health, connection stats, supabase status, environment, and uptime.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Detailed health information retrieved successfully',
+  })
+  @ApiInternalServerErrorResponse({ description: 'Failed to build detailed health info' })
+  async getDetailedHealth() {
+    return this.healthService.getDetailedHealth();
+  }
+
   @Get('ping')
   @ApiOperation({
     summary: 'Health check ping endpoint',

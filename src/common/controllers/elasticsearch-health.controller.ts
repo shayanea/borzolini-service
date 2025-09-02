@@ -81,7 +81,7 @@ export class ElasticsearchHealthController {
   async getClusterHealth(@Res() res: Response) {
     try {
       if (!this.elasticsearchService.isServiceEnabled()) {
-        return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+        return res.status(HttpStatus.OK).json({
           status: 'disabled',
           message: 'Elasticsearch service is disabled',
         });
@@ -117,7 +117,7 @@ export class ElasticsearchHealthController {
   async getIndicesInfo(@Res() res: Response) {
     try {
       if (!this.elasticsearchService.isServiceEnabled()) {
-        return res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+        return res.status(HttpStatus.OK).json({
           status: 'disabled',
           message: 'Elasticsearch service is disabled',
         });
