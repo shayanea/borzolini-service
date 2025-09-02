@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -232,17 +232,18 @@ export class UsersService implements OnModuleInit {
     return savedUser;
   }
 
-  async findAll(userRole?: UserRole, query?: FindUsersDto): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
+  async findAll(userRole?: UserRole | string, query?: FindUsersDto): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
     // Build base query with role-based security
     let whereConditions: any[] = [];
+    const isAdminAccess = userRole === UserRole.ADMIN || userRole === 'admin';
 
-    if (userRole === UserRole.VETERINARIAN || userRole === UserRole.STAFF) {
+    if (userRole === UserRole.VETERINARIAN || userRole === 'veterinarian' || userRole === UserRole.STAFF || userRole === 'staff') {
       // For veterinarians and staff, only show their own people and patients
       whereConditions = [
         { role: UserRole.PATIENT }, // Can see all patients
         { role: userRole }, // Can see people with same role
       ];
-    } else if (userRole === UserRole.ADMIN) {
+    } else if (isAdminAccess) {
       // Admin can see all users - no role restrictions
       whereConditions = [];
     } else {
@@ -250,8 +251,33 @@ export class UsersService implements OnModuleInit {
       whereConditions = [];
     }
 
-    // Build query builder
-    let queryBuilder = this.userRepository.createQueryBuilder('user').select(['user.id', 'user.email', 'user.firstName', 'user.lastName', 'user.role', 'user.isActive', 'user.createdAt', 'user.updatedAt']);
+    // Build query builder with different field selections based on admin access
+    let queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    if (isAdminAccess) {
+      // Admin gets additional fields for enhanced management
+      queryBuilder = queryBuilder.select([
+        'user.id',
+        'user.email',
+        'user.firstName',
+        'user.lastName',
+        'user.role',
+        'user.isActive',
+        'user.isEmailVerified',
+        'user.isPhoneVerified',
+        'user.phone',
+        'user.address',
+        'user.city',
+        'user.country',
+        'user.profileCompletionPercentage',
+        'user.lastLoginAt',
+        'user.createdAt',
+        'user.updatedAt',
+      ]);
+    } else {
+      // Non-admin users get limited fields
+      queryBuilder = queryBuilder.select(['user.id', 'user.email', 'user.firstName', 'user.lastName', 'user.role', 'user.isActive', 'user.createdAt', 'user.updatedAt']);
+    }
 
     // Add role-based where conditions
     if (whereConditions.length > 0) {
@@ -259,7 +285,7 @@ export class UsersService implements OnModuleInit {
     }
 
     // Apply role filter from query parameters (if admin)
-    if (query?.role && userRole === UserRole.ADMIN) {
+    if (query?.role && isAdminAccess) {
       queryBuilder = queryBuilder.andWhere('user.role = :role', { role: query.role });
     }
 
@@ -291,15 +317,150 @@ export class UsersService implements OnModuleInit {
     // Execute query
     const users = await queryBuilder.getMany();
 
+    // Add admin-specific properties to user objects
+    const enhancedUsers = users.map((user) => {
+      const userObj = user as any;
+
+      if (isAdminAccess) {
+        // Add admin-specific computed properties
+        userObj.adminProperties = {
+          isNewUser: this.isNewUser(user.createdAt),
+          accountAge: this.calculateAccountAge(user.createdAt),
+          lastActivityStatus: this.getLastActivityStatus(user.lastLoginAt),
+          profileCompleteness: user.profileCompletionPercentage || 0,
+          verificationStatus: this.getVerificationStatus(user.isEmailVerified, user.isPhoneVerified),
+          riskLevel: this.calculateRiskLevel(user),
+          managementNotes: '', // Placeholder for admin notes
+          priority: this.calculateUserPriority(user),
+        };
+
+        // Add admin-specific flags
+        userObj.isAdminView = true;
+        userObj.canEdit = true;
+        userObj.canDelete = user.role !== UserRole.ADMIN; // Admins can't delete other admins
+        userObj.requiresAttention = this.requiresAttention(user);
+      }
+
+      return userObj;
+    });
+
     // Calculate total pages
     const totalPages = Math.ceil(total / limit);
 
     return {
-      users,
+      users: enhancedUsers,
       total,
       page,
       totalPages,
     };
+  }
+
+  // Helper methods for admin-specific user properties
+  private isNewUser(createdAt: Date): boolean {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return new Date(createdAt) > thirtyDaysAgo;
+  }
+
+  private calculateAccountAge(createdAt: Date): string {
+    const now = new Date();
+    const created = new Date(createdAt);
+    const diffTime = Math.abs(now.getTime() - created.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 30) {
+      return `${diffDays} days`;
+    } else if (diffDays < 365) {
+      const months = Math.floor(diffDays / 30);
+      return `${months} month${months > 1 ? 's' : ''}`;
+    } else {
+      const years = Math.floor(diffDays / 365);
+      return `${years} year${years > 1 ? 's' : ''}`;
+    }
+  }
+
+  private getLastActivityStatus(lastLoginAt?: Date): string {
+    if (!lastLoginAt) {
+      return 'Never logged in';
+    }
+
+    const now = new Date();
+    const lastLogin = new Date(lastLoginAt);
+    const diffTime = Math.abs(now.getTime() - lastLogin.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Active today';
+    } else if (diffDays === 1) {
+      return 'Active yesterday';
+    } else if (diffDays < 7) {
+      return `Active ${diffDays} days ago`;
+    } else if (diffDays < 30) {
+      const weeks = Math.floor(diffDays / 7);
+      return `Active ${weeks} week${weeks > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Inactive';
+    }
+  }
+
+  private getVerificationStatus(isEmailVerified?: boolean, isPhoneVerified?: boolean): string {
+    if (isEmailVerified && isPhoneVerified) {
+      return 'Fully verified';
+    } else if (isEmailVerified || isPhoneVerified) {
+      return 'Partially verified';
+    } else {
+      return 'Unverified';
+    }
+  }
+
+  private calculateRiskLevel(user: User): 'low' | 'medium' | 'high' {
+    let riskScore = 0;
+
+    // Check if user is inactive
+    if (user.lastLoginAt) {
+      const daysSinceLogin = Math.ceil((Date.now() - new Date(user.lastLoginAt).getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceLogin > 90) riskScore += 3;
+      else if (daysSinceLogin > 30) riskScore += 2;
+      else if (daysSinceLogin > 7) riskScore += 1;
+    } else {
+      riskScore += 2; // Never logged in
+    }
+
+    // Check verification status
+    if (!user.isEmailVerified) riskScore += 1;
+    if (!user.isPhoneVerified) riskScore += 1;
+
+    // Check profile completion
+    if ((user.profileCompletionPercentage || 0) < 50) riskScore += 2;
+    else if ((user.profileCompletionPercentage || 0) < 80) riskScore += 1;
+
+    // Check if account is inactive
+    if (!user.isActive) riskScore += 3;
+
+    if (riskScore >= 5) return 'high';
+    if (riskScore >= 3) return 'medium';
+    return 'low';
+  }
+
+  private calculateUserPriority(user: User): 'low' | 'normal' | 'high' | 'urgent' {
+    const riskLevel = this.calculateRiskLevel(user);
+
+    if (riskLevel === 'high' || !user.isActive) {
+      return 'urgent';
+    } else if (riskLevel === 'medium' || user.role === UserRole.ADMIN) {
+      return 'high';
+    } else if (user.role === UserRole.VETERINARIAN) {
+      return 'normal';
+    } else {
+      return 'low';
+    }
+  }
+
+  private requiresAttention(user: User): boolean {
+    const riskLevel = this.calculateRiskLevel(user);
+    const isNew = this.isNewUser(user.createdAt);
+
+    return riskLevel === 'high' || !user.isActive || (!user.isEmailVerified && !isNew) || (user.profileCompletionPercentage || 0) < 30;
   }
 
   async findOne(id: string): Promise<User> {
@@ -323,7 +484,7 @@ export class UsersService implements OnModuleInit {
     return this.userRepository.findOne({ where: { phone } });
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, currentUserRole?: UserRole): Promise<User> {
     const user = await this.findOne(id);
 
     if (updateUserDto.email && updateUserDto.email !== user.email) {
@@ -333,9 +494,19 @@ export class UsersService implements OnModuleInit {
       }
     }
 
+    // Prepare update data with role mapping if role is provided
+    const updateData: any = { ...updateUserDto };
+    if (updateUserDto.role) {
+      // Only allow role changes if current user is admin
+      if (currentUserRole && currentUserRole !== UserRole.ADMIN) {
+        throw new ForbiddenException('Only administrators can change user roles');
+      }
+      updateData.role = this.mapRoleToEnum(updateUserDto.role);
+    }
+
     const updatedUser = await this.userRepository.save({
       ...user,
-      ...updateUserDto,
+      ...updateData,
     });
 
     // Calculate and update profile completion percentage
