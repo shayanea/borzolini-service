@@ -89,6 +89,21 @@ export class SettingsController {
     return await this.settingsService.findOne(id);
   }
 
+  @Patch('default')
+  @ApiOperation({ summary: 'Update default settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Default settings updated successfully',
+    type: Settings,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  @ApiResponse({ status: 404, description: 'Default settings not found' })
+  async updateDefault(@Body() updateSettingsDto: UpdateSettingsDto, @Request() req: any): Promise<Settings> {
+    return await this.settingsService.updateDefault(updateSettingsDto, req.user?.id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update settings by ID' })
   @ApiParam({ name: 'id', description: 'Settings ID' })
@@ -104,21 +119,6 @@ export class SettingsController {
   @ApiResponse({ status: 409, description: 'Conflict - Settings name already exists' })
   async update(@Param('id') id: string, @Body() updateSettingsDto: UpdateSettingsDto, @Request() req: any): Promise<Settings> {
     return await this.settingsService.update(id, updateSettingsDto, req.user?.id);
-  }
-
-  @Patch('default')
-  @ApiOperation({ summary: 'Update default settings' })
-  @ApiResponse({
-    status: 200,
-    description: 'Default settings updated successfully',
-    type: Settings,
-  })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
-  @ApiResponse({ status: 404, description: 'Default settings not found' })
-  async updateDefault(@Body() updateSettingsDto: UpdateSettingsDto, @Request() req: any): Promise<Settings> {
-    return await this.settingsService.updateDefault(updateSettingsDto, req.user?.id);
   }
 
   @Patch('general')
