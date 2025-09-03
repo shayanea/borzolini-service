@@ -1,5 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
+import { ExportService } from '../../common/services/export.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -18,7 +20,10 @@ import { Clinic } from './entities/clinic.entity';
 @ApiTags('clinics')
 @Controller('clinics')
 export class ClinicsController {
-  constructor(private readonly clinicsService: ClinicsService) {}
+  constructor(
+    private readonly clinicsService: ClinicsService,
+    private readonly exportService: ExportService
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -760,5 +765,188 @@ export class ClinicsController {
   @ApiResponse({ status: 409, description: 'Review already unverified' })
   async unverifyReview(@Param('id') reviewId: string, @Request() req: any): Promise<ClinicReview> {
     return await this.clinicsService.unverifyReview(reviewId, req.user?.id);
+  }
+
+  // Export endpoints
+  @Get('export/csv')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export clinics to CSV' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'Filter by clinic name',
+  })
+  @ApiQuery({ name: 'city', required: false, description: 'Filter by city' })
+  @ApiQuery({ name: 'state', required: false, description: 'Filter by state' })
+  @ApiQuery({
+    name: 'is_verified',
+    required: false,
+    description: 'Filter by verification status',
+  })
+  @ApiQuery({
+    name: 'is_active',
+    required: false,
+    description: 'Filter by active status',
+  })
+  @ApiQuery({
+    name: 'services',
+    required: false,
+    description: 'Filter by services offered',
+  })
+  @ApiQuery({
+    name: 'specializations',
+    required: false,
+    description: 'Filter by specializations',
+  })
+  @ApiQuery({
+    name: 'rating_min',
+    required: false,
+    description: 'Minimum rating filter',
+  })
+  @ApiQuery({
+    name: 'rating_max',
+    required: false,
+    description: 'Maximum rating filter',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file generated successfully',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportClinicsToCsv(
+    @Res() res: Response,
+    @Query('name') name?: string,
+    @Query('city') city?: string,
+    @Query('state') state?: string,
+    @Query('is_verified') isVerified?: boolean,
+    @Query('is_active') isActive?: boolean,
+    @Query('services') services?: string,
+    @Query('specializations') specializations?: string,
+    @Query('rating_min') ratingMin?: number,
+    @Query('rating_max') ratingMax?: number
+  ) {
+    const filters: ClinicFilters = {
+      ...(name && { name }),
+      ...(city && { city }),
+      ...(state && { state }),
+      ...(isVerified !== undefined && { is_verified: isVerified }),
+      ...(isActive !== undefined && { is_active: isActive }),
+      ...(services && { services: services.split(',') }),
+      ...(specializations && { specializations: specializations.split(',') }),
+      ...(ratingMin !== undefined && { rating_min: ratingMin }),
+      ...(ratingMax !== undefined && { rating_max: ratingMax }),
+    };
+
+    const options: ClinicSearchOptions = {
+      page: 1,
+      limit: 10000, // Large limit to get all records
+    };
+
+    const result = await this.clinicsService.findAll(filters, options);
+    const transformedData = this.exportService.transformClinicData(result.clinics);
+
+    await this.exportService.exportData(transformedData, 'csv', 'clinics', res);
+  }
+
+  @Get('export/excel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export clinics to Excel' })
+  @ApiQuery({
+    name: 'name',
+    required: false,
+    description: 'Filter by clinic name',
+  })
+  @ApiQuery({ name: 'city', required: false, description: 'Filter by city' })
+  @ApiQuery({ name: 'state', required: false, description: 'Filter by state' })
+  @ApiQuery({
+    name: 'is_verified',
+    required: false,
+    description: 'Filter by verification status',
+  })
+  @ApiQuery({
+    name: 'is_active',
+    required: false,
+    description: 'Filter by active status',
+  })
+  @ApiQuery({
+    name: 'services',
+    required: false,
+    description: 'Filter by services offered',
+  })
+  @ApiQuery({
+    name: 'specializations',
+    required: false,
+    description: 'Filter by specializations',
+  })
+  @ApiQuery({
+    name: 'rating_min',
+    required: false,
+    description: 'Minimum rating filter',
+  })
+  @ApiQuery({
+    name: 'rating_max',
+    required: false,
+    description: 'Maximum rating filter',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportClinicsToExcel(
+    @Res() res: Response,
+    @Query('name') name?: string,
+    @Query('city') city?: string,
+    @Query('state') state?: string,
+    @Query('is_verified') isVerified?: boolean,
+    @Query('is_active') isActive?: boolean,
+    @Query('services') services?: string,
+    @Query('specializations') specializations?: string,
+    @Query('rating_min') ratingMin?: number,
+    @Query('rating_max') ratingMax?: number
+  ) {
+    const filters: ClinicFilters = {
+      ...(name && { name }),
+      ...(city && { city }),
+      ...(state && { state }),
+      ...(isVerified !== undefined && { is_verified: isVerified }),
+      ...(isActive !== undefined && { is_active: isActive }),
+      ...(services && { services: services.split(',') }),
+      ...(specializations && { specializations: specializations.split(',') }),
+      ...(ratingMin !== undefined && { rating_min: ratingMin }),
+      ...(ratingMax !== undefined && { rating_max: ratingMax }),
+    };
+
+    const options: ClinicSearchOptions = {
+      page: 1,
+      limit: 10000, // Large limit to get all records
+    };
+
+    const result = await this.clinicsService.findAll(filters, options);
+    const transformedData = this.exportService.transformClinicData(result.clinics);
+
+    await this.exportService.exportData(transformedData, 'excel', 'clinics', res);
   }
 }

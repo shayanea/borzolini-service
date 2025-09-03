@@ -1,4 +1,5 @@
 import { AppModule } from "./app.module";
+import { BreedsSeeder } from "./modules/breeds/breeds.seeder";
 import { ClinicsSeeder } from "./modules/clinics/clinics.seeder";
 import { NestFactory } from "@nestjs/core";
 import { UsersSeeder } from "./modules/users/users.seeder";
@@ -11,6 +12,7 @@ async function seed() {
   try {
     const app = await NestFactory.createApplicationContext(AppModule);
     const usersSeeder = app.get(UsersSeeder);
+    const breedsSeeder = app.get(BreedsSeeder);
     const clinicsSeeder = app.get(ClinicsSeeder);
     const petsSeeder = app.get(PetsSeeder);
     const appointmentsSeeder = app.get(AppointmentsSeeder);
@@ -18,6 +20,9 @@ async function seed() {
     // Seed in order of dependencies
     console.log("👥 Seeding users...");
     await usersSeeder.seed();
+    
+    console.log("🐕 Seeding breeds...");
+    await breedsSeeder.seed();
     
     console.log("🏥 Seeding clinics...");
     await clinicsSeeder.seed();

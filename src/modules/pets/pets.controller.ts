@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ExportService } from '../common/services/export.service';
 import { UserRole } from '../users/entities/user.entity';
 import { CreatePetDto } from './dto/create-pet.dto';
 import { UpdatePetDto } from './dto/update-pet.dto';
@@ -15,7 +17,10 @@ import { PetFilters, PetsService, PetStats } from './pets.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class PetsController {
-  constructor(private readonly petsService: PetsService) {}
+  constructor(
+    private readonly petsService: PetsService,
+    private readonly exportService: ExportService
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -338,5 +343,224 @@ export class PetsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async validatePetData(@Body() createPetDto: CreatePetDto): Promise<{ isValid: boolean; errors: string[] }> {
     return this.petsService.validatePetData(createPetDto);
+  }
+
+  // Export endpoints
+  @Get('export/csv')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Export pets to CSV',
+    description: 'Export all pets to CSV format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10000)',
+  })
+  @ApiQuery({
+    name: 'species',
+    required: false,
+    enum: PetSpecies,
+    description: 'Filter by pet species',
+  })
+  @ApiQuery({
+    name: 'gender',
+    required: false,
+    enum: PetGender,
+    description: 'Filter by pet gender',
+  })
+  @ApiQuery({
+    name: 'size',
+    required: false,
+    enum: PetSize,
+    description: 'Filter by pet size',
+  })
+  @ApiQuery({
+    name: 'is_spayed_neutered',
+    required: false,
+    type: Boolean,
+    description: 'Filter by spayed/neutered status',
+  })
+  @ApiQuery({
+    name: 'is_vaccinated',
+    required: false,
+    type: Boolean,
+    description: 'Filter by vaccination status',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search in name, breed, or color',
+  })
+  @ApiQuery({
+    name: 'owner_id',
+    required: false,
+    type: String,
+    description: 'Filter by owner ID (admin only)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file generated successfully',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportPetsToCsv(
+    @Res() res: Response,
+    @Request() req: any,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10000,
+    @Query('species') species?: PetSpecies,
+    @Query('gender') gender?: PetGender,
+    @Query('size') size?: PetSize,
+    @Query('is_spayed_neutered') is_spayed_neutered?: boolean,
+    @Query('is_vaccinated') is_vaccinated?: boolean,
+    @Query('search') search?: string,
+    @Query('owner_id') owner_id?: string
+  ) {
+    // Only allow admins to filter by owner_id
+    if (owner_id && req.user.role !== UserRole.ADMIN) {
+      owner_id = req.user.id; // Force to current user's pets
+    }
+
+    const filters: PetFilters = {
+      species,
+      gender,
+      size,
+      is_spayed_neutered,
+      is_vaccinated,
+      search,
+      // Only filter by owner_id if explicitly provided or if user is not admin
+      owner_id: owner_id || (req.user.role !== UserRole.ADMIN ? req.user.id : undefined),
+    };
+
+    const result = await this.petsService.findAll(filters, page, limit);
+    const transformedData = this.exportService.transformPetData(result.pets);
+
+    await this.exportService.exportData(transformedData, 'csv', 'pets', res);
+  }
+
+  @Get('export/excel')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Export pets to Excel',
+    description: 'Export all pets to Excel format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10000)',
+  })
+  @ApiQuery({
+    name: 'species',
+    required: false,
+    enum: PetSpecies,
+    description: 'Filter by pet species',
+  })
+  @ApiQuery({
+    name: 'gender',
+    required: false,
+    enum: PetGender,
+    description: 'Filter by pet gender',
+  })
+  @ApiQuery({
+    name: 'size',
+    required: false,
+    enum: PetSize,
+    description: 'Filter by pet size',
+  })
+  @ApiQuery({
+    name: 'is_spayed_neutered',
+    required: false,
+    type: Boolean,
+    description: 'Filter by spayed/neutered status',
+  })
+  @ApiQuery({
+    name: 'is_vaccinated',
+    required: false,
+    type: Boolean,
+    description: 'Filter by vaccination status',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search in name, breed, or color',
+  })
+  @ApiQuery({
+    name: 'owner_id',
+    required: false,
+    type: String,
+    description: 'Filter by owner ID (admin only)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportPetsToExcel(
+    @Res() res: Response,
+    @Request() req: any,
+    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10000,
+    @Query('species') species?: PetSpecies,
+    @Query('gender') gender?: PetGender,
+    @Query('size') size?: PetSize,
+    @Query('is_spayed_neutered') is_spayed_neutered?: boolean,
+    @Query('is_vaccinated') is_vaccinated?: boolean,
+    @Query('search') search?: string,
+    @Query('owner_id') owner_id?: string
+  ) {
+    // Only allow admins to filter by owner_id
+    if (owner_id && req.user.role !== UserRole.ADMIN) {
+      owner_id = req.user.id; // Force to current user's pets
+    }
+
+    const filters: PetFilters = {
+      species,
+      gender,
+      size,
+      is_spayed_neutered,
+      is_vaccinated,
+      search,
+      // Only filter by owner_id if explicitly provided or if user is not admin
+      owner_id: owner_id || (req.user.role !== UserRole.ADMIN ? req.user.id : undefined),
+    };
+
+    const result = await this.petsService.findAll(filters, page, limit);
+    const transformedData = this.exportService.transformPetData(result.pets);
+
+    await this.exportService.exportData(transformedData, 'excel', 'pets', res);
   }
 }

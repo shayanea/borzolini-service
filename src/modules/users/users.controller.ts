@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Post, Put, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, NotFoundException, Param, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { Request as ExpressRequest } from 'express';
+import { Request as ExpressRequest, Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ExportService } from '../common/services/export.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
 import { RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
@@ -34,7 +35,8 @@ interface AuthenticatedRequest extends ExpressRequest {
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly usersResponseService: UsersResponseService
+    private readonly usersResponseService: UsersResponseService,
+    private readonly exportService: ExportService
   ) {}
 
   @Post()
@@ -635,5 +637,140 @@ export class UsersController {
     const activities = await this.usersService.getAdminDashboardActivities(validatedLimit);
 
     return this.usersResponseService.standardizeAdminDashboardActivityResponse(activities, 'Admin dashboard activities retrieved successfully');
+  }
+
+  // Export endpoints
+  @Get('export/csv')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Export users to CSV (Admin only)',
+    description: 'Exports all users to CSV format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 10000,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search term for filtering users by name or email',
+    example: 'john',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description: 'Filter users by role',
+    enum: ['admin', 'veterinarian', 'staff', 'patient'],
+    example: 'patient',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    description: 'Filter users by active status',
+    enum: ['true', 'false'],
+    example: 'true',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file generated successfully',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async exportUsersToCsv(@Res() res: Response, @Query('page') page?: string, @Query('limit') limit?: string, @Query('search') search?: string, @Query('role') role?: string, @Query('isActive') isActive?: string) {
+    const query: FindUsersDto = {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 10000,
+      search,
+      role: role as any,
+      isActive: isActive ? isActive === 'true' : undefined,
+    };
+
+    const result = await this.usersService.findAll(UserRole.ADMIN, query);
+    const transformedData = this.exportService.transformUserData(result.users);
+
+    await this.exportService.exportData(transformedData, 'csv', 'users', res);
+  }
+
+  @Get('export/excel')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({
+    summary: 'Export users to Excel (Admin only)',
+    description: 'Exports all users to Excel format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number for pagination',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Number of items per page',
+    example: 10000,
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Search term for filtering users by name or email',
+    example: 'john',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description: 'Filter users by role',
+    enum: ['admin', 'veterinarian', 'staff', 'patient'],
+    example: 'patient',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    description: 'Filter users by active status',
+    enum: ['true', 'false'],
+    example: 'true',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async exportUsersToExcel(@Res() res: Response, @Query('page') page?: string, @Query('limit') limit?: string, @Query('search') search?: string, @Query('role') role?: string, @Query('isActive') isActive?: string) {
+    const query: FindUsersDto = {
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 10000,
+      search,
+      role: role as any,
+      isActive: isActive ? isActive === 'true' : undefined,
+    };
+
+    const result = await this.usersService.findAll(UserRole.ADMIN, query);
+    const transformedData = this.exportService.transformUserData(result.users);
+
+    await this.exportService.exportData(transformedData, 'excel', 'users', res);
   }
 }

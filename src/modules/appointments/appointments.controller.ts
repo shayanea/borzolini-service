@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Response } from 'express';
 
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ExportService } from '../common/services/export.service';
 import { UserRole } from '../users/entities/user.entity';
 import { AppointmentFilters, AppointmentsService, AppointmentStats, TimeSlot } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
@@ -15,7 +17,10 @@ import { Appointment, AppointmentStatus, AppointmentType } from './entities/appo
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class AppointmentsController {
-  constructor(private readonly appointmentsService: AppointmentsService) {}
+  constructor(
+    private readonly appointmentsService: AppointmentsService,
+    private readonly exportService: ExportService
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -482,5 +487,278 @@ export class AppointmentsController {
 
     const result = await this.appointmentsService.findAll(filters, 1, 1000);
     return result.appointments.filter((apt) => apt.scheduled_date > new Date());
+  }
+
+  // Export endpoints
+  @Get('export/csv')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Export appointments to CSV',
+    description: 'Export all appointments to CSV format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10000)',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: AppointmentStatus,
+    description: 'Filter by appointment status',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: AppointmentType,
+    description: 'Filter by appointment type',
+  })
+  @ApiQuery({
+    name: 'clinic_id',
+    required: false,
+    type: String,
+    description: 'Filter by clinic ID',
+  })
+  @ApiQuery({
+    name: 'staff_id',
+    required: false,
+    type: String,
+    description: 'Filter by staff ID',
+  })
+  @ApiQuery({
+    name: 'pet_id',
+    required: false,
+    type: String,
+    description: 'Filter by pet ID',
+  })
+  @ApiQuery({
+    name: 'owner_id',
+    required: false,
+    type: String,
+    description: 'Filter by owner ID (admin only)',
+  })
+  @ApiQuery({
+    name: 'date_from',
+    required: false,
+    type: String,
+    description: 'Filter by start date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'date_to',
+    required: false,
+    type: String,
+    description: 'Filter by end date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'is_telemedicine',
+    required: false,
+    type: Boolean,
+    description: 'Filter by telemedicine appointments',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search in pet name, owner name, or notes',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file generated successfully',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportAppointmentsToCsv(
+    @Res() res: Response,
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: AppointmentStatus,
+    @Query('type') type?: AppointmentType,
+    @Query('clinic_id') clinic_id?: string,
+    @Query('staff_id') staff_id?: string,
+    @Query('pet_id') pet_id?: string,
+    @Query('owner_id') owner_id?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
+    @Query('is_telemedicine') is_telemedicine?: boolean,
+    @Query('search') search?: string
+  ) {
+    // Only allow admins to filter by owner_id
+    if (owner_id && req.user.role !== UserRole.ADMIN) {
+      owner_id = req.user.id; // Force to current user's appointments
+    }
+
+    const filters: AppointmentFilters = {
+      status,
+      type,
+      clinic_id,
+      staff_id,
+      pet_id,
+      // Only set owner_id for non-admin users or when explicitly filtering
+      owner_id: req.user.role === UserRole.ADMIN ? owner_id : owner_id || req.user.id,
+      date_from: date_from ? new Date(date_from) : undefined,
+      date_to: date_to ? new Date(date_to) : undefined,
+      is_telemedicine,
+      search,
+    };
+
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10000;
+
+    const result = await this.appointmentsService.findAll(filters, pageNum, limitNum);
+    const transformedData = this.exportService.transformAppointmentData(result.appointments);
+
+    await this.exportService.exportData(transformedData, 'csv', 'appointments', res);
+  }
+
+  @Get('export/excel')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Export appointments to Excel',
+    description: 'Export all appointments to Excel format with optional filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number (default: 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Items per page (default: 10000)',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: AppointmentStatus,
+    description: 'Filter by appointment status',
+  })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: AppointmentType,
+    description: 'Filter by appointment type',
+  })
+  @ApiQuery({
+    name: 'clinic_id',
+    required: false,
+    type: String,
+    description: 'Filter by clinic ID',
+  })
+  @ApiQuery({
+    name: 'staff_id',
+    required: false,
+    type: String,
+    description: 'Filter by staff ID',
+  })
+  @ApiQuery({
+    name: 'pet_id',
+    required: false,
+    type: String,
+    description: 'Filter by pet ID',
+  })
+  @ApiQuery({
+    name: 'owner_id',
+    required: false,
+    type: String,
+    description: 'Filter by owner ID (admin only)',
+  })
+  @ApiQuery({
+    name: 'date_from',
+    required: false,
+    type: String,
+    description: 'Filter by start date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'date_to',
+    required: false,
+    type: String,
+    description: 'Filter by end date (ISO string)',
+  })
+  @ApiQuery({
+    name: 'is_telemedicine',
+    required: false,
+    type: Boolean,
+    description: 'Filter by telemedicine appointments',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    type: String,
+    description: 'Search in pet name, owner name, or notes',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Excel file generated successfully',
+    content: {
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async exportAppointmentsToExcel(
+    @Res() res: Response,
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: AppointmentStatus,
+    @Query('type') type?: AppointmentType,
+    @Query('clinic_id') clinic_id?: string,
+    @Query('staff_id') staff_id?: string,
+    @Query('pet_id') pet_id?: string,
+    @Query('owner_id') owner_id?: string,
+    @Query('date_from') date_from?: string,
+    @Query('date_to') date_to?: string,
+    @Query('is_telemedicine') is_telemedicine?: boolean,
+    @Query('search') search?: string
+  ) {
+    // Only allow admins to filter by owner_id
+    if (owner_id && req.user.role !== UserRole.ADMIN) {
+      owner_id = req.user.id; // Force to current user's appointments
+    }
+
+    const filters: AppointmentFilters = {
+      status,
+      type,
+      clinic_id,
+      staff_id,
+      pet_id,
+      // Only set owner_id for non-admin users or when explicitly filtering
+      owner_id: req.user.role === UserRole.ADMIN ? owner_id : owner_id || req.user.id,
+      date_from: date_from ? new Date(date_from) : undefined,
+      date_to: date_to ? new Date(date_to) : undefined,
+      is_telemedicine,
+      search,
+    };
+
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10000;
+
+    const result = await this.appointmentsService.findAll(filters, pageNum, limitNum);
+    const transformedData = this.exportService.transformAppointmentData(result.appointments);
+
+    await this.exportService.exportData(transformedData, 'excel', 'appointments', res);
   }
 }

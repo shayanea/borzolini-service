@@ -19,6 +19,7 @@ import { ServiceHealthService } from './service-health.service';
 import { ElasticsearchIndexService } from './services/elasticsearch-index.service';
 import { ElasticsearchSearchService } from './services/elasticsearch-search.service';
 import { ElasticsearchSyncService } from './services/elasticsearch-sync.service';
+import { ExportService } from './services/export.service';
 import { RateLimitMonitorService } from './services/rate-limit-monitor.service';
 import { SmsService } from './sms.service';
 import { SupabaseModule } from './supabase.module';
@@ -31,6 +32,7 @@ import { ActivityLoggerUtils } from './utils/activity-logger.utils';
     CommonService,
     DatabaseService,
     EmailService,
+    ExportService,
     FileUploadService,
     LoggerService,
     NotificationService,
@@ -54,6 +56,7 @@ import { ActivityLoggerUtils } from './utils/activity-logger.utils';
     CommonService,
     DatabaseService,
     EmailService,
+    ExportService,
     FileUploadService,
     LoggerService,
     NotificationService,
