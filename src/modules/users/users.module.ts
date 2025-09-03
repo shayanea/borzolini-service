@@ -1,16 +1,17 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
-import { EmailService } from '../../common/email.service';
-import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
-import { SettingsConfigModule } from '../settings/settings-config.module';
-import { SmsService } from '../../common/sms.service';
+import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
+import { CommonModule } from '../../common/common.module';
+import { EmailService } from '../../common/email.service';
+import { SmsService } from '../../common/sms.service';
+import { SettingsConfigModule } from '../settings/settings-config.module';
 import { UserActivity } from './entities/user-activity.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
-import { UsersController } from './users.controller';
+import { User } from './entities/user.entity';
 import { UsersResponseService } from './users-response.service';
+import { UsersController } from './users.controller';
 import { UsersSeeder } from './users.seeder';
 import { UsersService } from './users.service';
 
@@ -18,6 +19,7 @@ import { UsersService } from './users.service';
   imports: [
     TypeOrmModule.forFeature([User, UserPreferences, UserActivity]),
     SettingsConfigModule,
+    CommonModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {

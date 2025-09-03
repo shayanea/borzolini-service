@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Breed, ExerciseNeeds, GroomingNeeds, PetSize, PetSpecies } from './entities/breed.entity';
@@ -21,13 +21,14 @@ interface BreedData {
 
 @Injectable()
 export class BreedsSeeder {
+  private readonly logger = new Logger(BreedsSeeder.name);
   constructor(
     @InjectRepository(Breed)
     private readonly breedRepository: Repository<Breed>
   ) {}
 
   async seed(): Promise<void> {
-    console.log('🌱 Starting breeds seeding...');
+    this.logger.log('🌱 Starting breeds seeding...');
 
     const breedsData: BreedData[] = [
       // DOGS
@@ -402,23 +403,23 @@ export class BreedsSeeder {
       });
 
       if (existingBreed) {
-        console.log(`⏭️  Skipping ${breedData.name} (${breedData.species}) - already exists`);
+        this.logger.log(`⏭️  Skipping ${breedData.name} (${breedData.species}) - already exists`);
         skippedCount++;
         continue;
       }
 
       const breed = this.breedRepository.create(breedData);
       await this.breedRepository.save(breed);
-      console.log(`✅ Created ${breedData.name} (${breedData.species})`);
+      this.logger.log(`✅ Created ${breedData.name} (${breedData.species})`);
       createdCount++;
     }
 
-    console.log(`🌱 Breeds seeding completed! Created: ${createdCount}, Skipped: ${skippedCount}`);
+    this.logger.log(`🌱 Breeds seeding completed! Created: ${createdCount}, Skipped: ${skippedCount}`);
   }
 
   async clear(): Promise<void> {
-    console.log('🧹 Clearing breeds data...');
+    this.logger.log('🧹 Clearing breeds data...');
     await this.breedRepository.delete({});
-    console.log('✅ Breeds data cleared');
+    this.logger.log('✅ Breeds data cleared');
   }
 }

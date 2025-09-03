@@ -4,7 +4,7 @@ import { Request as ExpressRequest, Response } from 'express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { ExportService } from '../common/services/export.service';
+import { ExportService } from '@common/services/export.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
 import { RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
@@ -696,10 +696,17 @@ export class UsersController {
     const query: FindUsersDto = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10000,
-      search,
       role: role as any,
-      isActive: isActive ? isActive === 'true' : undefined,
-    };
+      sortBy: 'createdAt',
+      sortOrder: 'DESC',
+    } as FindUsersDto;
+
+    if (search !== undefined) {
+      (query as any).search = search;
+    }
+    if (isActive !== undefined) {
+      (query as any).isActive = isActive === 'true';
+    }
 
     const result = await this.usersService.findAll(UserRole.ADMIN, query);
     const transformedData = this.exportService.transformUserData(result.users);
@@ -763,10 +770,17 @@ export class UsersController {
     const query: FindUsersDto = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10000,
-      search,
       role: role as any,
-      isActive: isActive ? isActive === 'true' : undefined,
-    };
+      sortBy: 'createdAt',
+      sortOrder: 'DESC',
+    } as FindUsersDto;
+
+    if (search !== undefined) {
+      (query as any).search = search;
+    }
+    if (isActive !== undefined) {
+      (query as any).isActive = isActive === 'true';
+    }
 
     const result = await this.usersService.findAll(UserRole.ADMIN, query);
     const transformedData = this.exportService.transformUserData(result.users);

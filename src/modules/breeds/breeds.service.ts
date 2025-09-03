@@ -196,10 +196,8 @@ export class BreedsService {
     const groupedBreeds: Record<string, Breed[]> = {};
 
     breeds.forEach((breed) => {
-      if (!groupedBreeds[breed.species]) {
-        groupedBreeds[breed.species] = [];
-      }
-      groupedBreeds[breed.species].push(breed);
+      groupedBreeds[breed.species] = groupedBreeds[breed.species] ?? [];
+      groupedBreeds[breed.species]!.push(breed);
     });
 
     return Object.entries(groupedBreeds).map(([species, speciesBreeds]) => ({
@@ -209,24 +207,45 @@ export class BreedsService {
   }
 
   private mapToResponseDto(breed: Breed): BreedResponseDto {
-    return {
+    const dto: Partial<BreedResponseDto> = {
       id: breed.id,
       name: breed.name,
       species: breed.species,
-      size_category: breed.size_category,
-      temperament: breed.temperament,
+      temperament: breed.temperament ?? '',
       health_risks: breed.health_risks,
-      life_expectancy_min: breed.life_expectancy_min,
-      life_expectancy_max: breed.life_expectancy_max,
-      weight_min: breed.weight_min,
-      weight_max: breed.weight_max,
-      origin_country: breed.origin_country,
-      description: breed.description,
-      grooming_needs: breed.grooming_needs,
-      exercise_needs: breed.exercise_needs,
       is_active: breed.is_active,
       created_at: breed.created_at,
       updated_at: breed.updated_at,
     };
+
+    if (breed.size_category !== undefined) {
+      dto.size_category = breed.size_category;
+    }
+    if (breed.life_expectancy_min !== undefined) {
+      dto.life_expectancy_min = breed.life_expectancy_min;
+    }
+    if (breed.life_expectancy_max !== undefined) {
+      dto.life_expectancy_max = breed.life_expectancy_max;
+    }
+    if (breed.weight_min !== undefined) {
+      dto.weight_min = breed.weight_min;
+    }
+    if (breed.weight_max !== undefined) {
+      dto.weight_max = breed.weight_max;
+    }
+    if (breed.origin_country !== undefined) {
+      dto.origin_country = breed.origin_country;
+    }
+    if (breed.description !== undefined) {
+      dto.description = breed.description;
+    }
+    if (breed.grooming_needs !== undefined) {
+      dto.grooming_needs = breed.grooming_needs;
+    }
+    if (breed.exercise_needs !== undefined) {
+      dto.exercise_needs = breed.exercise_needs;
+    }
+
+    return dto as BreedResponseDto;
   }
 }

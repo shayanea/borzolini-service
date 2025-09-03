@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import * as createCsvWriter from 'csv-writer';
-import { Response } from 'express';
 import * as XLSX from 'xlsx';
+
+import { Injectable } from '@nestjs/common';
+import { Response } from 'express';
 
 export interface ExportOptions {
   format: 'csv' | 'excel';
@@ -18,40 +18,39 @@ export class ExportService {
   /**
    * Export data to CSV format
    */
-  async exportToCsv(data: ExportData[], filename: string, res: Response, options: Partial<ExportOptions> = {}): Promise<void> {
+  async exportToCsv(data: ExportData[], filename: string, res: Response, _options: Partial<ExportOptions> = {}): Promise<void> {
     if (!data || data.length === 0) {
       res.status(404).json({ message: 'No data to export' });
       return;
     }
 
-    const headers = Object.keys(data[0]);
-    const csvWriter = createCsvWriter.createObjectCsvWriter({
-      path: filename,
-      header: headers.map((header) => ({ id: header, title: this.formatHeader(header) })),
-    });
+    const first = (data[0] || {}) as Record<string, unknown>;
+    const headers = Object.keys(first);
+    const escapeCsv = (value: unknown): string => {
+      if (value === null || value === undefined) return '';
+      const str = String(value);
+      const needsQuoting = /[",\n]/.test(str);
+      const escaped = str.replace(/"/g, '""');
+      return needsQuoting ? `"${escaped}"` : escaped;
+    };
+    const headerLine = headers.map((h) => escapeCsv(this.formatHeader(h))).join(',');
+    const lines = data.map((row) => headers.map((h) => escapeCsv((row as Record<string, unknown>)[h])).join(','));
+    const csvContent = [headerLine, ...lines].join('\n');
 
     try {
-      await csvWriter.writeRecords(data);
-
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-      // Read the file and send it
-      const fs = require('fs');
-      const fileContent = fs.readFileSync(filename);
-      res.send(fileContent);
-
-      // Clean up the temporary file
-      fs.unlinkSync(filename);
+      res.send(csvContent);
     } catch (error) {
-      res.status(500).json({ message: 'Error generating CSV export', error: error.message });
+      const err = error as Error;
+      res.status(500).json({ message: 'Error generating CSV export', error: err.message });
     }
   }
 
   /**
    * Export data to Excel format
    */
-  async exportToExcel(data: ExportData[], filename: string, res: Response, options: Partial<ExportOptions> = {}): Promise<void> {
+  async exportToExcel(data: ExportData[], filename: string, res: Response, _options: Partial<ExportOptions> = {}): Promise<void> {
     if (!data || data.length === 0) {
       res.status(404).json({ message: 'No data to export' });
       return;
@@ -74,21 +73,22 @@ export class ExportService {
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
       res.send(excelBuffer);
     } catch (error) {
-      res.status(500).json({ message: 'Error generating Excel export', error: error.message });
+      const err = error as Error;
+      res.status(500).json({ message: 'Error generating Excel export', error: err.message });
     }
   }
 
   /**
    * Export data in the specified format
    */
-  async exportData(data: ExportData[], format: 'csv' | 'excel', entityType: string, res: Response, options: Partial<ExportOptions> = {}): Promise<void> {
+  async exportData(data: ExportData[], format: 'csv' | 'excel', entityType: string, res: Response, _options: Partial<ExportOptions> = {}): Promise<void> {
     const timestamp = new Date().toISOString().split('T')[0];
     const filename = `${entityType}_export_${timestamp}.${format === 'csv' ? 'csv' : 'xlsx'}`;
 
     if (format === 'csv') {
-      await this.exportToCsv(data, filename, res, options);
+      await this.exportToCsv(data, filename, res, _options);
     } else {
-      await this.exportToExcel(data, filename, res, options);
+      await this.exportToExcel(data, filename, res, _options);
     }
   }
 
@@ -171,7 +171,7 @@ export class ExportService {
       is_vaccinated: pet.isVaccinated,
       medical_history: pet.medicalHistory,
       owner_id: pet.owner_id,
-      owner_name: `${pet.owner?.firstName  } ${  pet.owner?.lastName}` || '',
+      owner_name: `${pet.owner?.firstName} ${pet.owner?.lastName}` || '',
       owner_email: pet.owner?.email || '',
       created_at: pet.created_at,
       updated_at: pet.updated_at,
@@ -196,12 +196,12 @@ export class ExportService {
       pet_name: appointment.pet?.name || '',
       pet_species: appointment.pet?.species || '',
       owner_id: appointment.owner_id,
-      owner_name: `${appointment.owner?.firstName  } ${  appointment.owner?.lastName}` || '',
+      owner_name: `${appointment.owner?.firstName} ${appointment.owner?.lastName}` || '',
       owner_email: appointment.owner?.email || '',
       clinic_id: appointment.clinic_id,
       clinic_name: appointment.clinic?.name || '',
       staff_id: appointment.staff_id,
-      staff_name: `${appointment.staff?.user?.firstName  } ${  appointment.staff?.user?.lastName}` || '',
+      staff_name: `${appointment.staff?.user?.firstName} ${appointment.staff?.user?.lastName}` || '',
       created_at: appointment.created_at,
       updated_at: appointment.updated_at,
     }));
