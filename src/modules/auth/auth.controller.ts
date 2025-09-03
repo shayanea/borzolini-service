@@ -20,7 +20,7 @@ interface AuthenticatedRequest extends ExpressRequest {
   user: JwtUser;
 }
 
-@ApiTags('auth')
+@ApiTags('Auth')
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {

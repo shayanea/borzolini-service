@@ -3,7 +3,7 @@ import { Controller, Get } from '@nestjs/common';
 
 import { HealthService } from './health.service';
 
-@ApiTags('health')
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
   constructor(private healthService: HealthService) {}

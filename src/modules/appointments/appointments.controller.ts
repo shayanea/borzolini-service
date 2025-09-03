@@ -12,7 +12,7 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { Appointment, AppointmentStatus, AppointmentType } from './entities/appointment.entity';
 
-@ApiTags('appointments')
+@ApiTags('Appointments')
 @Controller('appointments')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

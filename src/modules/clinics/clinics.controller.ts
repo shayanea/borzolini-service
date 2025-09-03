@@ -17,7 +17,7 @@ import { ClinicService } from './entities/clinic-service.entity';
 import { ClinicStaff } from './entities/clinic-staff.entity';
 import { Clinic } from './entities/clinic.entity';
 
-@ApiTags('clinics')
+@ApiTags('Clinics')
 @Controller('clinics')
 export class ClinicsController {
   constructor(

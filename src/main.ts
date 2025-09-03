@@ -105,14 +105,20 @@ async function bootstrap() {
       },
       'JWT-auth'
     )
-    .addTag('auth', '🔐 Authentication & Security')
-    .addTag('users', '👥 User Management')
-    .addTag('clinics', '🏥 Clinic Management')
-    .addTag('pets', '🐕 Pet Health Monitoring')
-    .addTag('appointments', '📅 Appointment System')
-    .addTag('ai-health', '🤖 AI Health Insights')
-    .addTag('telemedicine', '🎥 Telemedicine & Consultations')
-    .addTag('health', '💊 Health Monitoring')
+    .addTag('Auth', '🔐 Authentication & Security')
+    .addTag('Users', '👥 User Management')
+    .addTag('Clinics', '🏥 Clinic Management')
+    .addTag('Pets', '🐕 Pet Health Monitoring')
+    .addTag('Appointments', '📅 Appointment System')
+    .addTag('Ai-health', '🤖 AI Health Insights')
+    .addTag('Telemedicine', '🎥 Telemedicine & Consultations')
+    .addTag('Health', '💊 Health Monitoring')
+    .addTag('Static-files', '🖼️ Static Files')
+    .addTag('Rate-limit-monitor', '🚨 Rate Limit Monitoring')
+    .addTag('Scheduled-tasks', '🔄 Scheduled Tasks')
+    .addTag('Settings', '⚙️ Settings Management')
+    .addTag('Breeds', '🐶 Breeds Management')
+    .addTag('File-upload', '🖼️ File Upload')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

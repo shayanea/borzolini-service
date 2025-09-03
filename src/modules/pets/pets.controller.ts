@@ -12,7 +12,7 @@ import { UpdatePetDto } from './dto/update-pet.dto';
 import { Pet, PetGender, PetSize, PetSpecies } from './entities/pet.entity';
 import { PetFilters, PetsService, PetStats } from './pets.service';
 
-@ApiTags('pets')
+@ApiTags('Pets')
 @Controller('pets')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

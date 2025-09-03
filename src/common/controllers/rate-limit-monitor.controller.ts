@@ -6,7 +6,7 @@ import { RolesGuard } from '../../modules/auth/guards/roles.guard';
 import { UserRole } from '../../modules/users/entities/user.entity';
 import { RateLimitMonitorService } from '../services/rate-limit-monitor.service';
 
-@ApiTags('rate-limit-monitor')
+@ApiTags('Rate-limit-monitor')
 @Controller('rate-limit-monitor')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()

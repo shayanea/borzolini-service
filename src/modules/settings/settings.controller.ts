@@ -10,7 +10,7 @@ import { UpdateSettingsDto } from './dto/update-settings.dto';
 import { Settings } from './entities/settings.entity';
 import { SettingsService } from './settings.service';
 
-@ApiTags('settings')
+@ApiTags('Settings')
 @Controller('settings')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
