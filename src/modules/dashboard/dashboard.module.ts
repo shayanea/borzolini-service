@@ -3,6 +3,7 @@ import * as redisStore from 'cache-manager-redis-store';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { CacheModule } from '@nestjs/cache-manager';
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { CommonModule } from '../../common/common.module';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
 import { Module } from '@nestjs/common';
@@ -13,6 +14,7 @@ import { User } from '../users/entities/user.entity';
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Clinic, Appointment, Pet]),
+    CommonModule,
     CacheModule.registerAsync({
       useFactory: () => ({
         store: redisStore,

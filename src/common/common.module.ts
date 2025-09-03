@@ -63,6 +63,7 @@ import { ActivityLoggerUtils } from './utils/activity-logger.utils';
     SmsService,
     ServiceHealthService,
     RateLimitMonitorService,
+    ElasticsearchModule,
     ElasticsearchIndexService,
     ElasticsearchSearchService,
     ElasticsearchSyncService,
