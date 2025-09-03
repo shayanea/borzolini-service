@@ -101,6 +101,45 @@ export class DashboardController {
     return this.dashboardService.getDashboardStats(filters);
   }
 
+  @Get('charts')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get dashboard charts data',
+    description: 'Retrieve dashboard charts data with optional filtering for analytics and visualizations',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard charts data retrieved successfully',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiQuery({
+    name: 'dateRange',
+    required: false,
+    type: [String],
+    description: 'Date range filter [startDate, endDate] in ISO string format',
+  })
+  @ApiQuery({
+    name: 'clinicId',
+    required: false,
+    type: String,
+    description: 'Filter charts by specific clinic ID',
+  })
+  async getDashboardCharts(@Query('dateRange') dateRange?: string[], @Query('clinicId') clinicId?: string): Promise<any> {
+    const filters: DashboardFiltersDto = {};
+
+    if (dateRange && dateRange.length === 2 && dateRange[0] && dateRange[1]) {
+      filters.dateRange = [dateRange[0], dateRange[1]];
+    }
+
+    if (clinicId) {
+      filters.clinicId = clinicId;
+    }
+
+    return this.dashboardService.getDashboardCharts(filters);
+  }
+
   @Get('health')
   @ApiOperation({
     summary: 'Dashboard service health check',

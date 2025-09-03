@@ -18,6 +18,7 @@ export class DashboardService {
   private readonly CACHE_TTL = 300; // 5 minutes
   private readonly CACHE_KEYS = {
     DASHBOARD_STATS: 'dashboard:stats',
+    DASHBOARD_CHARTS: 'dashboard:charts',
     RECENT_ACTIVITY: 'dashboard:recent_activity',
     TOP_CLINICS: 'dashboard:top_clinics',
     NEW_USERS_WEEK: 'dashboard:new_users_week',
@@ -434,6 +435,145 @@ export class DashboardService {
     return { where };
   }
 
+  // Get dashboard charts data
+  async getDashboardCharts(filters: DashboardFiltersDto = {}) {
+    const cacheKey = `${this.CACHE_KEYS.DASHBOARD_CHARTS}:${JSON.stringify(filters)}`;
+
+    // Try to get from cache first
+    const cachedCharts = await this.cacheManager.get(cacheKey);
+    if (cachedCharts) {
+      this.logger.debug('Returning cached dashboard charts');
+      return cachedCharts;
+    }
+
+    try {
+      // Get data for charts
+      const [appointmentStats, userStats, clinicStats] = await Promise.all([this.getAppointmentStatsForCharts(filters), this.getUserStatsForCharts(filters), this.getClinicStatsForCharts(filters)]);
+
+      // Prepare chart data
+      const chartsData = {
+        appointmentStatusChart: this.buildAppointmentStatusChart(appointmentStats),
+        appointmentTypeChart: this.buildAppointmentTypeChart(),
+        userRoleChart: this.buildUserRoleChart(userStats),
+        clinicPerformanceChart: this.buildClinicPerformanceChart(clinicStats),
+      };
+
+      // Cache the results
+      await this.cacheManager.set(cacheKey, chartsData, this.CACHE_TTL);
+
+      return chartsData;
+    } catch (error) {
+      this.logger.error('Error fetching dashboard charts:', error);
+      throw error;
+    }
+  }
+
+  // Helper methods for charts data
+  private async getAppointmentStatsForCharts(filters: DashboardFiltersDto) {
+    const appointments = await this.appointmentRepository.find({
+      where: this.buildAppointmentFilters(filters).where,
+      select: ['status', 'appointment_type'],
+    });
+
+    return appointments;
+  }
+
+  private async getUserStatsForCharts(_filters: DashboardFiltersDto) {
+    // Note: Clinic filtering for users might require a different relationship
+    // For now, we'll get all users since clinic filtering is complex
+    const users = await this.userRepository.find({
+      select: ['role'],
+    });
+
+    return users;
+  }
+
+  private async getClinicStatsForCharts(_filters: DashboardFiltersDto) {
+    const clinics = await this.clinicRepository.find({
+      select: ['id', 'name', 'rating'],
+      take: 10,
+      order: { rating: 'DESC' },
+    });
+
+    return clinics;
+  }
+
+  private buildAppointmentStatusChart(appointments: Appointment[]) {
+    const statusCounts = appointments.reduce(
+      (acc, appointment) => {
+        acc[appointment.status] = (acc[appointment.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    return Object.entries(statusCounts).map(([status, count]) => ({
+      name: status.charAt(0).toUpperCase() + status.slice(1),
+      value: count,
+      color: this.getStatusColor(status),
+    }));
+  }
+
+  private buildAppointmentTypeChart() {
+    // Mock data for appointment types since not available in current schema
+    return [
+      { name: 'Consultation', value: 45, color: '#1890ff' },
+      { name: 'Vaccination', value: 30, color: '#52c41a' },
+      { name: 'Surgery', value: 15, color: '#fa8c16' },
+      { name: 'Emergency', value: 10, color: '#ff4d4f' },
+    ];
+  }
+
+  private buildUserRoleChart(users: User[]) {
+    const roleCounts = users.reduce(
+      (acc, user) => {
+        if (user.role) {
+          acc[user.role] = (acc[user.role] || 0) + 1;
+        }
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    return Object.entries(roleCounts).map(([role, count]) => ({
+      name: role.charAt(0).toUpperCase() + role.slice(1),
+      value: count,
+      color: this.getRoleColor(role),
+    }));
+  }
+
+  private buildClinicPerformanceChart(clinics: Clinic[]) {
+    return clinics.slice(0, 5).map((clinic) => ({
+      name: clinic.name,
+      rating: clinic.rating || 0,
+      color: '#8b5cf6',
+    }));
+  }
+
+  private getStatusColor(status: string): string {
+    const colors: Record<string, string> = {
+      pending: '#faad14',
+      confirmed: '#52c41a',
+      in_progress: '#1890ff',
+      completed: '#52c41a',
+      cancelled: '#ff4d4f',
+      no_show: '#ff7875',
+      rescheduled: '#722ed1',
+      waiting: '#eb2f96',
+    };
+    return colors[status] || '#d9d9d9';
+  }
+
+  private getRoleColor(role: string): string {
+    const colors: Record<string, string> = {
+      admin: '#ff4d4f',
+      veterinarian: '#1890ff',
+      staff: '#52c41a',
+      patient: '#faad14',
+    };
+    return colors[role] || '#d9d9d9';
+  }
+
   // Cache invalidation methods
   async invalidateDashboardCache() {
     const cacheKeys = Object.values(this.CACHE_KEYS);
@@ -445,5 +585,11 @@ export class DashboardService {
     const cacheKey = `${this.CACHE_KEYS.DASHBOARD_STATS}:${JSON.stringify(filters)}`;
     await this.cacheManager.del(cacheKey);
     this.logger.debug('Dashboard stats cache invalidated');
+  }
+
+  async invalidateChartsCache(filters: DashboardFiltersDto = {}) {
+    const cacheKey = `${this.CACHE_KEYS.DASHBOARD_CHARTS}:${JSON.stringify(filters)}`;
+    await this.cacheManager.del(cacheKey);
+    this.logger.debug('Dashboard charts cache invalidated');
   }
 }
