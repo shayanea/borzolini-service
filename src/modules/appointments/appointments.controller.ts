@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, Patc
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
-import { ExportService } from '@common/services/export.service';
+import { ExportService } from '../../common/services/export.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';

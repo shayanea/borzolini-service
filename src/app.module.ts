@@ -10,18 +10,19 @@ import { ClinicsModule } from './modules/clinics/clinics.module';
 // Common modules
 import { CommonModule } from './common/common.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { FaqModule } from './modules/faq/faq.module';
 import { HealthModule } from './modules/health/health.module';
 // Core modules
 import { Module } from '@nestjs/common';
-import { PetsModule } from './modules/pets/pets.module';
 import { ScheduleModule } from '@nestjs/schedule';
-import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
-import { SettingsModule } from './modules/settings/settings.module';
-import { SupabaseModule } from './common/supabase.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './modules/users/users.module';
+import { SupabaseModule } from './common/supabase.module';
 import { getDatabaseConfig } from './config/database.config';
+import { PetsModule } from './modules/pets/pets.module';
+import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { getDatabaseConfig } from './config/database.config';
     BreedsModule,
     ClinicsModule,
     DashboardModule,
+    FaqModule,
     PetsModule,
     AppointmentsModule,
     AiHealthModule,
