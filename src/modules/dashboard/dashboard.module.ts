@@ -5,7 +5,6 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { Clinic } from '../clinics/entities/clinic.entity';
 import { CommonModule } from '../../common/common.module';
 import { DashboardController } from './dashboard.controller';
-import { DashboardPublicController } from './dashboard-public.controller';
 import { DashboardService } from './dashboard.service';
 import { Module } from '@nestjs/common';
 import { Pet } from '../pets/entities/pet.entity';
@@ -27,7 +26,7 @@ import { User } from '../users/entities/user.entity';
       isGlobal: false, // Module-scoped cache
     }),
   ],
-  controllers: [DashboardController, DashboardPublicController],
+  controllers: [DashboardController],
   providers: [DashboardService],
   exports: [DashboardService],
 })
