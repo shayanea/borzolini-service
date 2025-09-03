@@ -45,4 +45,35 @@ export class FaqSearchResponseDto {
 
   @ApiProperty({ description: 'List of matching FAQs', type: [FaqResponseDto] })
   results!: FaqResponseDto[];
+
+  @ApiProperty({ description: 'Search took this many milliseconds', required: false })
+  took?: number;
+
+  @ApiProperty({ description: 'Maximum score from search results', required: false })
+  max_score?: number;
+}
+
+export class FaqAutocompleteSuggestionDto {
+  @ApiProperty({ description: 'Suggested text' })
+  text!: string;
+
+  @ApiProperty({ description: 'Score of the suggestion' })
+  score!: number;
+
+  @ApiProperty({ description: 'Frequency of the suggestion', required: false })
+  frequency?: number;
+}
+
+export class FaqAutocompleteResponseDto {
+  @ApiProperty({ description: 'Original query' })
+  query!: string;
+
+  @ApiProperty({ description: 'List of autocomplete suggestions' })
+  suggestions!: FaqAutocompleteSuggestionDto[];
+
+  @ApiProperty({ description: 'Total number of suggestions' })
+  total!: number;
+
+  @ApiProperty({ description: 'Species filter used', required: false })
+  species?: PetSpecies | undefined;
 }

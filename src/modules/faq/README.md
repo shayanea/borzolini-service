@@ -7,7 +7,10 @@ This module provides comprehensive FAQ (Frequently Asked Questions) management f
 - **Comprehensive FAQ Database**: 50+ most asked questions about popular pet types
 - **Multi-Species Support**: Covers dogs, cats, birds, and rabbits
 - **Categorized Questions**: Organized by health care, feeding, training, exercise, housing, and general care
-- **Search Functionality**: Full-text search across questions and answers
+- **Advanced Search**: Elasticsearch-powered full-text search with fuzzy matching and relevance scoring
+- **Autocomplete Suggestions**: Intelligent autocomplete for search queries with completion suggestions
+- **Smart Ranking**: Results ranked by relevance with question matches prioritized over answer matches
+- **Fallback Support**: Database fallback when Elasticsearch is unavailable
 - **Statistics**: FAQ analytics and usage statistics
 - **RESTful API**: Complete CRUD operations with proper authentication
 
@@ -138,6 +141,68 @@ Authorization: Bearer <token>
 ```http
 GET /faq/{id}
 Authorization: Bearer <token>
+```
+
+### Get Autocomplete Suggestions
+
+```http
+GET /faq/autocomplete/suggestions?q={query}&species={species}&size={size}
+Authorization: Bearer <token>
+```
+
+**Parameters:**
+- `q` (required): Search query for suggestions
+- `species` (optional): Filter by animal species (`dog`, `cat`, `bird`, `rabbit`)
+- `size` (optional): Maximum number of suggestions (default: 10)
+
+**Response:**
+```json
+{
+  "query": "vaccin",
+  "suggestions": [
+    {
+      "text": "What vaccinations does my dog need?",
+      "score": 0.95,
+      "frequency": 1
+    },
+    {
+      "text": "What vaccinations does my cat need?",
+      "score": 0.89,
+      "frequency": 1
+    }
+  ],
+  "total": 2,
+  "species": "dog"
+}
+```
+
+### Index All FAQs in Elasticsearch (Admin Only)
+
+```http
+POST /faq/elasticsearch/index-all
+Authorization: Bearer <admin_token>
+```
+
+**Response:**
+```json
+{
+  "message": "Successfully indexed all FAQs in Elasticsearch",
+  "indexed_count": 54
+}
+```
+
+### Index Specific FAQ in Elasticsearch (Admin Only)
+
+```http
+POST /faq/elasticsearch/index/{id}
+Authorization: Bearer <admin_token>
+```
+
+**Response:**
+```json
+{
+  "message": "Successfully indexed FAQ \"What vaccinations does my dog need?\" in Elasticsearch"
+}
 ```
 
 ## Supported Species

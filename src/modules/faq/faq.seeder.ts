@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ElasticsearchService } from '../../common/elasticsearch.service';
 import { PetSpecies } from '../breeds/entities/breed.entity';
 import { AnimalFaq, FaqCategory } from './entities/faq.entity';
 
@@ -18,7 +19,8 @@ export class FaqSeeder {
 
   constructor(
     @InjectRepository(AnimalFaq)
-    private readonly faqRepository: Repository<AnimalFaq>
+    private readonly faqRepository: Repository<AnimalFaq>,
+    private readonly elasticsearchService: ElasticsearchService
   ) {}
 
   async seed(): Promise<void> {
@@ -51,6 +53,16 @@ export class FaqSeeder {
     }
 
     this.logger.log(`🌱 FAQ seeding completed! Created: ${createdCount}, Skipped: ${skippedCount}`);
+
+    // Index FAQs in Elasticsearch if enabled
+    if (this.elasticsearchService.isServiceEnabled() && createdCount > 0) {
+      this.logger.log('🔍 Indexing FAQs in Elasticsearch...');
+      try {
+        await this.indexFaqsInElasticsearch();
+      } catch (error) {
+        this.logger.warn('Failed to index FAQs in Elasticsearch, but seeding completed successfully', error);
+      }
+    }
   }
 
   private getFaqsData(): FaqData[] {
@@ -441,6 +453,156 @@ export class FaqSeeder {
         order_index: 2,
       },
     ];
+  }
+
+  /**
+   * Index all FAQs in Elasticsearch
+   */
+  private async indexFaqsInElasticsearch(): Promise<void> {
+    try {
+      // Create FAQ index if it doesn't exist
+      await this.createFaqIndex();
+
+      // Get all active FAQs
+      const faqs = await this.faqRepository.find({
+        where: { is_active: true },
+      });
+
+      if (faqs.length === 0) {
+        this.logger.log('No FAQs to index');
+        return;
+      }
+
+      this.logger.log(`Indexing ${faqs.length} FAQs`);
+
+      // Bulk index FAQs
+      const bulkOperations = faqs.flatMap(faq => [
+        {
+          index: {
+            _index: 'faqs',
+            _id: faq.id,
+          },
+        },
+        {
+          id: faq.id,
+          species: faq.species,
+          category: faq.category,
+          question: faq.question,
+          answer: faq.answer,
+          order_index: faq.order_index,
+          is_active: faq.is_active,
+          created_at: faq.created_at.toISOString(),
+          updated_at: faq.updated_at.toISOString(),
+          searchable_content: `${faq.question} ${faq.answer}`.toLowerCase(),
+        },
+      ]);
+
+      await this.elasticsearchService.bulk(bulkOperations);
+
+      this.logger.log(`✅ Successfully indexed ${faqs.length} FAQs in Elasticsearch`);
+    } catch (error) {
+      this.logger.error('Failed to index FAQs in Elasticsearch', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create FAQ index with proper mappings and settings
+   */
+  private async createFaqIndex(): Promise<void> {
+    const indexName = 'faqs';
+
+    // Check if index already exists
+    const indexExists = await this.elasticsearchService.indexExists(indexName);
+    if (indexExists) {
+      this.logger.log(`FAQ index '${indexName}' already exists`);
+      return;
+    }
+
+    const indexSettings = {
+      number_of_shards: 1,
+      number_of_replicas: 0,
+      analysis: {
+        analyzer: {
+          faq_analyzer: {
+            type: 'custom',
+            tokenizer: 'standard',
+            filter: ['lowercase', 'stop', 'porter_stem'],
+          },
+          autocomplete_analyzer: {
+            type: 'custom',
+            tokenizer: 'autocomplete_tokenizer',
+            filter: ['lowercase'],
+          },
+        },
+        filter: {
+          autocomplete_filter: {
+            type: 'edge_ngram',
+            min_gram: 2,
+            max_gram: 20,
+          },
+        },
+        tokenizer: {
+          autocomplete_tokenizer: {
+            type: 'edge_ngram',
+            min_gram: 2,
+            max_gram: 20,
+            token_chars: ['letter', 'digit'],
+          },
+        },
+      },
+    };
+
+    const mappings = {
+      properties: {
+        id: {
+          type: 'keyword',
+        },
+        species: {
+          type: 'keyword',
+        },
+        category: {
+          type: 'keyword',
+        },
+        question: {
+          type: 'text',
+          analyzer: 'faq_analyzer',
+          fields: {
+            keyword: {
+              type: 'keyword',
+            },
+            completion: {
+              type: 'completion',
+              analyzer: 'autocomplete_analyzer',
+            },
+          },
+        },
+        answer: {
+          type: 'text',
+          analyzer: 'faq_analyzer',
+        },
+        searchable_content: {
+          type: 'text',
+          analyzer: 'faq_analyzer',
+        },
+        order_index: {
+          type: 'integer',
+        },
+        is_active: {
+          type: 'boolean',
+        },
+        created_at: {
+          type: 'date',
+        },
+        updated_at: {
+          type: 'date',
+        },
+      },
+    };
+
+    await this.elasticsearchService.createIndex(indexName, mappings, indexSettings);
+
+    this.logger.log(`Created FAQ index '${indexName}'`);
   }
 
   async clear(): Promise<void> {

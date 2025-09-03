@@ -1,8 +1,11 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserRole } from '../users/entities/user.entity';
 import { PetSpecies } from '../breeds/entities/breed.entity';
-import { FaqResponseDto, FaqsBySpeciesResponseDto, FaqSearchResponseDto } from './dto/faq-response.dto';
+import { FaqResponseDto, FaqsBySpeciesResponseDto, FaqSearchResponseDto, FaqAutocompleteResponseDto } from './dto/faq-response.dto';
 import { FaqCategory } from './entities/faq.entity';
 import { FaqService } from './faq.service';
 
@@ -118,5 +121,83 @@ export class FaqController {
   })
   async getFaqById(@Param('id') id: string): Promise<FaqResponseDto> {
     return this.faqService.getFaqById(id);
+  }
+
+  @Get('autocomplete/suggestions')
+  @ApiOperation({ summary: 'Get autocomplete suggestions for FAQ search' })
+  @ApiQuery({
+    name: 'q',
+    description: 'Search query for autocomplete suggestions',
+    required: true,
+  })
+  @ApiQuery({
+    name: 'species',
+    enum: PetSpecies,
+    description: 'Optional species filter',
+    required: false,
+  })
+  @ApiQuery({
+    name: 'size',
+    description: 'Maximum number of suggestions to return',
+    required: false,
+    type: Number,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully retrieved autocomplete suggestions',
+    type: FaqAutocompleteResponseDto,
+  })
+  async getAutocompleteSuggestions(
+    @Query('q') query: string,
+    @Query('species') species?: PetSpecies,
+    @Query('size', ParseIntPipe) size: number = 10
+  ): Promise<FaqAutocompleteResponseDto> {
+    return this.faqService.getAutocompleteSuggestions(query, species, size);
+  }
+
+  @Post('elasticsearch/index-all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Index all FAQs in Elasticsearch (Admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully indexed all FAQs in Elasticsearch',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
+  async indexAllFaqs(): Promise<{ message: string; indexed_count: number }> {
+    await this.faqService.indexAllFaqs();
+    const stats = await this.faqService.getFaqStats();
+    return {
+      message: 'Successfully indexed all FAQs in Elasticsearch',
+      indexed_count: stats.total_faqs,
+    };
+  }
+
+  @Post('elasticsearch/index/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Index a specific FAQ in Elasticsearch (Admin only)' })
+  @ApiParam({ name: 'id', description: 'FAQ ID to index' })
+  @ApiResponse({
+    status: 200,
+    description: 'Successfully indexed FAQ in Elasticsearch',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - Admin access required',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'FAQ not found',
+  })
+  async indexFaq(@Param('id') id: string): Promise<{ message: string }> {
+    const faq = await this.faqService.getFaqById(id);
+    await this.faqService.indexFaq(faq as any);
+    return {
+      message: `Successfully indexed FAQ "${faq.question}" in Elasticsearch`,
+    };
   }
 }
