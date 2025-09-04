@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ExportService } from '../../common/services/export.service';
@@ -16,12 +16,17 @@ import { ClinicReview } from './entities/clinic-review.entity';
 import { ClinicService } from './entities/clinic-service.entity';
 import { ClinicStaff } from './entities/clinic-staff.entity';
 import { Clinic } from './entities/clinic.entity';
+// ClinicPetCase and ClinicCaseTimeline are not directly used in controller
+import { CreatePetCaseDto } from './dto/create-pet-case.dto';
+import { UpdatePetCaseDto } from './dto/update-pet-case.dto';
+import { CaseFilters, ClinicPetCaseService } from './services/clinic-pet-case.service';
 
 @ApiTags('Clinics')
 @Controller('clinics')
 export class ClinicsController {
   constructor(
     private readonly clinicsService: ClinicsService,
+    private readonly clinicPetCaseService: ClinicPetCaseService,
     private readonly exportService: ExportService
   ) {}
 
@@ -948,5 +953,113 @@ export class ClinicsController {
     const transformedData = this.exportService.transformClinicData(result.clinics);
 
     await this.exportService.exportData(transformedData, 'excel', 'clinics', res);
+  }
+
+  // Pet Case Management Endpoints
+  @Post(':id/cases')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new pet case for clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 201, description: 'Pet case created successfully' })
+  async createPetCase(@Param('id') clinicId: string, @Body() createCaseDto: CreatePetCaseDto, @Request() req: any) {
+    return await this.clinicPetCaseService.createCase(clinicId, createCaseDto, req.user.id);
+  }
+
+  @Get(':id/cases')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get pet cases for clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 200, description: 'Pet cases retrieved successfully' })
+  async getClinicPetCases(
+    @Param('id') clinicId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+    @Query('case_type') case_type?: string,
+    @Query('pet_id') pet_id?: string,
+    @Query('owner_id') owner_id?: string,
+    @Query('vet_id') vet_id?: string,
+    @Query('is_urgent') is_urgent?: boolean,
+    @Query('is_resolved') is_resolved?: boolean
+  ) {
+    const filters: CaseFilters = {
+      status: status ? (status.split(',') as any) : undefined,
+      priority: priority ? (priority.split(',') as any) : undefined,
+      case_type: case_type ? (case_type.split(',') as any) : undefined,
+      pet_id,
+      owner_id,
+      vet_id,
+      is_urgent,
+      is_resolved,
+    };
+
+    return await this.clinicPetCaseService.getCasesByClinic(clinicId, filters, page, limit);
+  }
+
+  @Get(':id/cases/:caseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get pet case by ID' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiParam({ name: 'caseId', description: 'Case ID' })
+  @ApiResponse({ status: 200, description: 'Pet case retrieved successfully' })
+  async getPetCaseById(@Param('id') clinicId: string, @Param('caseId') caseId: string) {
+    return await this.clinicPetCaseService.getCaseById(clinicId, caseId);
+  }
+
+  @Put(':id/cases/:caseId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update pet case' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiParam({ name: 'caseId', description: 'Case ID' })
+  @ApiResponse({ status: 200, description: 'Pet case updated successfully' })
+  async updatePetCase(@Param('id') clinicId: string, @Param('caseId') caseId: string, @Body() updateDto: UpdatePetCaseDto, @Request() req: any) {
+    return await this.clinicPetCaseService.updateCase(clinicId, caseId, updateDto, req.user.id);
+  }
+
+  @Get(':id/cases/:caseId/timeline')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get case timeline' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiParam({ name: 'caseId', description: 'Case ID' })
+  @ApiResponse({ status: 200, description: 'Case timeline retrieved successfully' })
+  async getCaseTimeline(@Param('id') _clinicId: string, @Param('caseId') caseId: string) {
+    return await this.clinicPetCaseService.getCaseTimeline(caseId);
+  }
+
+  @Post(':id/cases/:caseId/timeline')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add timeline event to case' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiParam({ name: 'caseId', description: 'Case ID' })
+  @ApiResponse({ status: 201, description: 'Timeline event added successfully' })
+  async addTimelineEvent(@Param('id') _clinicId: string, @Param('caseId') caseId: string, @Body() eventData: any, @Request() req: any) {
+    return await this.clinicPetCaseService.addTimelineEvent(caseId, {
+      ...eventData,
+      created_by: req.user.id,
+    });
+  }
+
+  @Get(':id/cases/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get case statistics for clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 200, description: 'Case statistics retrieved successfully' })
+  async getCaseStats(@Param('id') clinicId: string) {
+    return await this.clinicPetCaseService.getCaseStats(clinicId);
   }
 }

@@ -5,6 +5,7 @@ import { Appointment } from '../../appointments/entities/appointment.entity';
 import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
 // Clinic relationships (forward declarations to avoid circular dependencies)
 import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
+import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
 // Pet relationship (forward declaration to avoid circular dependencies)
 import { Pet } from '../../pets/entities/pet.entity';
 import { UserActivity } from './user-activity.entity';
@@ -184,6 +185,13 @@ export class User {
   // Appointment relationships
   @OneToMany(() => Appointment, (appointment) => appointment.owner)
   appointments!: Appointment[];
+
+  // Pet case relationships
+  @OneToMany(() => ClinicPetCase, (petCase) => petCase.owner)
+  clinic_pet_cases!: ClinicPetCase[];
+
+  @OneToMany(() => ClinicPetCase, (petCase) => petCase.veterinarian)
+  vet_cases!: ClinicPetCase[];
 
   canLogin(): boolean {
     return this.isActive && this.isEmailVerified;

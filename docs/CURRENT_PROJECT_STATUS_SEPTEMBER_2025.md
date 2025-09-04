@@ -414,6 +414,23 @@
 
 ---
 
+## 📊 **Financial Projections (Conservative, tied to roadmap reality)**
+
+- **Year 1**: $150K revenue, -$700K net income
+- **Year 2**: $1.2M revenue, -$150K net income
+- **Year 3**: $4.5M revenue, $600K net income
+- **Year 4**: $12M revenue, $3.2M net income
+- **Year 5**: $25M revenue, $8M net income
+
+Assumptions:
+
+- Initial beta: 5–10 clinics in first month post-MVP, scaling to 50–80 by Month 6
+- ARPC ramps from $80–$150/month (core + basic addons) to $250–$400/month by Year 5 (AI + telemedicine + analytics)
+- Payments go live Month 2 post-MVP; upsell features unlock incremental ARPU from Year 2
+- COGS primarily infra + 3rd-party APIs; OpEx front-loaded in Years 1–2 (engineering, GTM)
+
+---
+
 ## 🎯 **Conclusion**
 
 **Your project has achieved remarkable progress in just 1 month!**
