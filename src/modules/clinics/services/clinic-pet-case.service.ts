@@ -84,7 +84,7 @@ export class ClinicPetCaseService {
           event_type: TimelineEventType.CASE_CREATED,
           description: `Case created for ${pet.name}`,
           user_id: ownerId,
-          user_name: pet.owner.firstName + ' ' + pet.owner.lastName,
+          user_name: `${pet.owner.firstName  } ${  pet.owner.lastName}`,
         },
       ],
     });
