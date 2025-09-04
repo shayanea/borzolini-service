@@ -415,7 +415,7 @@ export class FaqService {
     if (species) {
       must.push({
         term: {
-          species: species,
+          species,
         },
       });
     }
@@ -485,7 +485,7 @@ export class FaqService {
     if (species) {
       queryFilters.push({
         term: {
-          species: species,
+          species,
         },
       });
     }

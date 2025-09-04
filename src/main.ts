@@ -19,11 +19,38 @@ async function bootstrap() {
   app.use(cookieParser());
 
   // Enable CORS for frontend integration
+  const allowedOrigins = [
+    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.ADMIN_FRONTEND_URL || 'http://localhost:3002',
+    // Development origins for network access
+    'http://192.168.70.188:3000',
+    'http://192.168.70.188:3001',
+    'http://localhost:3000',
+    'http://localhost:3001',
+  ];
+
   app.enableCors({
-    origin: [process.env.FRONTEND_URL || 'http://localhost:3000', process.env.ADMIN_FRONTEND_URL || 'http://localhost:3002'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // In development, allow any localhost or 192.168.x.x origin
+      if (process.env.NODE_ENV === 'development') {
+        if (origin.match(/^https?:\/\/localhost(:\d+)?$/) || origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/)) {
+          return callback(null, true);
+        }
+      }
+
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Authorization'],
   });
 
   // Global validation pipe
