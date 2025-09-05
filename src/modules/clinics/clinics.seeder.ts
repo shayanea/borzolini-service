@@ -1,17 +1,15 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { Clinic } from "./entities/clinic.entity";
-import { ClinicStaff } from "./entities/clinic-staff.entity";
-import { ClinicService } from "./entities/clinic-service.entity";
-import { ClinicPhoto } from "./entities/clinic-photo.entity";
-import { ClinicOperatingHours } from "./entities/clinic-operating-hours.entity";
-import { StaffRole } from "./entities/clinic-staff.entity";
-import { ServiceCategory } from "./entities/clinic-service.entity";
-import { PhotoCategory } from "./entities/clinic-photo.entity";
-import { DayOfWeek } from "./entities/clinic-operating-hours.entity";
-import { User, UserRole } from "../users/entities/user.entity";
-import { UsersService } from "../users/users.service";
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Pet } from '../pets/entities/pet.entity';
+import { User, UserRole } from '../users/entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { ClinicOperatingHours, DayOfWeek } from './entities/clinic-operating-hours.entity';
+import { ClinicPhoto, PhotoCategory } from './entities/clinic-photo.entity';
+import { ClinicService, ServiceCategory } from './entities/clinic-service.entity';
+import { ClinicStaff, StaffRole } from './entities/clinic-staff.entity';
+import { Clinic } from './entities/clinic.entity';
+import { CasePriority, CaseStatus, CaseType, ClinicPetCase } from './entities/pet-case.entity';
 
 interface ClinicData {
   name: string;
@@ -32,10 +30,7 @@ interface ClinicData {
   insurance_providers: string[];
   emergency_contact: string;
   emergency_phone: string;
-  operating_hours: Record<
-    string,
-    { open: string; close: string; closed: boolean }
-  >;
+  operating_hours: Record<string, { open: string; close: string; closed: boolean }>;
 }
 
 interface StaffData {
@@ -48,6 +43,32 @@ interface StaffData {
   education: string[];
   bio: string;
   hire_date: string;
+  is_active: boolean;
+}
+
+interface PetCaseData {
+  case_number: string;
+  clinic_id: string;
+  pet_id: string;
+  owner_id: string;
+  vet_id?: string;
+  case_type: CaseType;
+  status: CaseStatus;
+  priority: CasePriority;
+  title: string;
+  description: string;
+  initial_symptoms: string[];
+  current_symptoms: string[];
+  vital_signs?: any;
+  diagnosis?: string;
+  treatment_plan?: any;
+  ai_insights?: any;
+  timeline: any[];
+  attachments: any[];
+  notes?: string;
+  resolution_notes?: string;
+  resolved_at?: Date;
+  closed_at?: Date;
   is_active: boolean;
 }
 
@@ -66,11 +87,15 @@ export class ClinicsSeeder {
     private readonly clinicPhotoRepository: Repository<ClinicPhoto>,
     @InjectRepository(ClinicOperatingHours)
     private readonly clinicOperatingHoursRepository: Repository<ClinicOperatingHours>,
-    private readonly usersService: UsersService,
+    @InjectRepository(ClinicPetCase)
+    private readonly petCaseRepository: Repository<ClinicPetCase>,
+    @InjectRepository(Pet)
+    private readonly petRepository: Repository<Pet>,
+    private readonly usersService: UsersService
   ) {}
 
   async seed(): Promise<void> {
-    this.logger.log("Starting clinics seeding...");
+    this.logger.log('Starting clinics seeding...');
 
     try {
       // Validate database connection
@@ -79,22 +104,20 @@ export class ClinicsSeeder {
       // Check if clinics already exist
       const existingClinics = await this.clinicRepository.count();
       if (existingClinics > 0) {
-        this.logger.log("Clinics already seeded, skipping...");
+        this.logger.log('Clinics already seeded, skipping...');
         return;
       }
 
       // Validate that required users exist
       const requiredUsers = await this.validateRequiredUsers();
       if (!requiredUsers) {
-        throw new Error(
-          "Required users not found. Please run users seeder first.",
-        );
+        throw new Error('Required users not found. Please run users seeder first.');
       }
 
-      this.logger.log("Creating sample clinics...");
+      this.logger.log('Creating sample clinics...');
       const clinics = await this.createSampleClinics();
 
-      // Create sample staff, services, photos, and operating hours for each clinic
+      // Create sample staff, services, photos, operating hours, and pet cases for each clinic
       for (const clinic of clinics) {
         this.logger.log(`Setting up clinic: ${clinic.name}`);
 
@@ -102,28 +125,22 @@ export class ClinicsSeeder {
         await this.createSampleServices(clinic.id);
         await this.createSamplePhotos(clinic.id);
         await this.createSampleOperatingHours(clinic.id);
+        await this.createSamplePetCases(clinic.id, requiredUsers);
       }
 
-      this.logger.log(
-        `✅ Clinics seeding completed! Created ${clinics.length} clinics`,
-      );
+      this.logger.log(`✅ Clinics seeding completed! Created ${clinics.length} clinics`);
     } catch (error) {
-      this.logger.error(
-        "❌ Error seeding clinics:",
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error('❌ Error seeding clinics:', error instanceof Error ? error.message : String(error));
       throw error;
     }
   }
 
   private async validateDatabaseConnection(): Promise<void> {
     try {
-      await this.clinicRepository.query("SELECT 1");
-      this.logger.log("Database connection validated");
+      await this.clinicRepository.query('SELECT 1');
+      this.logger.log('Database connection validated');
     } catch (error) {
-      throw new Error(
-        `Database connection failed: ${error instanceof Error ? error.message : String(error)}`,
-      );
+      throw new Error(`Database connection failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
@@ -136,21 +153,13 @@ export class ClinicsSeeder {
       // Get all users and filter by role
       const allUsersResult = await this.usersService.findAll();
       const allUsers = allUsersResult.users;
-      const adminUsers = allUsers.filter(
-        (user) => user.role === UserRole.ADMIN && user.isActive,
-      );
-      const veterinarianUsers = allUsers.filter(
-        (user) => user.role === UserRole.VETERINARIAN && user.isActive,
-      );
-      const staffUsers = allUsers.filter(
-        (user) => user.role === UserRole.STAFF && user.isActive,
-      );
+      const adminUsers = allUsers.filter((user) => user.role === UserRole.ADMIN && user.isActive);
+      const veterinarianUsers = allUsers.filter((user) => user.role === UserRole.VETERINARIAN && user.isActive);
+      const staffUsers = allUsers.filter((user) => user.role === UserRole.STAFF && user.isActive);
 
       if (adminUsers.length === 0 || veterinarianUsers.length === 0) {
-        this.logger.warn("Insufficient users for clinic staff creation");
-        this.logger.warn(
-          `Found: ${adminUsers.length} admins, ${veterinarianUsers.length} veterinarians, ${staffUsers.length} staff`,
-        );
+        this.logger.warn('Insufficient users for clinic staff creation');
+        this.logger.warn(`Found: ${adminUsers.length} admins, ${veterinarianUsers.length} veterinarians, ${staffUsers.length} staff`);
         return null;
       }
 
@@ -171,10 +180,7 @@ export class ClinicsSeeder {
 
       return result;
     } catch (error) {
-      this.logger.error(
-        "Error validating required users:",
-        error instanceof Error ? error.message : String(error),
-      );
+      this.logger.error('Error validating required users:', error instanceof Error ? error.message : String(error));
       return null;
     }
   }
@@ -182,122 +188,90 @@ export class ClinicsSeeder {
   private async createSampleClinics(): Promise<Clinic[]> {
     const clinicData: ClinicData[] = [
       {
-        name: "Borzolini Pet Clinic",
-        description:
-          "Leading veterinary clinic providing comprehensive pet care with state-of-the-art facilities and experienced staff.",
-        address: "123 Pet Care Avenue",
-        city: "New York",
-        state: "NY",
-        postal_code: "10001",
-        country: "USA",
-        phone: "+1-555-0123",
-        email: "info@borzolini.com",
-        website: "https://borzolini.com",
+        name: 'Borzolini Pet Clinic',
+        description: 'Leading veterinary clinic providing comprehensive pet care with state-of-the-art facilities and experienced staff.',
+        address: '123 Pet Care Avenue',
+        city: 'New York',
+        state: 'NY',
+        postal_code: '10001',
+        country: 'USA',
+        phone: '+1-555-0123',
+        email: 'info@borzolini.com',
+        website: 'https://borzolini.com',
         is_verified: true,
         is_active: true,
-        services: [
-          "vaccinations",
-          "surgery",
-          "dental_care",
-          "emergency_care",
-          "wellness_exams",
-        ],
-        specializations: [
-          "feline_medicine",
-          "canine_medicine",
-          "exotic_pets",
-          "emergency_medicine",
-        ],
-        payment_methods: ["cash", "credit_card", "insurance"],
-        insurance_providers: ["PetCare Insurance", "VetHealth Plus"],
-        emergency_contact: "Dr. Smith",
-        emergency_phone: "+1-555-9999",
+        services: ['vaccinations', 'surgery', 'dental_care', 'emergency_care', 'wellness_exams'],
+        specializations: ['feline_medicine', 'canine_medicine', 'exotic_pets', 'emergency_medicine'],
+        payment_methods: ['cash', 'credit_card', 'insurance'],
+        insurance_providers: ['PetCare Insurance', 'VetHealth Plus'],
+        emergency_contact: 'Dr. Smith',
+        emergency_phone: '+1-555-9999',
         operating_hours: {
-          monday: { open: "09:00", close: "17:00", closed: false },
-          tuesday: { open: "09:00", close: "17:00", closed: false },
-          wednesday: { open: "09:00", close: "17:00", closed: false },
-          thursday: { open: "09:00", close: "17:00", closed: false },
-          friday: { open: "09:00", close: "17:00", closed: false },
-          saturday: { open: "10:00", close: "15:00", closed: false },
-          sunday: { open: "00:00", close: "00:00", closed: true },
+          monday: { open: '09:00', close: '17:00', closed: false },
+          tuesday: { open: '09:00', close: '17:00', closed: false },
+          wednesday: { open: '09:00', close: '17:00', closed: false },
+          thursday: { open: '09:00', close: '17:00', closed: false },
+          friday: { open: '09:00', close: '17:00', closed: false },
+          saturday: { open: '10:00', close: '15:00', closed: false },
+          sunday: { open: '00:00', close: '00:00', closed: true },
         },
       },
       {
-        name: "Happy Paws Veterinary Center",
-        description:
-          "Family-friendly veterinary center specializing in preventive care and wellness programs.",
-        address: "456 Animal Wellness Drive",
-        city: "Los Angeles",
-        state: "CA",
-        postal_code: "90210",
-        country: "USA",
-        phone: "+1-555-0456",
-        email: "hello@happypaws.com",
-        website: "https://happypaws.com",
+        name: 'Happy Paws Veterinary Center',
+        description: 'Family-friendly veterinary center specializing in preventive care and wellness programs.',
+        address: '456 Animal Wellness Drive',
+        city: 'Los Angeles',
+        state: 'CA',
+        postal_code: '90210',
+        country: 'USA',
+        phone: '+1-555-0456',
+        email: 'hello@happypaws.com',
+        website: 'https://happypaws.com',
         is_verified: true,
         is_active: true,
-        services: [
-          "preventive_care",
-          "vaccinations",
-          "wellness_exams",
-          "nutrition_counseling",
-        ],
-        specializations: [
-          "preventive_medicine",
-          "nutrition",
-          "behavioral_medicine",
-        ],
-        payment_methods: ["cash", "credit_card", "debit_card", "insurance"],
-        insurance_providers: ["PetWell Insurance"],
-        emergency_contact: "Dr. Johnson",
-        emergency_phone: "+1-555-8888",
+        services: ['preventive_care', 'vaccinations', 'wellness_exams', 'nutrition_counseling'],
+        specializations: ['preventive_medicine', 'nutrition', 'behavioral_medicine'],
+        payment_methods: ['cash', 'credit_card', 'debit_card', 'insurance'],
+        insurance_providers: ['PetWell Insurance'],
+        emergency_contact: 'Dr. Johnson',
+        emergency_phone: '+1-555-8888',
         operating_hours: {
-          monday: { open: "08:00", close: "18:00", closed: false },
-          tuesday: { open: "08:00", close: "18:00", closed: false },
-          wednesday: { open: "08:00", close: "18:00", closed: false },
-          thursday: { open: "08:00", close: "18:00", closed: false },
-          friday: { open: "08:00", close: "18:00", closed: false },
-          saturday: { open: "09:00", close: "16:00", closed: false },
-          sunday: { open: "00:00", close: "00:00", closed: true },
+          monday: { open: '08:00', close: '18:00', closed: false },
+          tuesday: { open: '08:00', close: '18:00', closed: false },
+          wednesday: { open: '08:00', close: '18:00', closed: false },
+          thursday: { open: '08:00', close: '18:00', closed: false },
+          friday: { open: '08:00', close: '18:00', closed: false },
+          saturday: { open: '09:00', close: '16:00', closed: false },
+          sunday: { open: '00:00', close: '00:00', closed: true },
         },
       },
       {
-        name: "Emergency Pet Hospital",
-        description:
-          "24/7 emergency veterinary hospital providing critical care and emergency surgery.",
-        address: "789 Emergency Lane",
-        city: "Chicago",
-        state: "IL",
-        postal_code: "60601",
-        country: "USA",
-        phone: "+1-555-0789",
-        email: "emergency@petemergency.com",
-        website: "https://petemergency.com",
+        name: 'Emergency Pet Hospital',
+        description: '24/7 emergency veterinary hospital providing critical care and emergency surgery.',
+        address: '789 Emergency Lane',
+        city: 'Chicago',
+        state: 'IL',
+        postal_code: '60601',
+        country: 'USA',
+        phone: '+1-555-0789',
+        email: 'emergency@petemergency.com',
+        website: 'https://petemergency.com',
         is_verified: true,
         is_active: true,
-        services: [
-          "emergency_care",
-          "critical_care",
-          "emergency_surgery",
-          "trauma_treatment",
-        ],
-        specializations: [
-          "emergency_medicine",
-          "critical_care",
-          "trauma_surgery",
-        ],
-        payment_methods: ["cash", "credit_card", "insurance", "payment_plans"],
-        insurance_providers: ["Emergency Pet Insurance", "Critical Care Plus"],
-        emergency_contact: "Dr. Emergency",
-        emergency_phone: "+1-555-0000",
+        services: ['emergency_care', 'critical_care', 'emergency_surgery', 'trauma_treatment'],
+        specializations: ['emergency_medicine', 'critical_care', 'trauma_surgery'],
+        payment_methods: ['cash', 'credit_card', 'insurance', 'payment_plans'],
+        insurance_providers: ['Emergency Pet Insurance', 'Critical Care Plus'],
+        emergency_contact: 'Dr. Emergency',
+        emergency_phone: '+1-555-0000',
         operating_hours: {
-          monday: { open: "00:00", close: "23:59", closed: false },
-          tuesday: { open: "00:00", close: "23:59", closed: false },
-          wednesday: { open: "00:00", close: "23:59", closed: false },
-          thursday: { open: "00:00", close: "23:59", closed: false },
-          friday: { open: "00:00", close: "23:59", closed: false },
-          saturday: { open: "00:00", close: "23:59", closed: false },
-          sunday: { open: "00:00", close: "23:59", closed: false },
+          monday: { open: '00:00', close: '23:59', closed: false },
+          tuesday: { open: '00:00', close: '23:59', closed: false },
+          wednesday: { open: '00:00', close: '23:59', closed: false },
+          thursday: { open: '00:00', close: '23:59', closed: false },
+          friday: { open: '00:00', close: '23:59', closed: false },
+          saturday: { open: '00:00', close: '23:59', closed: false },
+          sunday: { open: '00:00', close: '23:59', closed: false },
         },
       },
     ];
@@ -308,9 +282,7 @@ export class ClinicsSeeder {
         const clinic = this.clinicRepository.create(data);
         const savedClinic = await this.clinicRepository.save(clinic);
         clinics.push(savedClinic);
-        this.logger.log(
-          `Created clinic: ${savedClinic.name} (ID: ${savedClinic.id})`,
-        );
+        this.logger.log(`Created clinic: ${savedClinic.name} (ID: ${savedClinic.id})`);
       } catch (error) {
         this.logger.error(`Failed to create clinic ${data.name}:`, error);
         throw error;
@@ -320,36 +292,30 @@ export class ClinicsSeeder {
     return clinics;
   }
 
-  private async createSampleStaff(
-    clinicId: string,
-    users: { admin: User; veterinarian: User; staff?: User },
-  ): Promise<void> {
+  private async createSampleStaff(clinicId: string, users: { admin: User; veterinarian: User; staff?: User }): Promise<void> {
     const staffData: StaffData[] = [
       {
         clinic_id: clinicId,
         user_id: users.admin.id,
         role: StaffRole.ADMIN,
-        specialization: "Clinic Management",
-        license_number: "ADM-001",
+        specialization: 'Clinic Management',
+        license_number: 'ADM-001',
         experience_years: 5,
-        education: [
-          "Veterinary Business Administration",
-          "Healthcare Management",
-        ],
-        bio: "Experienced clinic administrator with expertise in veterinary practice management.",
-        hire_date: "2023-01-01",
+        education: ['Veterinary Business Administration', 'Healthcare Management'],
+        bio: 'Experienced clinic administrator with expertise in veterinary practice management.',
+        hire_date: '2023-01-01',
         is_active: true,
       },
       {
         clinic_id: clinicId,
         user_id: users.veterinarian.id,
         role: StaffRole.DOCTOR,
-        specialization: "General Veterinary Medicine",
-        license_number: "VET-001",
+        specialization: 'General Veterinary Medicine',
+        license_number: 'VET-001',
         experience_years: 8,
-        education: ["Doctor of Veterinary Medicine", "Small Animal Surgery"],
-        bio: "Experienced veterinarian with expertise in general practice and surgery.",
-        hire_date: "2023-01-15",
+        education: ['Doctor of Veterinary Medicine', 'Small Animal Surgery'],
+        bio: 'Experienced veterinarian with expertise in general practice and surgery.',
+        hire_date: '2023-01-15',
         is_active: true,
       },
     ];
@@ -360,12 +326,12 @@ export class ClinicsSeeder {
         clinic_id: clinicId,
         user_id: users.staff.id,
         role: StaffRole.ASSISTANT,
-        specialization: "Veterinary Nursing",
-        license_number: "NUR-001",
+        specialization: 'Veterinary Nursing',
+        license_number: 'NUR-001',
         experience_years: 3,
-        education: ["Veterinary Technology", "Animal Nursing"],
-        bio: "Dedicated veterinary nurse with experience in patient care and support.",
-        hire_date: "2023-02-01",
+        education: ['Veterinary Technology', 'Animal Nursing'],
+        bio: 'Dedicated veterinary nurse with experience in patient care and support.',
+        hire_date: '2023-02-01',
         is_active: true,
       });
     }
@@ -374,14 +340,9 @@ export class ClinicsSeeder {
       try {
         const staff = this.clinicStaffRepository.create(data);
         await this.clinicStaffRepository.save(staff);
-        this.logger.log(
-          `Created staff member: ${data.role} for clinic ${clinicId}`,
-        );
+        this.logger.log(`Created staff member: ${data.role} for clinic ${clinicId}`);
       } catch (error) {
-        this.logger.error(
-          `Failed to create staff member for clinic ${clinicId}:`,
-          error,
-        );
+        this.logger.error(`Failed to create staff member for clinic ${clinicId}:`, error);
         throw error;
       }
     }
@@ -391,112 +352,111 @@ export class ClinicsSeeder {
     const serviceData = [
       {
         clinic_id: clinicId,
-        name: "Wellness Exam",
-        description:
-          "Comprehensive health checkup including physical examination and vaccinations",
+        name: 'Wellness Exam',
+        description: 'Comprehensive health checkup including physical examination and vaccinations',
         category: ServiceCategory.PREVENTIVE,
         duration_minutes: 45,
         price: 75.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Vaccination",
-        description: "Core and non-core vaccinations for pets",
+        name: 'Vaccination',
+        description: 'Core and non-core vaccinations for pets',
         category: ServiceCategory.PREVENTIVE,
         duration_minutes: 30,
         price: 45.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Dental Cleaning",
-        description: "Professional dental cleaning and oral health assessment",
+        name: 'Dental Cleaning',
+        description: 'Professional dental cleaning and oral health assessment',
         category: ServiceCategory.DENTAL,
         duration_minutes: 60,
         price: 150.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Emergency Care",
-        description: "24/7 emergency veterinary care and treatment",
+        name: 'Emergency Care',
+        description: '24/7 emergency veterinary care and treatment',
         category: ServiceCategory.EMERGENCY,
         duration_minutes: 90,
         price: 200.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: false,
       },
       {
         clinic_id: clinicId,
-        name: "Surgery",
-        description: "General and specialized surgical procedures",
+        name: 'Surgery',
+        description: 'General and specialized surgical procedures',
         category: ServiceCategory.SURGICAL,
         duration_minutes: 120,
         price: 500.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Laboratory Tests",
-        description: "Blood work, urinalysis, and diagnostic testing",
+        name: 'Laboratory Tests',
+        description: 'Blood work, urinalysis, and diagnostic testing',
         category: ServiceCategory.DIAGNOSTIC,
         duration_minutes: 30,
         price: 85.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "X-Ray Imaging",
-        description: "Digital radiography for diagnostic imaging",
+        name: 'X-Ray Imaging',
+        description: 'Digital radiography for diagnostic imaging',
         category: ServiceCategory.DIAGNOSTIC,
         duration_minutes: 45,
         price: 120.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Behavioral Consultation",
-        description: "Professional behavioral assessment and training recommendations",
+        name: 'Behavioral Consultation',
+        description: 'Professional behavioral assessment and training recommendations',
         category: ServiceCategory.THERAPY,
         duration_minutes: 60,
         price: 95.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Nutrition Consultation",
-        description: "Dietary assessment and personalized nutrition plans",
+        name: 'Nutrition Consultation',
+        description: 'Dietary assessment and personalized nutrition plans',
         category: ServiceCategory.WELLNESS,
         duration_minutes: 45,
         price: 65.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
       {
         clinic_id: clinicId,
-        name: "Grooming",
-        description: "Professional pet grooming and hygiene services",
+        name: 'Grooming',
+        description: 'Professional pet grooming and hygiene services',
         category: ServiceCategory.WELLNESS,
         duration_minutes: 90,
         price: 75.0,
-        currency: "USD",
+        currency: 'USD',
         is_active: true,
         requires_appointment: true,
       },
@@ -507,10 +467,7 @@ export class ClinicsSeeder {
         const service = this.clinicServiceRepository.create(data);
         await this.clinicServiceRepository.save(service);
       } catch (error) {
-        this.logger.error(
-          `Failed to create service ${data.name} for clinic ${clinicId}:`,
-          error,
-        );
+        this.logger.error(`Failed to create service ${data.name} for clinic ${clinicId}:`, error);
         throw error;
       }
     }
@@ -520,24 +477,24 @@ export class ClinicsSeeder {
     const photoData = [
       {
         clinic_id: clinicId,
-        photo_url: "https://example.com/clinic-exterior.jpg",
-        caption: "Clinic Exterior",
+        photo_url: 'https://example.com/clinic-exterior.jpg',
+        caption: 'Clinic Exterior',
         category: PhotoCategory.EXTERIOR,
         is_primary: true,
         is_active: true,
       },
       {
         clinic_id: clinicId,
-        photo_url: "https://example.com/waiting-area.jpg",
-        caption: "Comfortable Waiting Area",
+        photo_url: 'https://example.com/waiting-area.jpg',
+        caption: 'Comfortable Waiting Area',
         category: PhotoCategory.WAITING_AREA,
         is_primary: false,
         is_active: true,
       },
       {
         clinic_id: clinicId,
-        photo_url: "https://example.com/examination-room.jpg",
-        caption: "Examination Room",
+        photo_url: 'https://example.com/examination-room.jpg',
+        caption: 'Examination Room',
         category: PhotoCategory.EXAMINATION_ROOM,
         is_primary: false,
         is_active: true,
@@ -549,25 +506,14 @@ export class ClinicsSeeder {
         const photo = this.clinicPhotoRepository.create(data);
         await this.clinicPhotoRepository.save(photo);
       } catch (error) {
-        this.logger.error(
-          `Failed to create photo for clinic ${clinicId}:`,
-          error,
-        );
+        this.logger.error(`Failed to create photo for clinic ${clinicId}:`, error);
         throw error;
       }
     }
   }
 
   private async createSampleOperatingHours(clinicId: string): Promise<void> {
-    const days = [
-      DayOfWeek.MONDAY,
-      DayOfWeek.TUESDAY,
-      DayOfWeek.WEDNESDAY,
-      DayOfWeek.THURSDAY,
-      DayOfWeek.FRIDAY,
-      DayOfWeek.SATURDAY,
-      DayOfWeek.SUNDAY,
-    ];
+    const days = [DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY, DayOfWeek.SUNDAY];
 
     for (const day of days) {
       try {
@@ -577,52 +523,330 @@ export class ClinicsSeeder {
           hours = {
             clinic_id: clinicId,
             day_of_week: day,
-            open_time: "00:00",
-            close_time: "00:00",
+            open_time: '00:00',
+            close_time: '00:00',
             is_closed: true,
           };
         } else if (day === DayOfWeek.SATURDAY) {
           hours = {
             clinic_id: clinicId,
             day_of_week: day,
-            open_time: "10:00",
-            close_time: "15:00",
+            open_time: '10:00',
+            close_time: '15:00',
             is_closed: false,
           };
         } else {
           hours = {
             clinic_id: clinicId,
             day_of_week: day,
-            open_time: "09:00",
-            close_time: "17:00",
+            open_time: '09:00',
+            close_time: '17:00',
             is_closed: false,
           };
         }
 
-        const operatingHours =
-          this.clinicOperatingHoursRepository.create(hours);
+        const operatingHours = this.clinicOperatingHoursRepository.create(hours);
         await this.clinicOperatingHoursRepository.save(operatingHours);
       } catch (error) {
-        this.logger.error(
-          `Failed to create operating hours for ${day} for clinic ${clinicId}:`,
-          error,
-        );
+        this.logger.error(`Failed to create operating hours for ${day} for clinic ${clinicId}:`, error);
         throw error;
       }
     }
   }
 
-  async clear(): Promise<void> {
-    this.logger.log("Clearing all clinics and related data...");
+  private async createSamplePetCases(clinicId: string, users: { admin: User; veterinarian: User; staff?: User }): Promise<void> {
     try {
+      // Get all pets from the database
+      const allPets = await this.petRepository.find({
+        relations: ['owner'],
+        where: { is_active: true },
+      });
+
+      if (allPets.length === 0) {
+        this.logger.warn(`No pets found for creating cases for clinic ${clinicId}`);
+        return;
+      }
+
+      // Create sample pet cases
+      const petCaseData: PetCaseData[] = [
+        {
+          case_number: `CASE-${clinicId.substring(0, 8).toUpperCase()}-001`,
+          clinic_id: clinicId,
+          pet_id: allPets[0]!.id,
+          owner_id: allPets[0]!.owner_id,
+          vet_id: users.veterinarian.id,
+          case_type: CaseType.CONSULTATION,
+          status: CaseStatus.OPEN,
+          priority: CasePriority.NORMAL,
+          title: 'Routine Wellness Check',
+          description: 'Annual wellness examination and vaccination update for the pet.',
+          initial_symptoms: ['No symptoms reported'],
+          current_symptoms: ['No current symptoms'],
+          vital_signs: {
+            temperature: '101.5°F',
+            heart_rate: '120 bpm',
+            respiratory_rate: '20 breaths/min',
+            weight: '25.5 lbs',
+          },
+          diagnosis: 'Healthy pet, no issues found',
+          treatment_plan: {
+            vaccinations: ['Rabies', 'DHPP'],
+            follow_up: 'Next appointment in 12 months',
+            recommendations: ['Continue current diet', 'Regular exercise'],
+          },
+          ai_insights: {
+            health_score: 95,
+            recommendations: ['Maintain current care routine'],
+            risk_factors: [],
+          },
+          timeline: [
+            {
+              timestamp: new Date(),
+              event_type: 'case_created',
+              description: 'Case created for routine wellness check',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+          ],
+          attachments: [],
+          notes: 'Pet is in excellent health condition',
+          is_active: true,
+        },
+        {
+          case_number: `CASE-${clinicId.substring(0, 8).toUpperCase()}-002`,
+          clinic_id: clinicId,
+          pet_id: allPets[1]?.id || allPets[0]!.id,
+          owner_id: allPets[1]?.owner_id || allPets[0]!.owner_id,
+          vet_id: users.veterinarian.id,
+          case_type: CaseType.EMERGENCY,
+          status: CaseStatus.IN_PROGRESS,
+          priority: CasePriority.HIGH,
+          title: 'Emergency Visit - Injury',
+          description: 'Pet presented with limping and visible injury to front leg.',
+          initial_symptoms: ['Limping', 'Swelling', 'Pain when touched'],
+          current_symptoms: ['Limping', 'Mild swelling', 'Favoring leg'],
+          vital_signs: {
+            temperature: '102.1°F',
+            heart_rate: '140 bpm',
+            respiratory_rate: '25 breaths/min',
+            weight: '22.3 lbs',
+          },
+          diagnosis: 'Suspected soft tissue injury',
+          treatment_plan: {
+            immediate_care: ['Rest', 'Ice application', 'Pain management'],
+            medications: ['Anti-inflammatory', 'Pain relief'],
+            follow_up: 'Recheck in 3 days',
+            restrictions: ['Limited activity', 'No jumping'],
+          },
+          ai_insights: {
+            health_score: 75,
+            recommendations: ['Monitor for improvement', 'Follow rest protocol'],
+            risk_factors: ['Activity level', 'Age'],
+          },
+          timeline: [
+            {
+              timestamp: new Date(),
+              event_type: 'case_created',
+              description: 'Emergency case created for leg injury',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+            {
+              timestamp: new Date(Date.now() - 3600000), // 1 hour ago
+              event_type: 'examination',
+              description: 'Initial examination completed',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+          ],
+          attachments: [
+            {
+              type: 'xray',
+              url: 'https://example.com/xray-leg.jpg',
+              description: 'X-ray of injured leg',
+            },
+          ],
+          notes: 'Pet is responding well to initial treatment',
+          is_active: true,
+        },
+        {
+          case_number: `CASE-${clinicId.substring(0, 8).toUpperCase()}-003`,
+          clinic_id: clinicId,
+          pet_id: allPets[2]?.id || allPets[0]!.id,
+          owner_id: allPets[2]?.owner_id || allPets[0]!.owner_id,
+          vet_id: users.veterinarian.id,
+          case_type: CaseType.FOLLOW_UP,
+          status: CaseStatus.PENDING_CONSULTATION,
+          priority: CasePriority.NORMAL,
+          title: 'Post-Surgery Follow-up',
+          description: 'Follow-up appointment after spay surgery to check healing progress.',
+          initial_symptoms: ['Post-surgical recovery'],
+          current_symptoms: ['Healing incision', 'Normal activity'],
+          vital_signs: {
+            temperature: '100.8°F',
+            heart_rate: '110 bpm',
+            respiratory_rate: '18 breaths/min',
+            weight: '28.2 lbs',
+          },
+          diagnosis: 'Normal post-surgical recovery',
+          treatment_plan: {
+            wound_care: ['Keep incision clean and dry'],
+            activity: ['Gradual increase in activity'],
+            follow_up: 'Final check in 2 weeks',
+            medications: ['Antibiotics as prescribed'],
+          },
+          ai_insights: {
+            health_score: 88,
+            recommendations: ['Continue current care', 'Monitor incision'],
+            risk_factors: ['Infection risk'],
+          },
+          timeline: [
+            {
+              timestamp: new Date(Date.now() - 86400000), // 1 day ago
+              event_type: 'case_created',
+              description: 'Follow-up case created',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+          ],
+          attachments: [],
+          notes: 'Recovery is progressing well',
+          is_active: true,
+        },
+        {
+          case_number: `CASE-${clinicId.substring(0, 8).toUpperCase()}-004`,
+          clinic_id: clinicId,
+          pet_id: allPets[3]?.id || allPets[0]!.id,
+          owner_id: allPets[3]?.owner_id || allPets[0]!.owner_id,
+          vet_id: users.veterinarian.id,
+          case_type: CaseType.BEHAVIORAL,
+          status: CaseStatus.OPEN,
+          priority: CasePriority.LOW,
+          title: 'Behavioral Consultation',
+          description: 'Pet showing signs of anxiety and destructive behavior when left alone.',
+          initial_symptoms: ['Destructive behavior', 'Excessive barking', 'Anxiety'],
+          current_symptoms: ['Mild anxiety', 'Some destructive behavior'],
+          vital_signs: {
+            temperature: '101.2°F',
+            heart_rate: '115 bpm',
+            respiratory_rate: '22 breaths/min',
+            weight: '30.1 lbs',
+          },
+          diagnosis: 'Separation anxiety',
+          treatment_plan: {
+            behavior_modification: ['Gradual desensitization', 'Positive reinforcement'],
+            environmental_changes: ['Interactive toys', 'Safe space creation'],
+            follow_up: 'Progress check in 2 weeks',
+            medications: ['Anxiety medication if needed'],
+          },
+          ai_insights: {
+            health_score: 82,
+            recommendations: ['Consistent routine', 'Behavioral training'],
+            risk_factors: ['Stress triggers', 'Environment changes'],
+          },
+          timeline: [
+            {
+              timestamp: new Date(Date.now() - 172800000), // 2 days ago
+              event_type: 'case_created',
+              description: 'Behavioral consultation case created',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+          ],
+          attachments: [],
+          notes: 'Owner committed to following behavioral plan',
+          is_active: true,
+        },
+        {
+          case_number: `CASE-${clinicId.substring(0, 8).toUpperCase()}-005`,
+          clinic_id: clinicId,
+          pet_id: allPets[4]?.id || allPets[0]!.id,
+          owner_id: allPets[4]?.owner_id || allPets[0]!.owner_id,
+          vet_id: users.veterinarian.id,
+          case_type: CaseType.CHRONIC_CONDITION,
+          status: CaseStatus.UNDER_OBSERVATION,
+          priority: CasePriority.HIGH,
+          title: 'Diabetes Management',
+          description: 'Ongoing management of diabetes with regular monitoring and insulin therapy.',
+          initial_symptoms: ['Excessive thirst', 'Frequent urination', 'Weight loss'],
+          current_symptoms: ['Well-controlled with medication'],
+          vital_signs: {
+            temperature: '100.5°F',
+            heart_rate: '105 bpm',
+            respiratory_rate: '20 breaths/min',
+            weight: '26.8 lbs',
+            blood_glucose: '120 mg/dL',
+          },
+          diagnosis: 'Diabetes mellitus - well controlled',
+          treatment_plan: {
+            medications: ['Insulin twice daily', 'Blood glucose monitoring'],
+            diet: ['Prescription diabetic diet', 'Regular feeding schedule'],
+            monitoring: ['Weekly glucose checks', 'Monthly vet visits'],
+            follow_up: 'Monthly check-up',
+          },
+          ai_insights: {
+            health_score: 78,
+            recommendations: ['Maintain current treatment', 'Monitor glucose levels'],
+            risk_factors: ['Blood sugar fluctuations', 'Complications'],
+          },
+          timeline: [
+            {
+              timestamp: new Date(Date.now() - 2592000000), // 30 days ago
+              event_type: 'case_created',
+              description: 'Diabetes management case created',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+            {
+              timestamp: new Date(Date.now() - 1209600000), // 14 days ago
+              event_type: 'treatment_update',
+              description: 'Insulin dosage adjusted based on glucose levels',
+              user_id: users.veterinarian.id,
+              user_name: `${users.veterinarian.firstName} ${users.veterinarian.lastName}`,
+            },
+          ],
+          attachments: [
+            {
+              type: 'lab_results',
+              url: 'https://example.com/lab-results.pdf',
+              description: 'Recent blood work results',
+            },
+          ],
+          notes: 'Pet is responding well to treatment, glucose levels stable',
+          is_active: true,
+        },
+      ];
+
+      for (const data of petCaseData) {
+        try {
+          const petCase = this.petCaseRepository.create(data);
+          await this.petCaseRepository.save(petCase);
+          this.logger.log(`Created pet case: ${data.case_number} for clinic ${clinicId}`);
+        } catch (error) {
+          this.logger.error(`Failed to create pet case ${data.case_number} for clinic ${clinicId}:`, error);
+          // Continue with other cases even if one fails
+        }
+      }
+
+      this.logger.log(`Created ${petCaseData.length} pet cases for clinic ${clinicId}`);
+    } catch (error) {
+      this.logger.error(`Error creating pet cases for clinic ${clinicId}:`, error);
+      // Don't throw error to prevent stopping the entire seeding process
+    }
+  }
+
+  async clear(): Promise<void> {
+    this.logger.log('Clearing all clinics and related data...');
+    try {
+      await this.petCaseRepository.clear();
       await this.clinicOperatingHoursRepository.clear();
       await this.clinicPhotoRepository.clear();
       await this.clinicServiceRepository.clear();
       await this.clinicStaffRepository.clear();
       await this.clinicRepository.clear();
-      this.logger.log("All clinics and related data cleared");
+      this.logger.log('All clinics and related data cleared');
     } catch (error) {
-      this.logger.error("Error clearing clinics data:", error);
+      this.logger.error('Error clearing clinics data:', error);
       throw error;
     }
   }

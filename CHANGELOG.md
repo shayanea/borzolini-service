@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.1.0] - 2024-09-04
 
 ### Added
+
 - **Pet Case Management System**
   - Complete CRUD operations for pet cases
   - Case timeline tracking with event history
@@ -37,11 +38,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added support for localhost:3002 and 127.0.0.1:3002
 
 ### Changed
+
 - Enhanced ClinicsController with pet case management endpoints
 - Updated entity relationships to support case management
 - Improved error handling and validation
 
 ### Technical Details
+
 - **Database Migration**: 009-create-pet-cases-tables.sql
 - **New Services**: ClinicPetCaseService with comprehensive case management
 - **New DTOs**: CreatePetCaseDto, UpdatePetCaseDto
@@ -49,6 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript**: Full type safety for all new features
 
 ### Migration Required
+
 - Run database migration: `pnpm run migrate`
 - No breaking changes to existing API
 
@@ -57,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2024-08-15
 
 ### Added
+
 - Initial release of Borzolini Service API
 - Core telemedicine platform functionality
 - User management and authentication
@@ -70,6 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting and security features
 
 ### Technical Stack
+
 - NestJS framework with TypeScript
 - PostgreSQL database with TypeORM
 - Elasticsearch for search functionality
@@ -84,31 +90,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### [Unreleased]
 
 ### Added
+
 - New features
 
 ### Changed
+
 - Changes in existing functionality
 
 ### Deprecated
+
 - Soon-to-be removed features
 
 ### Removed
+
 - Removed features
 
 ### Fixed
+
 - Bug fixes
 
 ### Security
+
 - Security improvements
 
 ---
 
 ## Version History
 
-| Version | Release Date | Type | Description |
-|---------|--------------|------|-------------|
+| Version | Release Date | Type  | Description                |
+| ------- | ------------ | ----- | -------------------------- |
 | 1.1.0   | 2024-09-04   | Minor | Pet Case Management System |
-| 1.0.0   | 2024-08-15   | Major | Initial Release |
+| 1.0.0   | 2024-08-15   | Major | Initial Release            |
 
 ## How to Read This Changelog
 
