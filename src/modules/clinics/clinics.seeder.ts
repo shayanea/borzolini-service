@@ -31,6 +31,7 @@ interface ClinicData {
   emergency_contact: string;
   emergency_phone: string;
   operating_hours: Record<string, { open: string; close: string; closed: boolean }>;
+  owner_id?: string;
 }
 
 interface StaffData {
@@ -115,7 +116,7 @@ export class ClinicsSeeder {
       }
 
       this.logger.log('Creating sample clinics...');
-      const clinics = await this.createSampleClinics();
+      const clinics = await this.createSampleClinics(requiredUsers);
 
       // Create sample staff, services, photos, operating hours, and pet cases for each clinic
       for (const clinic of clinics) {
@@ -146,6 +147,7 @@ export class ClinicsSeeder {
 
   private async validateRequiredUsers(): Promise<{
     admin: User;
+    clinicOwner: User;
     veterinarian: User;
     staff?: User;
   } | null> {
@@ -157,15 +159,19 @@ export class ClinicsSeeder {
       const veterinarianUsers = allUsers.filter((user) => user.role === UserRole.VETERINARIAN && user.isActive);
       const staffUsers = allUsers.filter((user) => user.role === UserRole.STAFF && user.isActive);
 
-      if (adminUsers.length === 0 || veterinarianUsers.length === 0) {
+      // Find Shayan Araghi as the clinic owner
+      const clinicOwner = allUsers.find((user) => user.email === 'shayan.araghi@borzolini.com' && user.isActive);
+
+      if (adminUsers.length === 0 || veterinarianUsers.length === 0 || !clinicOwner) {
         this.logger.warn('Insufficient users for clinic staff creation');
-        this.logger.warn(`Found: ${adminUsers.length} admins, ${veterinarianUsers.length} veterinarians, ${staffUsers.length} staff`);
+        this.logger.warn(`Found: ${adminUsers.length} admins, ${veterinarianUsers.length} veterinarians, ${staffUsers.length} staff, clinic owner: ${clinicOwner ? 'found' : 'not found'}`);
         return null;
       }
 
       // Return a mapping of user types for easy access
-      const result: { admin: User; veterinarian: User; staff?: User } = {
+      const result: { admin: User; clinicOwner: User; veterinarian: User; staff?: User } = {
         admin: adminUsers[0]!,
+        clinicOwner: clinicOwner,
         veterinarian: veterinarianUsers[0]!,
       };
 
@@ -185,7 +191,7 @@ export class ClinicsSeeder {
     }
   }
 
-  private async createSampleClinics(): Promise<Clinic[]> {
+  private async createSampleClinics(users: { admin: User; clinicOwner: User; veterinarian: User; staff?: User }): Promise<Clinic[]> {
     const clinicData: ClinicData[] = [
       {
         name: 'Borzolini Pet Clinic',
@@ -215,6 +221,7 @@ export class ClinicsSeeder {
           saturday: { open: '10:00', close: '15:00', closed: false },
           sunday: { open: '00:00', close: '00:00', closed: true },
         },
+        owner_id: users.clinicOwner.id,
       },
       {
         name: 'Happy Paws Veterinary Center',
@@ -292,7 +299,7 @@ export class ClinicsSeeder {
     return clinics;
   }
 
-  private async createSampleStaff(clinicId: string, users: { admin: User; veterinarian: User; staff?: User }): Promise<void> {
+  private async createSampleStaff(clinicId: string, users: { admin: User; clinicOwner: User; veterinarian: User; staff?: User }): Promise<void> {
     const staffData: StaffData[] = [
       {
         clinic_id: clinicId,
@@ -554,7 +561,7 @@ export class ClinicsSeeder {
     }
   }
 
-  private async createSamplePetCases(clinicId: string, users: { admin: User; veterinarian: User; staff?: User }): Promise<void> {
+  private async createSamplePetCases(clinicId: string, users: { admin: User; clinicOwner: User; veterinarian: User; staff?: User }): Promise<void> {
     try {
       // Get all pets from the database
       const allPets = await this.petRepository.find({

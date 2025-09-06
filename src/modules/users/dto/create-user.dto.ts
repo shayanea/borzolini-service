@@ -174,6 +174,11 @@ export class UpdateUserDto {
   @IsBoolean()
   isActive?: boolean;
 
+  @ApiPropertyOptional({ description: 'User email verified status' })
+  @IsOptional()
+  @IsBoolean()
+  isEmailVerified?: boolean;
+
   @ApiPropertyOptional({
     description: 'User role',
     enum: ['patient', 'veterinarian', 'staff', 'admin'],

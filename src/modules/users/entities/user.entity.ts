@@ -3,6 +3,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, Prim
 // Appointment relationship (forward declaration to avoid circular dependencies)
 import { Appointment } from '../../appointments/entities/appointment.entity';
 import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 // Clinic relationships (forward declarations to avoid circular dependencies)
 import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
 import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
@@ -172,6 +173,9 @@ export class User {
   activities!: UserActivity[];
 
   // Clinic relationships
+  @OneToMany(() => Clinic, (clinic) => clinic.owner)
+  owned_clinics!: Clinic[];
+
   @OneToMany(() => ClinicStaff, (staff) => staff.user)
   clinic_staff!: ClinicStaff[];
 

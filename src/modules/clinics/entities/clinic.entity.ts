@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { Appointment } from '../../appointments/entities/appointment.entity';
+import { User } from '../../users/entities/user.entity';
 import { ClinicOperatingHours } from './clinic-operating-hours.entity';
 import { ClinicPhoto } from './clinic-photo.entity';
 import { ClinicReview } from './clinic-review.entity';
@@ -115,6 +116,9 @@ export class Clinic {
   @Column({ type: 'jsonb', default: [] })
   insurance_providers!: string[];
 
+  @Column({ type: 'uuid', nullable: true })
+  owner_id?: string;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at!: Date;
 
@@ -122,6 +126,10 @@ export class Clinic {
   updated_at!: Date;
 
   // Relationships
+  @ManyToOne(() => User, (user) => user.owned_clinics, { nullable: true })
+  @JoinColumn({ name: 'owner_id' })
+  owner?: User;
+
   @OneToMany(() => ClinicStaff, (staff) => staff.clinic)
   staff!: ClinicStaff[];
 

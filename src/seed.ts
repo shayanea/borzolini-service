@@ -42,6 +42,7 @@ async function seed() {
     console.log('🔑 Default password for all users: Password123!');
     console.log('📧 Test users created:');
     console.log('   - admin@borzolini.com (Admin)');
+    console.log('   - shayan.araghi@borzolini.com (Admin - Clinic Owner)');
     console.log('   - dr.smith@borzolini.com (Veterinarian)');
     console.log('   - dr.johnson@borzolini.com (Veterinarian)');
     console.log('   - dr.garcia@borzolini.com (Veterinarian)');
