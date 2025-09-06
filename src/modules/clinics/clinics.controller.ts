@@ -1001,6 +1001,17 @@ export class ClinicsController {
     return await this.clinicPetCaseService.getCasesByClinic(clinicId, filters, page, limit);
   }
 
+  @Get(':id/cases/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get case statistics for clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 200, description: 'Case statistics retrieved successfully' })
+  async getCaseStats(@Param('id') clinicId: string) {
+    return await this.clinicPetCaseService.getCaseStats(clinicId);
+  }
+
   @Get(':id/cases/:caseId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
@@ -1050,16 +1061,5 @@ export class ClinicsController {
       ...eventData,
       created_by: req.user.id,
     });
-  }
-
-  @Get(':id/cases/stats')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get case statistics for clinic' })
-  @ApiParam({ name: 'id', description: 'Clinic ID' })
-  @ApiResponse({ status: 200, description: 'Case statistics retrieved successfully' })
-  async getCaseStats(@Param('id') clinicId: string) {
-    return await this.clinicPetCaseService.getCaseStats(clinicId);
   }
 }

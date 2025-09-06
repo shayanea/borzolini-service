@@ -84,7 +84,7 @@ export class ClinicPetCaseService {
           event_type: TimelineEventType.CASE_CREATED,
           description: `Case created for ${pet.name}`,
           user_id: ownerId,
-          user_name: `${pet.owner.firstName  } ${  pet.owner.lastName}`,
+          user_name: `${pet.owner.firstName} ${pet.owner.lastName}`,
         },
       ],
     });
@@ -179,7 +179,7 @@ export class ClinicPetCaseService {
   async getCaseById(clinicId: string, caseId: string): Promise<ClinicPetCase> {
     const petCase = await this.petCaseRepository.findOne({
       where: { id: caseId, clinic_id: clinicId, is_active: true },
-      relations: ['pet', 'owner', 'veterinarian', 'appointments'],
+      relations: ['pet', 'owner', 'veterinarian'],
     });
 
     if (!petCase) {
