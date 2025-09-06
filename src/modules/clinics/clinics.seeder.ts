@@ -171,7 +171,7 @@ export class ClinicsSeeder {
       // Return a mapping of user types for easy access
       const result: { admin: User; clinicOwner: User; veterinarian: User; staff?: User } = {
         admin: adminUsers[0]!,
-        clinicOwner: clinicOwner,
+        clinicOwner,
         veterinarian: veterinarianUsers[0]!,
       };
 
