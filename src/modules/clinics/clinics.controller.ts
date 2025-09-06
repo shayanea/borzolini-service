@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ExportService } from '../../common/services/export.service';
@@ -297,7 +297,10 @@ export class ClinicsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List staff members for a clinic' })
+  @ApiOperation({
+    summary: 'List staff members for a clinic',
+    description: 'Retrieve staff members for a specific clinic. Admin users can view staff from any clinic, while staff/veterinarians can only view colleagues from their own clinic.',
+  })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
   @ApiQuery({ name: 'role', required: false, description: 'Filter by staff role' })
   @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status' })
@@ -322,8 +325,12 @@ export class ClinicsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - You can only view staff from clinics where you are a member' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
   async listClinicStaff(
     @Param('id') clinicId: string,
+    @Request() req: any,
     @Query('role') role?: string,
     @Query('is_active') isActive?: boolean,
     @Query('specialization') specialization?: string,
@@ -335,6 +342,14 @@ export class ClinicsController {
     @Query('sort_by') sortBy?: string,
     @Query('sort_order') sortOrder?: 'ASC' | 'DESC'
   ) {
+    // For non-admin users, check if they are staff at this clinic
+    if (req.user.role !== UserRole.ADMIN) {
+      const isStaffAtClinic = await this.clinicsService.isUserStaffAtClinic(req.user.id, clinicId);
+      if (!isStaffAtClinic) {
+        throw new ForbiddenException('Access denied: You can only view staff from clinics where you are a member');
+      }
+    }
+
     const filters = {
       ...(role && { role }),
       ...(isActive !== undefined && { is_active: isActive }),
@@ -545,6 +560,53 @@ export class ClinicsController {
   @ApiResponse({ status: 404, description: 'Clinic not found' })
   async getClinicStats(@Param('id') id: string) {
     return await this.clinicsService.getClinicStats(id);
+  }
+
+  @Get('with-appointments-pets-staff')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get clinics with appointments, pets, and staff',
+    description: 'Retrieve all active clinics that have at least one appointment, one pet case, and one staff member. Includes statistics for each clinic.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinics with appointments, pets, and staff retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          clinic: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              city: { type: 'string' },
+              state: { type: 'string' },
+              rating: { type: 'number' },
+              is_verified: { type: 'boolean' },
+              created_at: { type: 'string', format: 'date-time' },
+              updated_at: { type: 'string', format: 'date-time' },
+            },
+          },
+          stats: {
+            type: 'object',
+            properties: {
+              appointments: { type: 'number' },
+              pets: { type: 'number' },
+              staff: { type: 'number' },
+            },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  async getClinicsWithAppointmentsPetsAndStaff() {
+    return await this.clinicsService.getClinicsWithAppointmentsPetsAndStaff();
   }
 
   // Clinic Verification and Status Management

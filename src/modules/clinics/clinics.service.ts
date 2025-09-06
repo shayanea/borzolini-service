@@ -362,10 +362,7 @@ export class ClinicsService implements OnModuleInit {
     const sortOrderVal: 'ASC' | 'DESC' = options.sortOrder === 'ASC' ? 'ASC' : 'DESC';
     const skip = (pageNum - 1) * limitNum;
 
-    const queryBuilder = this.clinicStaffRepository
-      .createQueryBuilder('staff')
-      .leftJoinAndSelect('staff.user', 'user')
-      .where('staff.clinic_id = :clinicId', { clinicId });
+    const queryBuilder = this.clinicStaffRepository.createQueryBuilder('staff').leftJoinAndSelect('staff.user', 'user').where('staff.clinic_id = :clinicId', { clinicId });
 
     if (filters.role && Object.values(StaffRole).includes(filters.role)) {
       queryBuilder.andWhere('staff.role = :role', { role: filters.role });
@@ -394,6 +391,92 @@ export class ClinicsService implements OnModuleInit {
     const totalPages = Math.ceil(total / limitNum);
 
     return { staff, total, page: pageNum, totalPages };
+  }
+
+  /**
+   * Check if a user is staff member of a specific clinic
+   * @param userId - The user ID to check
+   * @param clinicId - The clinic ID to check against
+   * @returns Promise<boolean> - True if user is staff at the clinic
+   */
+  async isUserStaffAtClinic(userId: string, clinicId: string): Promise<boolean> {
+    const staffMember = await this.clinicStaffRepository.findOne({
+      where: {
+        user_id: userId,
+        clinic_id: clinicId,
+        is_active: true, // Only check active staff members
+      },
+    });
+
+    return !!staffMember;
+  }
+
+  /**
+   * Get all clinic IDs where a user is a staff member
+   * @param userId - The user ID to check
+   * @returns Promise<string[]> - Array of clinic IDs where user is staff
+   */
+  async getUserClinicIds(userId: string): Promise<string[]> {
+    const staffMemberships = await this.clinicStaffRepository.find({
+      where: {
+        user_id: userId,
+        is_active: true, // Only active staff memberships
+      },
+      select: ['clinic_id'],
+    });
+
+    return staffMemberships.map((membership) => membership.clinic_id);
+  }
+
+  /**
+   * Get clinics that have appointments, pets, and staff
+   * @returns Promise<Array<{clinic: Clinic, stats: {appointments: number, pets: number, staff: number}}>>
+   */
+  async getClinicsWithAppointmentsPetsAndStaff(): Promise<
+    Array<{
+      clinic: Clinic;
+      stats: {
+        appointments: number;
+        pets: number;
+        staff: number;
+      };
+    }>
+  > {
+    const queryBuilder = this.clinicRepository
+      .createQueryBuilder('clinic')
+      .leftJoin('clinic.appointments', 'appointments')
+      .leftJoin('clinic.pet_cases', 'pet_cases')
+      .leftJoin('clinic.staff', 'staff')
+      .leftJoin('pet_cases.pet', 'pet')
+      .where('clinic.is_active = :isActive', { isActive: true })
+      .groupBy('clinic.id')
+      .having('COUNT(DISTINCT appointments.id) > 0')
+      .andHaving('COUNT(DISTINCT pet.id) > 0')
+      .andHaving('COUNT(DISTINCT staff.id) > 0')
+      .select(['clinic.id', 'clinic.name', 'clinic.city', 'clinic.state', 'clinic.rating', 'clinic.is_verified', 'clinic.created_at', 'clinic.updated_at'])
+      .addSelect('COUNT(DISTINCT appointments.id)', 'appointmentCount')
+      .addSelect('COUNT(DISTINCT pet.id)', 'petCount')
+      .addSelect('COUNT(DISTINCT staff.id)', 'staffCount');
+
+    const results = await queryBuilder.getRawMany();
+
+    return results.map((result) => ({
+      clinic: {
+        id: result.clinic_id,
+        name: result.clinic_name,
+        city: result.clinic_city,
+        state: result.clinic_state,
+        rating: result.clinic_rating,
+        is_verified: result.clinic_is_verified,
+        created_at: result.clinic_created_at,
+        updated_at: result.clinic_updated_at,
+      } as Clinic,
+      stats: {
+        appointments: parseInt(result.appointmentCount) || 0,
+        pets: parseInt(result.petCount) || 0,
+        staff: parseInt(result.staffCount) || 0,
+      },
+    }));
   }
 
   async addService(createClinicServiceDto: CreateClinicServiceDto, userId?: string): Promise<ClinicService> {
