@@ -4,6 +4,7 @@ import { Response } from 'express';
 
 import { ExportService } from '../../common/services/export.service';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { ClinicAccessGuard } from '../auth/guards/clinic-access.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
@@ -215,6 +216,7 @@ export class AppointmentsController {
   }
 
   @Get('clinic/:clinicId')
+  @UseGuards(JwtAuthGuard, ClinicAccessGuard)
   @ApiOperation({
     summary: 'Get appointments by clinic',
     description: 'Retrieve all appointments for a specific clinic',
@@ -276,6 +278,7 @@ export class AppointmentsController {
   }
 
   @Get('available-slots/:clinicId')
+  @UseGuards(JwtAuthGuard, ClinicAccessGuard)
   @ApiOperation({
     summary: 'Get available time slots',
     description: 'Get available time slots for a specific clinic and date',

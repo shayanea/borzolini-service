@@ -3,6 +3,8 @@ import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags }
 import { Response } from 'express';
 import { ExportService } from '../../common/services/export.service';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { RequiredStaffRoles } from '../auth/decorators/required-staff-roles.decorator';
+import { ClinicAccessGuard } from '../auth/guards/clinic-access.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
@@ -14,7 +16,7 @@ import { UpdateClinicDto } from './dto/update-clinic.dto';
 import { ClinicPhoto } from './entities/clinic-photo.entity';
 import { ClinicReview } from './entities/clinic-review.entity';
 import { ClinicService } from './entities/clinic-service.entity';
-import { ClinicStaff } from './entities/clinic-staff.entity';
+import { ClinicStaff, StaffRole } from './entities/clinic-staff.entity';
 import { Clinic } from './entities/clinic.entity';
 // ClinicPetCase and ClinicCaseTimeline are not directly used in controller
 import { CreatePetCaseDto } from './dto/create-pet-case.dto';
@@ -394,8 +396,8 @@ export class ClinicsController {
   }
 
   @Delete(':clinicId/staff/:userId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, ClinicAccessGuard)
+  @RequiredStaffRoles(StaffRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove staff member from clinic' })
   @ApiParam({ name: 'clinicId', description: 'Clinic ID' })
