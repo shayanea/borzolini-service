@@ -238,6 +238,20 @@ export class PetsController {
     return this.petsService.getPetsNeedingSpayNeuter();
   }
 
+  @Get('distinct/allergies')
+  @ApiOperation({ summary: 'Get distinct allergies', description: 'Returns a distinct, sorted list of pet allergies' })
+  @ApiResponse({ status: 200, description: 'Distinct allergies retrieved successfully' })
+  async getDistinctAllergies(): Promise<string[]> {
+    return this.petsService.getDistinctAllergies();
+  }
+
+  @Get('distinct/medications')
+  @ApiOperation({ summary: 'Get distinct medications', description: 'Returns a distinct, sorted list of pet medications' })
+  @ApiResponse({ status: 200, description: 'Distinct medications retrieved successfully' })
+  async getDistinctMedications(): Promise<string[]> {
+    return this.petsService.getDistinctMedications();
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get pet by ID',

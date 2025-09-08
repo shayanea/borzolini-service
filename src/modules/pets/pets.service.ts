@@ -285,6 +285,16 @@ export class PetsService {
     });
   }
 
+  async getDistinctAllergies(): Promise<string[]> {
+    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT unnest(allergies) AS value FROM pets WHERE is_active = true AND array_length(allergies, 1) IS NOT NULL ORDER BY value ASC;`);
+    return rows.map((r) => (r.value ?? '').trim()).filter((v) => v.length > 0);
+  }
+
+  async getDistinctMedications(): Promise<string[]> {
+    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT unnest(medications) AS value FROM pets WHERE is_active = true AND array_length(medications, 1) IS NOT NULL ORDER BY value ASC;`);
+    return rows.map((r) => (r.value ?? '').trim()).filter((v) => v.length > 0);
+  }
+
   private calculateSizeFromWeight(weight: number): PetSize {
     if (weight < 5) return PetSize.TINY;
     if (weight < 20) return PetSize.SMALL;

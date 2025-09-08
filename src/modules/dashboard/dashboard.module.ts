@@ -1,15 +1,15 @@
 import * as redisStore from 'cache-manager-redis-store';
 
-import { Appointment } from '../appointments/entities/appointment.entity';
 import { CacheModule } from '@nestjs/cache-manager';
-import { Clinic } from '../clinics/entities/clinic.entity';
+import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '../../common/common.module';
+import { Appointment } from '../appointments/entities/appointment.entity';
+import { Clinic } from '../clinics/entities/clinic.entity';
+import { Pet } from '../pets/entities/pet.entity';
+import { User } from '../users/entities/user.entity';
 import { DashboardController } from './dashboard.controller';
 import { DashboardService } from './dashboard.service';
-import { Module } from '@nestjs/common';
-import { Pet } from '../pets/entities/pet.entity';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
