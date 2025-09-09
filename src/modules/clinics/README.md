@@ -192,7 +192,6 @@ interface ClinicService {
 
 ### Public Endpoints
 
-- `GET /clinics` - List clinics (with filtering)
 - `GET /clinics/:id` - Get clinic details
 - `GET /clinics/search` - Search clinics
 - `GET /clinics/name/:name` - Get clinics by name
@@ -201,6 +200,7 @@ interface ClinicService {
 
 ### Authenticated Endpoints
 
+- `GET /clinics` - List clinics (with filtering) - All authenticated users
 - `POST /clinics/:id/reviews` - Add reviews (any authenticated user)
 
 ### Admin Only Endpoints

@@ -2,8 +2,8 @@ import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ExportService } from '../../common/services/export.service';
-import { Roles } from '../auth/decorators/roles.decorator';
 import { RequiredStaffRoles } from '../auth/decorators/required-staff-roles.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { ClinicAccessGuard } from '../auth/guards/clinic-access.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -52,7 +52,7 @@ export class ClinicsController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF, UserRole.PATIENT)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all clinics with filtering and pagination' })
   @ApiQuery({

@@ -70,18 +70,18 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```typescript
 // User Roles
 enum UserRole {
-  PET_OWNER = 'pet_owner',
-  CLINIC_ADMIN = 'clinic_admin',
-  DOCTOR = 'doctor',
-  ASSISTANT = 'assistant',
+  PATIENT = 'patient',
+  ADMIN = 'admin',
+  VETERINARIAN = 'veterinarian',
+  STAFF = 'staff',
 }
 
 // Permission Levels
 interface Permissions {
-  pet_owner: ['read:own_pets', 'create:appointments', 'read:own_appointments'];
-  clinic_admin: ['manage:clinic', 'manage:staff', 'read:all_appointments'];
-  doctor: ['read:patient_records', 'update:appointments', 'create:consultations'];
-  assistant: ['read:appointments', 'update:appointment_status'];
+  patient: ['read:own_pets', 'create:appointments', 'read:own_appointments', 'read:clinics'];
+  admin: ['manage:clinic', 'manage:staff', 'read:all_appointments', 'manage:all'];
+  veterinarian: ['read:patient_records', 'update:appointments', 'create:consultations', 'read:clinics'];
+  staff: ['read:appointments', 'update:appointment_status', 'read:clinics'];
 }
 ```
 
