@@ -46,12 +46,8 @@ export class AppointmentsSeeder {
     this.logger.log('Starting appointments seeding...');
 
     try {
-      // Check if appointments already exist
-      const existingAppointments = await this.appointmentRepository.count();
-      if (existingAppointments > 0) {
-        this.logger.log('Appointments already seeded, skipping...');
-        return;
-      }
+      // Clear existing appointments first for fresh data
+      await this.clear();
 
       // Validate that required data exists
       const requiredData = await this.validateRequiredData();
@@ -99,7 +95,7 @@ export class AppointmentsSeeder {
   private async createSampleAppointments(requiredData: { clinics: Clinic[]; pets: Pet[]; staff: ClinicStaff[]; services: ClinicService[]; users: User[] }): Promise<Appointment[]> {
     const { clinics, pets, staff, services, users } = requiredData;
     const appointmentData: AppointmentData[] = [
-      // Wellness appointments
+      // Past appointments (completed)
       {
         clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Buddy',
@@ -107,41 +103,12 @@ export class AppointmentsSeeder {
         staff_email: 'dr.smith@borzolini.com',
         service_name: 'Wellness Exam',
         appointment_type: AppointmentType.WELLNESS_EXAM,
-        status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-15T10:00:00Z',
+        status: AppointmentStatus.COMPLETED,
+        scheduled_date: '2024-01-10T10:00:00Z',
         duration_minutes: 45,
-
-        notes: 'Annual wellness checkup, check vaccination status',
+        notes: 'Annual wellness checkup completed. Pet is healthy, vaccinations up to date.',
         is_telemedicine: false,
       },
-      {
-        clinic_name: 'Borzolini Pet Clinic',
-        pet_name: 'Max',
-        owner_email: 'jane.smith@example.com',
-        staff_email: 'dr.johnson@borzolini.com',
-        service_name: 'Wellness Exam',
-        appointment_type: AppointmentType.WELLNESS_EXAM,
-        status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-16T14:00:00Z',
-        duration_minutes: 45,
-        notes: 'Annual wellness checkup, hip dysplasia monitoring',
-        is_telemedicine: false,
-      },
-      {
-        clinic_name: 'Happy Paws Veterinary Center',
-        pet_name: 'Bella',
-        owner_email: 'sarah.wilson@example.com',
-        staff_email: 'dr.garcia@borzolini.com',
-        service_name: 'Wellness Exam',
-        appointment_type: AppointmentType.WELLNESS_EXAM,
-        status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-01-17T09:00:00Z',
-        duration_minutes: 45,
-        notes: 'Annual wellness checkup, heart monitoring',
-        is_telemedicine: false,
-      },
-
-      // Vaccination appointments
       {
         clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Luna',
@@ -149,27 +116,25 @@ export class AppointmentsSeeder {
         staff_email: 'dr.smith@borzolini.com',
         service_name: 'Vaccination',
         appointment_type: AppointmentType.VACCINATION,
-        status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-18T11:00:00Z',
+        status: AppointmentStatus.COMPLETED,
+        scheduled_date: '2024-01-12T11:00:00Z',
         duration_minutes: 30,
-        notes: 'Core vaccinations due, check microchip',
+        notes: 'Core vaccinations administered successfully. Microchip verified.',
         is_telemedicine: false,
       },
       {
         clinic_name: 'Happy Paws Veterinary Center',
-        pet_name: 'Shadow',
-        owner_email: 'alex.chen@example.com',
-        staff_email: 'dr.garcia@borzolini.com',
-        service_name: 'Vaccination',
-        appointment_type: AppointmentType.VACCINATION,
-        status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-19T15:00:00Z',
-        duration_minutes: 30,
-        notes: 'Annual vaccinations, working dog assessment',
+        pet_name: 'Max',
+        owner_email: 'jane.smith@example.com',
+        staff_email: 'dr.johnson@borzolini.com',
+        service_name: 'Wellness Exam',
+        appointment_type: AppointmentType.WELLNESS_EXAM,
+        status: AppointmentStatus.COMPLETED,
+        scheduled_date: '2024-01-15T14:00:00Z',
+        duration_minutes: 45,
+        notes: 'Hip dysplasia monitoring. X-rays show mild arthritis, joint supplements recommended.',
         is_telemedicine: false,
       },
-
-      // Dental appointments
       {
         clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Whiskers',
@@ -177,40 +142,53 @@ export class AppointmentsSeeder {
         staff_email: 'dr.johnson@borzolini.com',
         service_name: 'Dental Cleaning',
         appointment_type: AppointmentType.DENTAL_CLEANING,
-        status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-20T13:00:00Z',
+        status: AppointmentStatus.COMPLETED,
+        scheduled_date: '2024-01-18T13:00:00Z',
         duration_minutes: 60,
-        notes: 'Professional dental cleaning, eye care check',
-        is_telemedicine: false,
-      },
-      {
-        clinic_name: 'Borzolini Pet Clinic',
-        pet_name: 'Oliver',
-        owner_email: 'sarah.wilson@example.com',
-        staff_email: 'dr.smith@borzolini.com',
-        service_name: 'Dental Cleaning',
-        appointment_type: AppointmentType.DENTAL_CLEANING,
-        status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-01-21T10:00:00Z',
-        duration_minutes: 60,
-        notes: 'Dental cleaning, large breed monitoring',
+        notes: 'Professional dental cleaning completed. Eye care routine reviewed.',
         is_telemedicine: false,
       },
 
-      // Emergency appointments
+      // Current appointments (confirmed/in-progress)
+      {
+        clinic_name: 'Borzolini Pet Clinic',
+        pet_name: 'Bella',
+        owner_email: 'sarah.wilson@example.com',
+        staff_email: 'dr.smith@borzolini.com',
+        service_name: 'Wellness Exam',
+        appointment_type: AppointmentType.WELLNESS_EXAM,
+        status: AppointmentStatus.CONFIRMED,
+        scheduled_date: '2024-01-25T09:00:00Z',
+        duration_minutes: 45,
+        notes: 'Annual wellness checkup, heart monitoring due to breed predisposition',
+        is_telemedicine: false,
+      },
+      {
+        clinic_name: 'Happy Paws Veterinary Center',
+        pet_name: 'Shadow',
+        owner_email: 'alex.chen@example.com',
+        staff_email: 'dr.johnson@borzolini.com',
+        service_name: 'Vaccination',
+        appointment_type: AppointmentType.VACCINATION,
+        status: AppointmentStatus.CONFIRMED,
+        scheduled_date: '2024-01-26T15:00:00Z',
+        duration_minutes: 30,
+        notes: 'Annual vaccinations, working dog fitness assessment',
+        is_telemedicine: false,
+      },
       {
         clinic_name: 'Emergency Pet Hospital',
         pet_name: 'Rocky',
         owner_email: 'mike.brown@example.com',
-        staff_email: 'dr.smith@borzolini.com',
+        staff_email: 'dr.garcia@borzolini.com',
         service_name: 'Emergency Care',
         appointment_type: AppointmentType.EMERGENCY,
         status: AppointmentStatus.IN_PROGRESS,
-        scheduled_date: '2024-01-14T22:30:00Z',
+        scheduled_date: '2024-01-24T22:30:00Z',
         duration_minutes: 90,
-        notes: 'Emergency consultation, service dog training injury',
+        notes: 'Emergency consultation for service dog training injury. X-rays taken.',
         is_telemedicine: false,
-        address: 'Home visit - 147 Pet Owner Ave, Pet Owner City',
+        address: 'Home visit - 789 Pine Street, Chicago, IL 60602',
       },
 
       // Telemedicine appointments
@@ -218,13 +196,26 @@ export class AppointmentsSeeder {
         clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Mittens',
         owner_email: 'alex.chen@example.com',
-        staff_email: 'dr.johnson@borzolini.com',
+        staff_email: 'dr.smith@borzolini.com',
         service_name: 'Wellness Exam',
         appointment_type: AppointmentType.WELLNESS_EXAM,
         status: AppointmentStatus.CONFIRMED,
-        scheduled_date: '2024-01-22T16:00:00Z',
+        scheduled_date: '2024-01-27T16:00:00Z',
         duration_minutes: 45,
-        notes: 'Telemedicine wellness checkup, behavioral consultation',
+        notes: 'Telemedicine wellness checkup, behavioral consultation for separation anxiety',
+        is_telemedicine: true,
+      },
+      {
+        clinic_name: 'Coastal Veterinary Clinic',
+        pet_name: 'Coco',
+        owner_email: 'lisa.garcia@example.com',
+        staff_email: 'dr.wilson@borzolini.com',
+        service_name: 'Wellness Exam',
+        appointment_type: AppointmentType.WELLNESS_EXAM,
+        status: AppointmentStatus.CONFIRMED,
+        scheduled_date: '2024-01-28T14:00:00Z',
+        duration_minutes: 45,
+        notes: 'Telemedicine consultation for small breed dental care',
         is_telemedicine: true,
       },
 
@@ -237,9 +228,22 @@ export class AppointmentsSeeder {
         service_name: 'Wellness Exam',
         appointment_type: AppointmentType.FOLLOW_UP,
         status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-01-23T14:30:00Z',
+        scheduled_date: '2024-02-05T14:30:00Z',
         duration_minutes: 30,
-        notes: 'Follow-up on hip dysplasia treatment, exercise recommendations',
+        notes: 'Follow-up on hip dysplasia treatment, review exercise recommendations',
+        is_telemedicine: false,
+      },
+      {
+        clinic_name: 'Pacific Northwest Animal Hospital',
+        pet_name: 'Duke',
+        owner_email: 'david.miller@example.com',
+        staff_email: 'dr.brown@borzolini.com',
+        service_name: 'Wellness Exam',
+        appointment_type: AppointmentType.FOLLOW_UP,
+        status: AppointmentStatus.PENDING,
+        scheduled_date: '2024-02-08T10:00:00Z',
+        duration_minutes: 45,
+        notes: 'Follow-up on bloat monitoring, review joint health supplements',
         is_telemedicine: false,
       },
 
@@ -248,39 +252,65 @@ export class AppointmentsSeeder {
         clinic_name: 'Happy Paws Veterinary Center',
         pet_name: 'Buddy',
         owner_email: 'john.doe@example.com',
-        staff_email: 'dr.garcia@borzolini.com',
+        staff_email: 'dr.johnson@borzolini.com',
         service_name: 'Vaccination',
         appointment_type: AppointmentType.VACCINATION,
         status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-02-01T10:00:00Z',
+        scheduled_date: '2024-02-12T10:00:00Z',
         duration_minutes: 30,
-        notes: 'Booster vaccinations, health check',
+        notes: 'Booster vaccinations, health check and weight monitoring',
         is_telemedicine: false,
       },
       {
         clinic_name: 'Borzolini Pet Clinic',
-        pet_name: 'Luna',
-        owner_email: 'john.doe@example.com',
-        staff_email: 'dr.johnson@borzolini.com',
-        service_name: 'Wellness Exam',
-        appointment_type: AppointmentType.WELLNESS_EXAM,
+        pet_name: 'Oliver',
+        owner_email: 'sarah.wilson@example.com',
+        staff_email: 'dr.smith@borzolini.com',
+        service_name: 'Dental Cleaning',
+        appointment_type: AppointmentType.DENTAL_CLEANING,
         status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-02-05T11:00:00Z',
-        duration_minutes: 45,
-        notes: '6-month wellness checkup, weight monitoring',
+        scheduled_date: '2024-02-15T10:00:00Z',
+        duration_minutes: 60,
+        notes: 'Dental cleaning for large breed cat, monitoring growth',
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Happy Paws Veterinary Center',
-        pet_name: 'Shadow',
-        owner_email: 'alex.chen@example.com',
-        staff_email: 'dr.garcia@borzolini.com',
+        clinic_name: 'Coastal Veterinary Clinic',
+        pet_name: 'Simba',
+        owner_email: 'lisa.garcia@example.com',
+        staff_email: 'dr.wilson@borzolini.com',
         service_name: 'Wellness Exam',
         appointment_type: AppointmentType.WELLNESS_EXAM,
         status: AppointmentStatus.PENDING,
-        scheduled_date: '2024-02-08T09:00:00Z',
+        scheduled_date: '2024-02-18T09:00:00Z',
         duration_minutes: 45,
-        notes: 'Working dog fitness assessment, training recommendations',
+        notes: 'Annual wellness checkup for Siamese cat, vocal behavior assessment',
+        is_telemedicine: false,
+      },
+      {
+        clinic_name: 'Pacific Northwest Animal Hospital',
+        pet_name: 'Princess',
+        owner_email: 'david.miller@example.com',
+        staff_email: 'dr.brown@borzolini.com',
+        service_name: 'Wellness Exam',
+        appointment_type: AppointmentType.WELLNESS_EXAM,
+        status: AppointmentStatus.PENDING,
+        scheduled_date: '2024-02-20T11:00:00Z',
+        duration_minutes: 45,
+        notes: 'Holistic wellness checkup, coat care recommendations',
+        is_telemedicine: false,
+      },
+      {
+        clinic_name: 'Emergency Pet Hospital',
+        pet_name: 'Rocky',
+        owner_email: 'mike.brown@example.com',
+        staff_email: 'dr.garcia@borzolini.com',
+        service_name: 'Emergency Care',
+        appointment_type: AppointmentType.EMERGENCY,
+        status: AppointmentStatus.PENDING,
+        scheduled_date: '2024-02-22T20:00:00Z',
+        duration_minutes: 90,
+        notes: 'Follow-up emergency visit for service dog injury recovery',
         is_telemedicine: false,
       },
     ];
@@ -344,7 +374,8 @@ export class AppointmentsSeeder {
   async clear(): Promise<void> {
     this.logger.log('Clearing all appointments...');
     try {
-      await this.appointmentRepository.clear();
+      // Use query builder to delete all records
+      await this.appointmentRepository.createQueryBuilder().delete().execute();
       this.logger.log('All appointments cleared');
     } catch (error) {
       this.logger.error('Error clearing appointments:', error);

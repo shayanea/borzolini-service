@@ -476,7 +476,7 @@ export class FaqSeeder {
       this.logger.log(`Indexing ${faqs.length} FAQs`);
 
       // Bulk index FAQs
-      const bulkOperations = faqs.flatMap(faq => [
+      const bulkOperations = faqs.flatMap((faq) => [
         {
           index: {
             _index: 'faqs',
@@ -607,7 +607,7 @@ export class FaqSeeder {
 
   async clear(): Promise<void> {
     this.logger.log('🧹 Clearing FAQ data...');
-    await this.faqRepository.delete({});
+    await this.faqRepository.createQueryBuilder().delete().execute();
     this.logger.log('✅ FAQ data cleared');
   }
 }

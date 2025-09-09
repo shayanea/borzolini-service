@@ -102,12 +102,8 @@ export class ClinicsSeeder {
       // Validate database connection
       await this.validateDatabaseConnection();
 
-      // Check if clinics already exist
-      const existingClinics = await this.clinicRepository.count();
-      if (existingClinics > 0) {
-        this.logger.log('Clinics already seeded, skipping...');
-        return;
-      }
+      // Clear existing clinics first for fresh data
+      await this.clear();
 
       // Validate that required users exist
       const requiredUsers = await this.validateRequiredUsers();
@@ -152,9 +148,16 @@ export class ClinicsSeeder {
     staff?: User;
   } | null> {
     try {
-      // Get all users and filter by role
-      const allUsersResult = await this.usersService.findAll();
+      // Get all users and filter by role (with high limit to get all users)
+      const allUsersResult = await this.usersService.findAll(undefined, { limit: 1000 });
       const allUsers = allUsersResult.users;
+
+      // Debug logging
+      this.logger.log(`Total users found: ${allUsers.length}`);
+      allUsers.forEach((user) => {
+        this.logger.log(`User: ${user.email}, Role: ${user.role}, Active: ${user.isActive}`);
+      });
+
       const adminUsers = allUsers.filter((user) => user.role === UserRole.ADMIN && user.isActive);
       const veterinarianUsers = allUsers.filter((user) => user.role === UserRole.VETERINARIAN && user.isActive);
       const staffUsers = allUsers.filter((user) => user.role === UserRole.STAFF && user.isActive);
@@ -195,7 +198,7 @@ export class ClinicsSeeder {
     const clinicData: ClinicData[] = [
       {
         name: 'Borzolini Pet Clinic',
-        description: 'Leading veterinary clinic providing comprehensive pet care with state-of-the-art facilities and experienced staff.',
+        description: 'Leading veterinary clinic providing comprehensive pet care with state-of-the-art facilities and experienced staff. Specializing in advanced diagnostics, surgery, and emergency care.',
         address: '123 Pet Care Avenue',
         city: 'New York',
         state: 'NY',
@@ -206,26 +209,26 @@ export class ClinicsSeeder {
         website: 'https://borzolini.com',
         is_verified: true,
         is_active: true,
-        services: ['vaccinations', 'surgery', 'dental_care', 'emergency_care', 'wellness_exams'],
-        specializations: ['feline_medicine', 'canine_medicine', 'exotic_pets', 'emergency_medicine'],
-        payment_methods: ['cash', 'credit_card', 'insurance'],
-        insurance_providers: ['PetCare Insurance', 'VetHealth Plus'],
-        emergency_contact: 'Dr. Smith',
+        services: ['vaccinations', 'surgery', 'dental_care', 'emergency_care', 'wellness_exams', 'diagnostic_imaging', 'laboratory_tests'],
+        specializations: ['feline_medicine', 'canine_medicine', 'exotic_pets', 'emergency_medicine', 'surgery', 'cardiology'],
+        payment_methods: ['cash', 'credit_card', 'insurance', 'payment_plans'],
+        insurance_providers: ['PetCare Insurance', 'VetHealth Plus', 'Paws & Claws Insurance'],
+        emergency_contact: 'Dr. Sarah Smith',
         emergency_phone: '+1-555-9999',
         operating_hours: {
-          monday: { open: '09:00', close: '17:00', closed: false },
-          tuesday: { open: '09:00', close: '17:00', closed: false },
-          wednesday: { open: '09:00', close: '17:00', closed: false },
-          thursday: { open: '09:00', close: '17:00', closed: false },
-          friday: { open: '09:00', close: '17:00', closed: false },
-          saturday: { open: '10:00', close: '15:00', closed: false },
-          sunday: { open: '00:00', close: '00:00', closed: true },
+          monday: { open: '08:00', close: '18:00', closed: false },
+          tuesday: { open: '08:00', close: '18:00', closed: false },
+          wednesday: { open: '08:00', close: '18:00', closed: false },
+          thursday: { open: '08:00', close: '18:00', closed: false },
+          friday: { open: '08:00', close: '18:00', closed: false },
+          saturday: { open: '09:00', close: '16:00', closed: false },
+          sunday: { open: '10:00', close: '15:00', closed: false },
         },
         owner_id: users.clinicOwner.id,
       },
       {
         name: 'Happy Paws Veterinary Center',
-        description: 'Family-friendly veterinary center specializing in preventive care and wellness programs.',
+        description: 'Family-friendly veterinary center specializing in preventive care and wellness programs. Committed to providing compassionate care for pets and their families.',
         address: '456 Animal Wellness Drive',
         city: 'Los Angeles',
         state: 'CA',
@@ -236,11 +239,11 @@ export class ClinicsSeeder {
         website: 'https://happypaws.com',
         is_verified: true,
         is_active: true,
-        services: ['preventive_care', 'vaccinations', 'wellness_exams', 'nutrition_counseling'],
-        specializations: ['preventive_medicine', 'nutrition', 'behavioral_medicine'],
+        services: ['preventive_care', 'vaccinations', 'wellness_exams', 'nutrition_counseling', 'behavioral_consultation', 'grooming'],
+        specializations: ['preventive_medicine', 'nutrition', 'behavioral_medicine', 'geriatric_care'],
         payment_methods: ['cash', 'credit_card', 'debit_card', 'insurance'],
-        insurance_providers: ['PetWell Insurance'],
-        emergency_contact: 'Dr. Johnson',
+        insurance_providers: ['PetWell Insurance', 'Healthy Paws'],
+        emergency_contact: 'Dr. Michael Johnson',
         emergency_phone: '+1-555-8888',
         operating_hours: {
           monday: { open: '08:00', close: '18:00', closed: false },
@@ -254,7 +257,7 @@ export class ClinicsSeeder {
       },
       {
         name: 'Emergency Pet Hospital',
-        description: '24/7 emergency veterinary hospital providing critical care and emergency surgery.',
+        description: '24/7 emergency veterinary hospital providing critical care and emergency surgery. Equipped with advanced life support systems and experienced emergency veterinarians.',
         address: '789 Emergency Lane',
         city: 'Chicago',
         state: 'IL',
@@ -265,11 +268,11 @@ export class ClinicsSeeder {
         website: 'https://petemergency.com',
         is_verified: true,
         is_active: true,
-        services: ['emergency_care', 'critical_care', 'emergency_surgery', 'trauma_treatment'],
-        specializations: ['emergency_medicine', 'critical_care', 'trauma_surgery'],
+        services: ['emergency_care', 'critical_care', 'emergency_surgery', 'trauma_treatment', 'intensive_care', 'blood_transfusions'],
+        specializations: ['emergency_medicine', 'critical_care', 'trauma_surgery', 'toxicology'],
         payment_methods: ['cash', 'credit_card', 'insurance', 'payment_plans'],
-        insurance_providers: ['Emergency Pet Insurance', 'Critical Care Plus'],
-        emergency_contact: 'Dr. Emergency',
+        insurance_providers: ['Emergency Pet Insurance', 'Critical Care Plus', 'Pet Emergency Fund'],
+        emergency_contact: 'Dr. Maria Garcia',
         emergency_phone: '+1-555-0000',
         operating_hours: {
           monday: { open: '00:00', close: '23:59', closed: false },
@@ -279,6 +282,64 @@ export class ClinicsSeeder {
           friday: { open: '00:00', close: '23:59', closed: false },
           saturday: { open: '00:00', close: '23:59', closed: false },
           sunday: { open: '00:00', close: '23:59', closed: false },
+        },
+      },
+      {
+        name: 'Coastal Veterinary Clinic',
+        description: 'Full-service veterinary clinic serving the Miami area with comprehensive pet care services. Specializing in tropical pet diseases and marine animal care.',
+        address: '321 Ocean Drive',
+        city: 'Miami',
+        state: 'FL',
+        postal_code: '33101',
+        country: 'USA',
+        phone: '+1-555-0321',
+        email: 'info@coastalvet.com',
+        website: 'https://coastalvet.com',
+        is_verified: true,
+        is_active: true,
+        services: ['wellness_exams', 'vaccinations', 'dental_care', 'surgery', 'exotic_pet_care', 'marine_animal_care'],
+        specializations: ['exotic_pets', 'marine_medicine', 'tropical_diseases', 'avian_medicine'],
+        payment_methods: ['cash', 'credit_card', 'insurance'],
+        insurance_providers: ['Exotic Pet Insurance', 'Marine Animal Care'],
+        emergency_contact: 'Dr. David Wilson',
+        emergency_phone: '+1-555-7777',
+        operating_hours: {
+          monday: { open: '07:00', close: '19:00', closed: false },
+          tuesday: { open: '07:00', close: '19:00', closed: false },
+          wednesday: { open: '07:00', close: '19:00', closed: false },
+          thursday: { open: '07:00', close: '19:00', closed: false },
+          friday: { open: '07:00', close: '19:00', closed: false },
+          saturday: { open: '08:00', close: '17:00', closed: false },
+          sunday: { open: '09:00', close: '15:00', closed: false },
+        },
+      },
+      {
+        name: 'Pacific Northwest Animal Hospital',
+        description: 'Modern veterinary hospital serving the Seattle area with cutting-edge technology and compassionate care. Specializing in large animal medicine and holistic treatments.',
+        address: '654 Rainier Avenue',
+        city: 'Seattle',
+        state: 'WA',
+        postal_code: '98101',
+        country: 'USA',
+        phone: '+1-555-0654',
+        email: 'care@pacificnwanimal.com',
+        website: 'https://pacificnwanimal.com',
+        is_verified: true,
+        is_active: true,
+        services: ['wellness_exams', 'surgery', 'diagnostic_imaging', 'physical_therapy', 'holistic_medicine', 'large_animal_care'],
+        specializations: ['large_animal_medicine', 'holistic_medicine', 'physical_therapy', 'equine_medicine'],
+        payment_methods: ['cash', 'credit_card', 'insurance', 'payment_plans'],
+        insurance_providers: ['Large Animal Insurance', 'Holistic Pet Care'],
+        emergency_contact: 'Dr. Emily Brown',
+        emergency_phone: '+1-555-6666',
+        operating_hours: {
+          monday: { open: '08:00', close: '17:00', closed: false },
+          tuesday: { open: '08:00', close: '17:00', closed: false },
+          wednesday: { open: '08:00', close: '17:00', closed: false },
+          thursday: { open: '08:00', close: '17:00', closed: false },
+          friday: { open: '08:00', close: '17:00', closed: false },
+          saturday: { open: '09:00', close: '15:00', closed: false },
+          sunday: { open: '00:00', close: '00:00', closed: true },
         },
       },
     ];
@@ -300,8 +361,17 @@ export class ClinicsSeeder {
   }
 
   private async createSampleStaff(clinicId: string, users: { admin: User; clinicOwner: User; veterinarian: User; staff?: User }): Promise<void> {
-    const staffData: StaffData[] = [
-      {
+    // Get all veterinarians and staff from the database
+    const allUsersResult = await this.usersService.findAll();
+    const allUsers = allUsersResult.users;
+    const veterinarians = allUsers.filter((user) => user.role === UserRole.VETERINARIAN && user.isActive);
+    const staffMembers = allUsers.filter((user) => user.role === UserRole.STAFF && user.isActive);
+
+    const staffData: StaffData[] = [];
+
+    // Add admin to Borzolini Pet Clinic only
+    if (clinicId === (await this.clinicRepository.findOne({ where: { name: 'Borzolini Pet Clinic' } }))?.id) {
+      staffData.push({
         clinic_id: clinicId,
         user_id: users.admin.id,
         role: StaffRole.ADMIN,
@@ -312,35 +382,83 @@ export class ClinicsSeeder {
         bio: 'Experienced clinic administrator with expertise in veterinary practice management.',
         hire_date: '2023-01-01',
         is_active: true,
-      },
-      {
-        clinic_id: clinicId,
-        user_id: users.veterinarian.id,
-        role: StaffRole.DOCTOR,
-        specialization: 'General Veterinary Medicine',
-        license_number: 'VET-001',
-        experience_years: 8,
-        education: ['Doctor of Veterinary Medicine', 'Small Animal Surgery'],
-        bio: 'Experienced veterinarian with expertise in general practice and surgery.',
-        hire_date: '2023-01-15',
-        is_active: true,
-      },
-    ];
+      });
+    }
 
-    // Add staff member if available
-    if (users.staff && users.staff.id !== users.veterinarian.id) {
+    // Add clinic owner to Borzolini Pet Clinic only
+    if (clinicId === (await this.clinicRepository.findOne({ where: { name: 'Borzolini Pet Clinic' } }))?.id) {
       staffData.push({
         clinic_id: clinicId,
-        user_id: users.staff.id,
-        role: StaffRole.ASSISTANT,
-        specialization: 'Veterinary Nursing',
-        license_number: 'NUR-001',
-        experience_years: 3,
-        education: ['Veterinary Technology', 'Animal Nursing'],
-        bio: 'Dedicated veterinary nurse with experience in patient care and support.',
-        hire_date: '2023-02-01',
+        user_id: users.clinicOwner.id,
+        role: StaffRole.ADMIN,
+        specialization: 'Clinic Ownership',
+        license_number: 'OWN-001',
+        experience_years: 10,
+        education: ['Business Administration', 'Veterinary Practice Management'],
+        bio: 'Clinic owner with extensive experience in veterinary business management.',
+        hire_date: '2022-01-01',
         is_active: true,
       });
+    }
+
+    // Assign veterinarians to different clinics
+    const clinic = await this.clinicRepository.findOne({ where: { id: clinicId } });
+    if (clinic) {
+      let assignedVet: User | undefined;
+
+      switch (clinic.name) {
+        case 'Borzolini Pet Clinic':
+          assignedVet = veterinarians.find((v) => v.email === 'dr.smith@borzolini.com');
+          break;
+        case 'Happy Paws Veterinary Center':
+          assignedVet = veterinarians.find((v) => v.email === 'dr.johnson@borzolini.com');
+          break;
+        case 'Emergency Pet Hospital':
+          assignedVet = veterinarians.find((v) => v.email === 'dr.garcia@borzolini.com');
+          break;
+        case 'Coastal Veterinary Clinic':
+          assignedVet = veterinarians.find((v) => v.email === 'dr.wilson@borzolini.com');
+          break;
+        case 'Pacific Northwest Animal Hospital':
+          assignedVet = veterinarians.find((v) => v.email === 'dr.brown@borzolini.com');
+          break;
+        default:
+          assignedVet = veterinarians[0];
+      }
+
+      if (assignedVet) {
+        staffData.push({
+          clinic_id: clinicId,
+          user_id: assignedVet.id,
+          role: StaffRole.DOCTOR,
+          specialization: this.getSpecializationForClinic(clinic.name),
+          license_number: `VET-${assignedVet.id.substring(0, 8).toUpperCase()}`,
+          experience_years: this.getExperienceYears(assignedVet.email),
+          education: this.getEducationForVet(assignedVet.email),
+          bio: this.getBioForVet(assignedVet.email, clinic.name),
+          hire_date: '2023-01-15',
+          is_active: true,
+        });
+      }
+
+      // Add staff members to clinics
+      if (staffMembers.length > 0) {
+        const staffMember = staffMembers[0];
+        if (staffMember) {
+          staffData.push({
+            clinic_id: clinicId,
+            user_id: staffMember.id,
+            role: StaffRole.ASSISTANT,
+            specialization: 'Veterinary Nursing',
+            license_number: `NUR-${staffMember.id.substring(0, 8).toUpperCase()}`,
+            experience_years: 3,
+            education: ['Veterinary Technology', 'Animal Nursing'],
+            bio: 'Dedicated veterinary nurse with experience in patient care and support.',
+            hire_date: '2023-02-01',
+            is_active: true,
+          });
+        }
+      }
     }
 
     for (const data of staffData) {
@@ -842,15 +960,84 @@ export class ClinicsSeeder {
     }
   }
 
+  private getSpecializationForClinic(clinicName: string): string {
+    switch (clinicName) {
+      case 'Borzolini Pet Clinic':
+        return 'General Veterinary Medicine & Surgery';
+      case 'Happy Paws Veterinary Center':
+        return 'Preventive Medicine & Wellness';
+      case 'Emergency Pet Hospital':
+        return 'Emergency Medicine & Critical Care';
+      case 'Coastal Veterinary Clinic':
+        return 'Exotic Pet Medicine & Marine Animals';
+      case 'Pacific Northwest Animal Hospital':
+        return 'Large Animal Medicine & Holistic Care';
+      default:
+        return 'General Veterinary Medicine';
+    }
+  }
+
+  private getExperienceYears(email: string): number {
+    switch (email) {
+      case 'dr.smith@borzolini.com':
+        return 8;
+      case 'dr.johnson@borzolini.com':
+        return 6;
+      case 'dr.garcia@borzolini.com':
+        return 10;
+      case 'dr.wilson@borzolini.com':
+        return 7;
+      case 'dr.brown@borzolini.com':
+        return 5;
+      default:
+        return 5;
+    }
+  }
+
+  private getEducationForVet(email: string): string[] {
+    switch (email) {
+      case 'dr.smith@borzolini.com':
+        return ['Doctor of Veterinary Medicine', 'Small Animal Surgery Residency', 'Emergency Medicine Certification'];
+      case 'dr.johnson@borzolini.com':
+        return ['Doctor of Veterinary Medicine', 'Preventive Medicine Fellowship', 'Nutritional Medicine Certification'];
+      case 'dr.garcia@borzolini.com':
+        return ['Doctor of Veterinary Medicine', 'Emergency Medicine Residency', 'Critical Care Specialist'];
+      case 'dr.wilson@borzolini.com':
+        return ['Doctor of Veterinary Medicine', 'Exotic Animal Medicine', 'Marine Biology Degree'];
+      case 'dr.brown@borzolini.com':
+        return ['Doctor of Veterinary Medicine', 'Large Animal Medicine', 'Holistic Medicine Certification'];
+      default:
+        return ['Doctor of Veterinary Medicine'];
+    }
+  }
+
+  private getBioForVet(email: string, clinicName: string): string {
+    switch (email) {
+      case 'dr.smith@borzolini.com':
+        return `Experienced veterinarian specializing in general practice and surgery. Committed to providing comprehensive care for pets at ${clinicName}.`;
+      case 'dr.johnson@borzolini.com':
+        return `Dedicated to preventive medicine and wellness programs. Passionate about helping pets live their healthiest lives at ${clinicName}.`;
+      case 'dr.garcia@borzolini.com':
+        return `Emergency medicine specialist with extensive experience in critical care. Available 24/7 to provide life-saving treatment at ${clinicName}.`;
+      case 'dr.wilson@borzolini.com':
+        return `Exotic animal specialist with expertise in marine animals and tropical diseases. Providing specialized care for unique pets at ${clinicName}.`;
+      case 'dr.brown@borzolini.com':
+        return `Holistic medicine practitioner specializing in large animals and alternative treatments. Combining traditional and modern approaches at ${clinicName}.`;
+      default:
+        return `Experienced veterinarian providing compassionate care for pets at ${clinicName}.`;
+    }
+  }
+
   async clear(): Promise<void> {
     this.logger.log('Clearing all clinics and related data...');
     try {
-      await this.petCaseRepository.clear();
-      await this.clinicOperatingHoursRepository.clear();
-      await this.clinicPhotoRepository.clear();
-      await this.clinicServiceRepository.clear();
-      await this.clinicStaffRepository.clear();
-      await this.clinicRepository.clear();
+      // Use query builder to delete all records
+      await this.petCaseRepository.createQueryBuilder().delete().execute();
+      await this.clinicOperatingHoursRepository.createQueryBuilder().delete().execute();
+      await this.clinicPhotoRepository.createQueryBuilder().delete().execute();
+      await this.clinicServiceRepository.createQueryBuilder().delete().execute();
+      await this.clinicStaffRepository.createQueryBuilder().delete().execute();
+      await this.clinicRepository.createQueryBuilder().delete().execute();
       this.logger.log('All clinics and related data cleared');
     } catch (error) {
       this.logger.error('Error clearing clinics data:', error);

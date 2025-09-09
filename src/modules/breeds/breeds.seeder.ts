@@ -419,7 +419,7 @@ export class BreedsSeeder {
 
   async clear(): Promise<void> {
     this.logger.log('🧹 Clearing breeds data...');
-    await this.breedRepository.delete({});
+    await this.breedRepository.createQueryBuilder().delete().execute();
     this.logger.log('✅ Breeds data cleared');
   }
 }
