@@ -286,12 +286,12 @@ export class PetsService {
   }
 
   async getDistinctAllergies(): Promise<string[]> {
-    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT unnest(allergies) AS value FROM pets WHERE is_active = true AND array_length(allergies, 1) IS NOT NULL ORDER BY value ASC;`);
+    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT jsonb_array_elements_text(allergies) AS value FROM pets WHERE is_active = true AND jsonb_array_length(allergies) > 0 ORDER BY value ASC;`);
     return rows.map((r) => (r.value ?? '').trim()).filter((v) => v.length > 0);
   }
 
   async getDistinctMedications(): Promise<string[]> {
-    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT unnest(medications) AS value FROM pets WHERE is_active = true AND array_length(medications, 1) IS NOT NULL ORDER BY value ASC;`);
+    const rows: Array<{ value: string | null }> = await this.petRepository.query(`SELECT DISTINCT jsonb_array_elements_text(medications) AS value FROM pets WHERE is_active = true AND jsonb_array_length(medications) > 0 ORDER BY value ASC;`);
     return rows.map((r) => (r.value ?? '').trim()).filter((v) => v.length > 0);
   }
 
