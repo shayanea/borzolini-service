@@ -1,10 +1,11 @@
-import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppointmentsSeeder } from './modules/appointments/appointments.seeder';
 import { BreedsSeeder } from './modules/breeds/breeds.seeder';
 import { ClinicsSeeder } from './modules/clinics/clinics.seeder';
 import { FaqSeeder } from './modules/faq/faq.seeder';
+import { NestFactory } from '@nestjs/core';
 import { PetsSeeder } from './modules/pets/pets.seeder';
+import { ReviewsSeeder } from './modules/reviews/reviews.seeder';
 import { UsersSeeder } from './modules/users/users.seeder';
 
 async function seed() {
@@ -17,14 +18,16 @@ async function seed() {
     const clinicsSeeder = app.get(ClinicsSeeder);
     const petsSeeder = app.get(PetsSeeder);
     const appointmentsSeeder = app.get(AppointmentsSeeder);
+    const reviewsSeeder = app.get(ReviewsSeeder);
     const faqSeeder = app.get(FaqSeeder);
 
     // Clear existing data first for fresh seeding (in correct order due to foreign key constraints)
     console.log('🧹 Clearing existing data...');
     // Clear in dependency order: child tables first, parent tables last
-    await appointmentsSeeder.clear(); // Clear appointments first (references pets)
-    await petsSeeder.clear(); // Clear pets second (references users, but has ai_health_insights referencing it)
-    await clinicsSeeder.clear(); // Clear clinics third (references users)
+    await reviewsSeeder.clear(); // Clear reviews first (references appointments)
+    await appointmentsSeeder.clear(); // Clear appointments second (references pets)
+    await petsSeeder.clear(); // Clear pets third (references users, but has ai_health_insights referencing it)
+    await clinicsSeeder.clear(); // Clear clinics fourth (references users)
     await usersSeeder.clear(); // Clear users last (referenced by others)
     await faqSeeder.clear();
     await breedsSeeder.clear();
@@ -44,6 +47,9 @@ async function seed() {
 
     console.log('📅 Seeding appointments...');
     await appointmentsSeeder.seed();
+
+    console.log('⭐ Seeding reviews...');
+    await reviewsSeeder.seed();
 
     console.log('❓ Seeding FAQs...');
     await faqSeeder.seed();
@@ -95,13 +101,19 @@ async function seed() {
     console.log('   - Duke (Great Dane) - David Miller');
     console.log('   - Princess (British Shorthair) - David Miller');
     console.log('');
-    console.log('📅 Sample appointments created (16 total):');
-    console.log('   - Past appointments (completed)');
+    console.log('📅 Sample appointments created (25 total):');
+    console.log('   - Past appointments (completed) with real medical issues');
     console.log('   - Current appointments (confirmed/in-progress)');
     console.log('   - Telemedicine visits');
     console.log('   - Follow-up appointments');
-    console.log('   - Upcoming scheduled appointments');
-    console.log('   - Emergency consultations');
+    console.log('   - Future appointments (1-2 months ahead) at Borzolini Clinic');
+    console.log('   - Emergency consultations and surgeries');
+    console.log('');
+    console.log('⭐ Sample reviews created (5 total):');
+    console.log('   - Detailed reviews for completed appointments');
+    console.log('   - Realistic feedback on medical treatments');
+    console.log('   - Clinic responses to reviews');
+    console.log('   - Verified reviews with photos');
 
     await app.close();
     process.exit(0);
