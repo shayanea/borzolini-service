@@ -9,6 +9,7 @@ import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
 import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
 // Pet relationship (forward declaration to avoid circular dependencies)
 import { Pet } from '../../pets/entities/pet.entity';
+import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserPreferences } from './user-preferences.entity';
 
@@ -17,6 +18,8 @@ export enum UserRole {
   VETERINARIAN = 'veterinarian',
   STAFF = 'staff',
   PATIENT = 'patient',
+  CLINIC_ADMIN = 'clinic_admin',
+  DOCTOR = 'doctor',
 }
 
 @Entity('users')
@@ -196,6 +199,10 @@ export class User {
 
   @OneToMany(() => ClinicPetCase, (petCase) => petCase.veterinarian)
   vet_cases!: ClinicPetCase[];
+
+  // Appointment review relationships
+  @OneToMany(() => AppointmentReview, (review) => review.user)
+  appointment_reviews!: AppointmentReview[];
 
   canLogin(): boolean {
     return this.isActive && this.isEmailVerified;

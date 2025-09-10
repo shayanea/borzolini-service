@@ -14,15 +14,16 @@ import { FaqModule } from './modules/faq/faq.module';
 import { HealthModule } from './modules/health/health.module';
 // Core modules
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SupabaseModule } from './common/supabase.module';
-import { getDatabaseConfig } from './config/database.config';
 import { PetsModule } from './modules/pets/pets.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { SupabaseModule } from './common/supabase.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -77,6 +78,7 @@ import { UsersModule } from './modules/users/users.module';
     PetsModule,
     AppointmentsModule,
     AiHealthModule,
+    ReviewsModule,
     ScheduledTasksModule,
     SettingsModule,
     // TelemedicineModule,

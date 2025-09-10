@@ -5,6 +5,7 @@ import { AiHealthInsight } from '../../ai-health/entities/ai-health-insight.enti
 import { Appointment } from '../../appointments/entities/appointment.entity';
 import { Breed } from '../../breeds/entities/breed.entity';
 import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
+import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum PetSpecies {
@@ -149,6 +150,9 @@ export class Pet {
 
   @OneToMany(() => ClinicPetCase, (petCase) => petCase.pet)
   clinic_cases!: ClinicPetCase[];
+
+  @OneToMany(() => AppointmentReview, (review) => review.pet)
+  appointment_reviews!: AppointmentReview[];
 
   // Computed properties (not stored in database)
   get age(): number | null {

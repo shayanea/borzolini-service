@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { Appointment } from '../../appointments/entities/appointment.entity';
+import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { User } from '../../users/entities/user.entity';
 import { ClinicOperatingHours } from './clinic-operating-hours.entity';
 import { ClinicPhoto } from './clinic-photo.entity';
@@ -150,4 +151,7 @@ export class Clinic {
 
   @OneToMany(() => ClinicPetCase, (petCase) => petCase.clinic)
   pet_cases!: ClinicPetCase[];
+
+  @OneToMany(() => AppointmentReview, (review) => review.clinic)
+  appointment_reviews!: AppointmentReview[];
 }
