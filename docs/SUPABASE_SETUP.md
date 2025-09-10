@@ -151,21 +151,8 @@ CREATE TABLE ai_health_insights (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Social media content table
-CREATE TABLE social_media_content (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  clinic_id UUID REFERENCES clinics(id) ON DELETE CASCADE,
-  platform VARCHAR(50) NOT NULL, -- 'instagram', 'tiktok'
-  content_type VARCHAR(50) NOT NULL, -- 'post', 'story', 'reel'
-  title VARCHAR(255),
-  description TEXT,
-  media_urls TEXT[],
-  scheduled_date TIMESTAMP WITH TIME ZONE,
-  published_date TIMESTAMP WITH TIME ZONE,
-  status VARCHAR(50) DEFAULT 'draft', -- 'draft', 'scheduled', 'published'
-  engagement_metrics JSONB,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Social media URLs are now stored directly in the clinics table
+-- instagram_url and tiktok_url columns added to clinics table
 
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);

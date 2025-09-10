@@ -109,6 +109,22 @@ export class CreateClinicDto {
   banner_url?: string;
 
   @ApiPropertyOptional({
+    example: 'https://www.instagram.com/borzoliniclinic/',
+    description: 'Instagram profile URL for content scraping',
+  })
+  @IsOptional()
+  @IsUrl()
+  instagram_url?: string;
+
+  @ApiPropertyOptional({
+    example: 'https://www.tiktok.com/@borzoliniclinic',
+    description: 'TikTok profile URL for content scraping',
+  })
+  @IsOptional()
+  @IsUrl()
+  tiktok_url?: string;
+
+  @ApiPropertyOptional({
     example: 'Dr. Smith',
     description: 'Emergency contact person',
   })

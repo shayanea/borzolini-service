@@ -19,6 +19,8 @@ export class ClinicResponseDto {
       website: 'https://borzoliniclinic.com',
       logo_url: 'https://example.com/logo.png',
       banner_url: 'https://example.com/banner.jpg',
+      instagram_url: 'https://www.instagram.com/borzoliniclinic/',
+      tiktok_url: 'https://www.tiktok.com/@borzoliniclinic',
       rating: 4.8,
       total_reviews: 156,
       is_verified: true,

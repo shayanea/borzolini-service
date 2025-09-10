@@ -31,6 +31,8 @@ interface ClinicData {
   emergency_contact: string;
   emergency_phone: string;
   operating_hours: Record<string, { open: string; close: string; closed: boolean }>;
+  instagram_url?: string;
+  tiktok_url?: string;
   owner_id?: string;
 }
 
@@ -224,6 +226,8 @@ export class ClinicsSeeder {
           saturday: { open: '09:00', close: '16:00', closed: false },
           sunday: { open: '10:00', close: '15:00', closed: false },
         },
+        instagram_url: 'https://www.instagram.com/borzoliniclinic/',
+        tiktok_url: 'https://www.tiktok.com/@borzoliniclinic',
         owner_id: users.clinicOwner.id,
       },
       {

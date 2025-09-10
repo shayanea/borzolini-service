@@ -75,6 +75,12 @@ export class Clinic {
   @Column({ type: 'varchar', length: 500, nullable: true })
   banner_url?: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  instagram_url?: string;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  tiktok_url?: string;
+
   @Column({
     type: 'decimal',
     precision: 3,
