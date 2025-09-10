@@ -19,6 +19,7 @@ import { ReviewsModule } from './modules/reviews/reviews.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { SocialMediaModule } from './modules/social-media/social-media.module';
 import { SupabaseModule } from './common/supabase.module';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -81,8 +82,8 @@ import { getDatabaseConfig } from './config/database.config';
     ReviewsModule,
     ScheduledTasksModule,
     SettingsModule,
+    SocialMediaModule,
     // TelemedicineModule,
-    // SocialMediaModule,
     // PaymentsModule,
 
     // Common utilities
