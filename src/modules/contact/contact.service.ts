@@ -145,4 +145,90 @@ export class ContactService {
     dto.updatedAt = contact.updatedAt;
     return dto;
   }
+
+  async findAllContactsPaginated(page: number, limit: number, filters: any) {
+    try {
+      const queryBuilder = this.contactRepository.createQueryBuilder('contact');
+
+      // Apply filters
+      if (filters.status) {
+        queryBuilder.andWhere('contact.status = :status', { status: filters.status });
+      }
+
+      if (filters.search) {
+        queryBuilder.andWhere(
+          '(contact.name ILIKE :search OR contact.email ILIKE :search OR contact.subject ILIKE :search OR contact.message ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
+      if (filters.dateFrom) {
+        queryBuilder.andWhere('contact.createdAt >= :dateFrom', { dateFrom: filters.dateFrom });
+      }
+
+      if (filters.dateTo) {
+        queryBuilder.andWhere('contact.createdAt <= :dateTo', { dateTo: filters.dateTo });
+      }
+
+      // Apply pagination
+      const skip = (page - 1) * limit;
+      queryBuilder.skip(skip).take(limit);
+
+      // Order by creation date (newest first)
+      queryBuilder.orderBy('contact.createdAt', 'DESC');
+
+      const [contacts, total] = await queryBuilder.getManyAndCount();
+
+      return {
+        data: contacts.map(contact => this.mapToResponseDto(contact)),
+        total,
+        page,
+        limit,
+      };
+    } catch (error) {
+      this.logger.error('Error fetching paginated contacts:', error);
+      throw error;
+    }
+  }
+
+  async exportContacts(filters: any) {
+    try {
+      const queryBuilder = this.contactRepository.createQueryBuilder('contact');
+
+      // Apply filters
+      if (filters.status) {
+        queryBuilder.andWhere('contact.status = :status', { status: filters.status });
+      }
+
+      if (filters.search) {
+        queryBuilder.andWhere(
+          '(contact.name ILIKE :search OR contact.email ILIKE :search OR contact.subject ILIKE :search OR contact.message ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
+      if (filters.dateFrom) {
+        queryBuilder.andWhere('contact.createdAt >= :dateFrom', { dateFrom: filters.dateFrom });
+      }
+
+      if (filters.dateTo) {
+        queryBuilder.andWhere('contact.createdAt <= :dateTo', { dateTo: filters.dateTo });
+      }
+
+      queryBuilder.orderBy('contact.createdAt', 'DESC');
+
+      const contacts = await queryBuilder.getMany();
+
+      // Convert to CSV format
+      const csvHeader = 'ID,Name,Email,Subject,Message,Status,Admin Notes,IP Address,User Agent,Created At,Updated At\n';
+      const csvRows = contacts.map(contact => 
+        `"${contact.id}","${contact.name}","${contact.email}","${contact.subject}","${contact.message.replace(/"/g, '""')}","${contact.status}","${contact.adminNotes || ''}","${contact.ipAddress || ''}","${contact.userAgent || ''}","${contact.createdAt.toISOString()}","${contact.updatedAt.toISOString()}"`
+      ).join('\n');
+
+      return csvHeader + csvRows;
+    } catch (error) {
+      this.logger.error('Error exporting contacts:', error);
+      throw error;
+    }
+  }
 }

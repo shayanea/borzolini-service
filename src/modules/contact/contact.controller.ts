@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -69,8 +69,59 @@ export class ContactController {
     status: 403,
     description: 'Forbidden - insufficient permissions',
   })
-  async findAllContacts(): Promise<ContactResponseDto[]> {
-    return this.contactService.findAllContacts();
+  async findAllContacts(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const filters = {
+      status,
+      search,
+      dateFrom,
+      dateTo,
+    };
+    return this.contactService.findAllContactsPaginated(page, limit, filters);
+  }
+
+  @Get('export')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Export contact submissions',
+    description: 'Export contact form submissions to CSV. Requires admin or staff role.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Contact submissions exported successfully',
+    content: {
+      'text/csv': {
+        schema: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  async exportContacts(
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    const filters = {
+      status,
+      search,
+      dateFrom,
+      dateTo,
+    };
+    return this.contactService.exportContacts(filters);
+  }
+
+  async findAllContactsOld(): Promise<ContactResponseDto[]> {    return this.contactService.findAllContacts();
   }
 
   @Get('stats')
