@@ -26,6 +26,10 @@ export class AnimalFaq {
   @Column({ type: 'enum', enum: FaqCategory })
   category!: FaqCategory;
 
+  @ApiProperty({ description: 'Optional breed this FAQ targets (overrides species-wide)', required: false })
+  @Column({ type: 'uuid', nullable: true })
+  breed_id?: string;
+
   @ApiProperty({ description: 'The question being answered' })
   @Column({ type: 'text' })
   question!: string;

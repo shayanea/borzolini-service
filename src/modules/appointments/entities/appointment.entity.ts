@@ -1,11 +1,11 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 import { ApiProperty } from '@nestjs/swagger';
-import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
-import { Clinic } from '../../clinics/entities/clinic.entity';
 import { ClinicService } from '../../clinics/entities/clinic-service.entity';
 import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
+import { Clinic } from '../../clinics/entities/clinic.entity';
 import { Pet } from '../../pets/entities/pet.entity';
+import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { User } from '../../users/entities/user.entity';
 
 export enum AppointmentType {
@@ -147,6 +147,10 @@ export class Appointment {
   @ApiProperty({ description: 'Whether this is a home visit appointment' })
   @Column({ type: 'boolean', default: false })
   is_home_visit!: boolean;
+
+  @ApiProperty({ description: 'Indicates if the pet has anxiety and needs low-stress handling' })
+  @Column({ type: 'boolean', default: false })
+  pet_anxiety_mode!: boolean;
 
   @ApiProperty({ description: 'Reminder settings for the appointment' })
   @Column({ type: 'jsonb', default: {} })

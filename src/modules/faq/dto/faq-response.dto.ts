@@ -12,6 +12,9 @@ export class FaqResponseDto {
   @ApiProperty({ description: 'Category of the FAQ', enum: FaqCategory })
   category!: FaqCategory;
 
+  @ApiProperty({ description: 'Optional breed this FAQ targets', required: false })
+  breed_id?: string;
+
   @ApiProperty({ description: 'The question being answered' })
   question!: string;
 

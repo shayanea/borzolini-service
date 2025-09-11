@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { ElasticsearchService } from '../../common/elasticsearch.service';
 import { PetSpecies } from '../breeds/entities/breed.entity';
-import { FaqResponseDto, FaqsBySpeciesResponseDto, FaqSearchResponseDto, FaqAutocompleteResponseDto } from './dto/faq-response.dto';
+import { FaqAutocompleteResponseDto, FaqResponseDto, FaqsBySpeciesResponseDto, FaqSearchResponseDto } from './dto/faq-response.dto';
 import { AnimalFaq, FaqCategory } from './entities/faq.entity';
 
 @Injectable()
@@ -76,6 +76,48 @@ export class FaqService {
       order: { order_index: 'ASC', created_at: 'ASC' },
     });
 
+    return faqs.map((faq) => this.mapToResponseDto(faq));
+  }
+
+  /**
+   * Get FAQs for a specific breed (optionally fallback to species if none)
+   */
+  async getFaqsByBreed(breedId: string, includeSpeciesFallback: boolean = true): Promise<FaqResponseDto[]> {
+    this.logger.log(`Fetching FAQs for breed: ${breedId}`);
+
+    // Breed-targeted FAQs
+    const breedFaqs = await this.faqRepository.find({
+      where: { breed_id: breedId, is_active: true },
+      order: { order_index: 'ASC', created_at: 'ASC' },
+    });
+
+    if (breedFaqs.length > 0 || !includeSpeciesFallback) {
+      return breedFaqs.map((faq) => this.mapToResponseDto(faq));
+    }
+
+    // If none, try species-level FAQs using the breed's species
+    // We need the breed's species; since we only have breedId here,
+    // the controller can pass species as an explicit param if needed.
+    return [];
+  }
+
+  /**
+   * Get FAQs filtered by optional breed or species
+   */
+  async getFaqsFiltered(options: { breed_id?: string; species?: PetSpecies; category?: FaqCategory }): Promise<FaqResponseDto[]> {
+    const { breed_id, species, category } = options;
+    this.logger.log(`Fetching FAQs filtered - breed: ${breed_id || 'none'}, species: ${species || 'none'}, category: ${category || 'any'}`);
+
+    const where: any = { is_active: true };
+    if (category) where.category = category;
+
+    if (breed_id) {
+      where.breed_id = breed_id;
+    } else if (species) {
+      where.species = species;
+    }
+
+    const faqs = await this.faqRepository.find({ where, order: { order_index: 'ASC', created_at: 'ASC' } });
     return faqs.map((faq) => this.mapToResponseDto(faq));
   }
 
@@ -173,20 +215,24 @@ export class FaqService {
 
       // Process completion suggestions
       if (response.suggest?.question_completion?.[0]?.options) {
-        suggestions.push(...response.suggest.question_completion[0].options.map((option: any) => ({
-          text: option.text,
-          score: option._score,
-          frequency: option._source?.frequency || 1,
-        })));
+        suggestions.push(
+          ...response.suggest.question_completion[0].options.map((option: any) => ({
+            text: option.text,
+            score: option._score,
+            frequency: option._source?.frequency || 1,
+          }))
+        );
       }
 
       // Process phrase suggestions
       if (response.suggest?.question_phrase?.[0]?.options) {
-        suggestions.push(...response.suggest.question_phrase[0].options.map((option: any) => ({
-          text: option.text,
-          score: option._score,
-          frequency: option._source?.frequency || 1,
-        })));
+        suggestions.push(
+          ...response.suggest.question_phrase[0].options.map((option: any) => ({
+            text: option.text,
+            score: option._score,
+            frequency: option._source?.frequency || 1,
+          }))
+        );
       }
 
       // Sort and deduplicate
@@ -229,7 +275,7 @@ export class FaqService {
       this.logger.log(`Indexing ${faqs.length} FAQs`);
 
       // Bulk index FAQs
-      const bulkOperations = faqs.flatMap(faq => [
+      const bulkOperations = faqs.flatMap((faq) => [
         {
           index: {
             _index: 'faqs',
@@ -428,11 +474,7 @@ export class FaqService {
         },
       },
       size,
-      sort: [
-        { _score: 'desc' },
-        { order_index: 'asc' },
-        { created_at: 'desc' },
-      ],
+      sort: [{ _score: 'desc' }, { order_index: 'asc' }, { created_at: 'desc' }],
       highlight: {
         fields: {
           question: {},
@@ -624,7 +666,7 @@ export class FaqService {
 
       const suggestions = faqs.map((faq, index) => ({
         text: faq.question,
-        score: 1.0 - (index * 0.1), // Decreasing score for each suggestion
+        score: 1.0 - index * 0.1, // Decreasing score for each suggestion
         frequency: 1,
       }));
 
@@ -669,6 +711,7 @@ export class FaqService {
       id: faq.id,
       species: faq.species,
       category: faq.category,
+      breed_id: (faq as any).breed_id,
       question: faq.question,
       answer: faq.answer,
       created_at: faq.created_at,

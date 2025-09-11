@@ -153,6 +153,7 @@ export class AppointmentsService {
       payment_status: 'pending',
       is_telemedicine: createAppointmentDto.is_telemedicine || false,
       is_home_visit: createAppointmentDto.is_home_visit || false,
+      pet_anxiety_mode: createAppointmentDto.pet_anxiety_mode || false,
       reminder_settings: {},
       is_active: true,
       owner_id: ownerId,

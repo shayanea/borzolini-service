@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AppointmentPriority, AppointmentStatus, AppointmentType } from '../entities/appointment.entity';
 import { IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, IsUUID, MaxLength, Min } from 'class-validator';
+import { AppointmentPriority, AppointmentStatus, AppointmentType } from '../entities/appointment.entity';
 
 import { Type } from 'class-transformer';
 
@@ -72,6 +72,14 @@ export class CreateAppointmentDto {
   @IsOptional()
   @IsBoolean()
   is_home_visit?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Indicates if the pet has anxiety and needs low-stress handling',
+    example: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  pet_anxiety_mode?: boolean;
 
   @ApiPropertyOptional({
     description: 'Telemedicine consultation link',
