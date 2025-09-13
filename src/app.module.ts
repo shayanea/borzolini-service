@@ -59,8 +59,6 @@ import { UsersModule } from './modules/users/users.module';
     // Scheduling for cron jobs and automated tasks
     ScheduleModule.forRoot(),
 
-    // Basic configuration only for now
-
     // Supabase integration
     SupabaseModule,
 

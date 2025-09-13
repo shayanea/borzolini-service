@@ -13,7 +13,7 @@ The `generate-tokens.ts` script allows you to generate JWT access and refresh to
 3. The script requires the following environment variables:
    - `JWT_SECRET`
    - `JWT_REFRESH_SECRET`
-   - `JWT_EXPIRES_IN` (optional, defaults to 15m)
+   - `JWT_EXPIRES_IN` (optional, defaults to 30m)
    - `JWT_REFRESH_EXPIRES_IN` (optional, defaults to 7d)
 
 ### Usage

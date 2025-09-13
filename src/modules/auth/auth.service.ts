@@ -287,7 +287,7 @@ export class AuthService implements OnModuleInit {
 
     const jwtSecret = this.configService.get<string>('JWT_SECRET');
     const jwtRefreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
-    const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '15m';
+    const jwtExpiresIn = this.configService.get<string>('JWT_EXPIRES_IN') || '30m';
     const jwtRefreshExpiresIn = this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d';
 
     if (!jwtSecret || !jwtRefreshSecret) {

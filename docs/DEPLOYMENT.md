@@ -29,7 +29,7 @@ Railway is the easiest and most developer-friendly option for deploying NestJS a
    PORT=3001
    JWT_SECRET=your-super-secret-jwt-key-here
    JWT_REFRESH_SECRET=your-super-secret-refresh-key-here
-   JWT_EXPIRES_IN=15m
+   JWT_EXPIRES_IN=30m
    JWT_REFRESH_EXPIRES_IN=7d
    BCRYPT_ROUNDS=12
    # DATABASE_URL is automatically set by Railway
@@ -153,7 +153,7 @@ DATABASE_URL=postgresql://username:password@host:port/database
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-long
 JWT_REFRESH_SECRET=your-super-secret-refresh-key-minimum-32-characters-long
-JWT_EXPIRES_IN=15m
+JWT_EXPIRES_IN=30m
 JWT_REFRESH_EXPIRES_IN=7d
 
 # Security

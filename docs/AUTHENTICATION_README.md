@@ -375,7 +375,7 @@ Authorization: Bearer <access_token>
 ```bash
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-here
-JWT_EXPIRES_IN=15m
+JWT_EXPIRES_IN=30m
 JWT_REFRESH_SECRET=your-refresh-secret-key
 JWT_REFRESH_EXPIRES_IN=7d
 
