@@ -6,6 +6,24 @@ This document provides comprehensive information about the Elasticsearch integra
 
 Elasticsearch has been integrated to provide powerful search capabilities, analytics, and data indexing for the clinic management system. The integration follows NestJS best practices and provides a robust foundation for search functionality.
 
+## ⚠️ MVP Configuration
+
+**For the MVP release, Elasticsearch is DISABLED by default.** This reduces complexity and resource requirements for initial deployment.
+
+### To Enable Elasticsearch (Post-MVP):
+
+1. Set `ELASTICSEARCH_ENABLED=true` in your environment configuration
+2. Uncomment Elasticsearch and Kibana services in `docker-compose.yml`
+3. Configure Elasticsearch connection settings
+4. Restart the application
+
+### Current MVP Status:
+
+- ✅ Elasticsearch module conditionally loaded based on `ELASTICSEARCH_ENABLED` environment variable
+- ✅ Elasticsearch services disabled by default
+- ✅ Docker services commented out for MVP
+- ✅ Environment templates configured for disabled state
+
 ## Architecture
 
 ### Core Components
@@ -67,7 +85,7 @@ elasticsearch:
   environment:
     - discovery.type=single-node
     - xpack.security.enabled=false
-    - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
     - cluster.name=clinic-cluster
     - node.name=clinic-node
 
@@ -143,18 +161,10 @@ Each index is configured with optimized mappings for search performance:
 
 ```typescript
 // Search pets with filters
-const results = await elasticsearchSearchService.searchPets(
-  'golden retriever',
-  { clinicId: 'clinic123', status: ['active'] },
-  { size: 20, highlight: true, aggregations: true }
-);
+const results = await elasticsearchSearchService.searchPets('golden retriever', { clinicId: 'clinic123', status: ['active'] }, { size: 20, highlight: true, aggregations: true });
 
 // Global search across all indices
-const globalResults = await elasticsearchSearchService.globalSearch(
-  'vaccination',
-  { clinicId: 'clinic123' },
-  { size: 10 }
-);
+const globalResults = await elasticsearchSearchService.globalSearch('vaccination', { clinicId: 'clinic123' }, { size: 10 });
 ```
 
 ## Data Synchronization
@@ -201,6 +211,7 @@ const globalResults = await elasticsearchSearchService.globalSearch(
 ### Logging
 
 Comprehensive logging for all operations:
+
 - **Debug logs** for development
 - **Info logs** for normal operations
 - **Warning logs** for potential issues

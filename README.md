@@ -2,6 +2,23 @@
 
 A professional NestJS backend for managing pet clinics, telemedicine consultations, and AI-powered health monitoring.
 
+## 🎯 MVP Configuration
+
+**For the MVP release, Elasticsearch and Kibana are DISABLED by default** to reduce complexity and resource requirements. See [MVP Configuration Guide](docs/MVP_CONFIGURATION.md) for details.
+
+### Quick MVP Start:
+
+```bash
+# Copy environment template
+cp config.env.local.template config.env.local
+
+# Start only essential services
+docker-compose up -d clinic-db
+
+# Run the application
+pnpm run start:dev
+```
+
 ## 🚀 Features
 
 ### Core Platform
