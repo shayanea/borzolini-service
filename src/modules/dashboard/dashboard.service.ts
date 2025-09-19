@@ -1,5 +1,5 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cache } from 'cache-manager';
 import { Between, MoreThan, Repository } from 'typeorm';
@@ -33,6 +33,7 @@ export class DashboardService {
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
 
+    @Optional()
     private readonly elasticsearchService: ElasticsearchService,
     @Inject(CACHE_MANAGER)
     private readonly cacheManager: Cache
@@ -96,7 +97,7 @@ export class DashboardService {
     const cacheKey = `${this.CACHE_KEYS.NEW_USERS_WEEK}:${JSON.stringify(filters)}`;
 
     // Use Elasticsearch for user counts if available, otherwise fallback to database
-    if (this.elasticsearchService.isServiceEnabled()) {
+    if (this.elasticsearchService?.isServiceEnabled()) {
       try {
         return await this.getUserStatsFromElasticsearch(filters);
       } catch (error) {
@@ -156,8 +157,8 @@ export class DashboardService {
       },
     };
 
-    const result = await this.elasticsearchService.search(query);
-    const aggs = result.aggregations;
+    const result = await this.elasticsearchService?.search(query);
+    const aggs = result?.aggregations;
 
     return {
       totalUsers: aggs?.total_users?.value || 0,
@@ -260,7 +261,7 @@ export class DashboardService {
 
     try {
       // Use Elasticsearch for recent activity if available
-      if (this.elasticsearchService.isServiceEnabled()) {
+      if (this.elasticsearchService?.isServiceEnabled()) {
         const recentActivity = await this.getRecentActivityFromElasticsearch();
         await this.cacheManager.set(cacheKey, recentActivity, this.CACHE_TTL);
         return recentActivity;
@@ -331,10 +332,10 @@ export class DashboardService {
       },
     };
 
-    const result = await this.elasticsearchService.search(query);
+    const result = await this.elasticsearchService?.search(query);
 
     return (
-      result.hits?.hits?.map((hit: ElasticsearchHit) => ({
+      result?.hits?.hits?.map((hit: ElasticsearchHit) => ({
         id: hit._source.id,
         type: hit._index === 'users' ? 'user_registration' : 'appointment_created',
         description: hit._index === 'users' ? `New ${hit._source.role} registered` : 'New appointment scheduled',
@@ -356,7 +357,7 @@ export class DashboardService {
 
     try {
       // Use Elasticsearch aggregations for clinic performance
-      if (this.elasticsearchService.isServiceEnabled()) {
+      if (this.elasticsearchService?.isServiceEnabled()) {
         const topClinics = await this.getTopClinicsFromElasticsearch();
         await this.cacheManager.set(cacheKey, topClinics, this.CACHE_TTL);
         return topClinics;
@@ -393,10 +394,10 @@ export class DashboardService {
       query: { match_all: {} },
     };
 
-    const result = await this.elasticsearchService.search(query);
+    const result = await this.elasticsearchService?.search(query);
 
     return (
-      result.hits?.hits?.map((hit: ElasticsearchHit) => ({
+      result?.hits?.hits?.map((hit: ElasticsearchHit) => ({
         id: hit._source.id,
         name: hit._source.name,
         rating: hit._source.rating || 0,

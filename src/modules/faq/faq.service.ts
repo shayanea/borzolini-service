@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { ElasticsearchService } from '../../common/elasticsearch.service';
@@ -13,6 +13,7 @@ export class FaqService {
   constructor(
     @InjectRepository(AnimalFaq)
     private readonly faqRepository: Repository<AnimalFaq>,
+    @Optional()
     private readonly elasticsearchService: ElasticsearchService
   ) {}
 
@@ -128,7 +129,7 @@ export class FaqService {
     this.logger.log(`Searching FAQs with query: ${query}, species: ${species || 'all'}`);
 
     // Try Elasticsearch first, fallback to database
-    if (this.elasticsearchService.isServiceEnabled()) {
+    if (this.elasticsearchService?.isServiceEnabled()) {
       try {
         return await this.searchFaqsElasticsearch(query, species);
       } catch (error) {
@@ -167,9 +168,9 @@ export class FaqService {
     const searchQuery = this.buildFaqSearchQuery(query, species, size);
 
     try {
-      const response = await this.elasticsearchService.search(searchQuery);
+      const response = await this.elasticsearchService?.search(searchQuery);
 
-      const results: FaqResponseDto[] = response.hits.hits.map((hit: any) => {
+      const results: FaqResponseDto[] = response?.hits?.hits?.map((hit: any) => {
         const source = hit._source;
         return {
           id: hit._id,
@@ -202,14 +203,14 @@ export class FaqService {
   async getAutocompleteSuggestions(query: string, species?: PetSpecies, size: number = 10): Promise<FaqAutocompleteResponseDto> {
     this.logger.log(`Getting autocomplete suggestions for: ${query}, species: ${species || 'all'}`);
 
-    if (!this.elasticsearchService.isServiceEnabled()) {
+    if (!this.elasticsearchService?.isServiceEnabled()) {
       // Fallback to basic suggestions from database
       return this.getBasicAutocompleteSuggestions(query, species, size);
     }
 
     try {
       const searchQuery = this.buildAutocompleteQuery(query, species, size);
-      const response = await this.elasticsearchService.search(searchQuery);
+      const response = await this.elasticsearchService?.search(searchQuery);
 
       const suggestions: any[] = [];
 
@@ -258,7 +259,7 @@ export class FaqService {
   async indexAllFaqs(): Promise<void> {
     this.logger.log('Starting FAQ indexing in Elasticsearch');
 
-    if (!this.elasticsearchService.isServiceEnabled()) {
+    if (!this.elasticsearchService?.isServiceEnabled()) {
       this.logger.warn('Elasticsearch is disabled, skipping FAQ indexing');
       return;
     }
@@ -297,7 +298,7 @@ export class FaqService {
         },
       ]);
 
-      await this.elasticsearchService.bulk(bulkOperations);
+      await this.elasticsearchService?.bulk(bulkOperations);
 
       this.logger.log(`Successfully indexed ${faqs.length} FAQs`);
     } catch (error) {
@@ -310,12 +311,12 @@ export class FaqService {
    * Index a single FAQ in Elasticsearch
    */
   async indexFaq(faq: AnimalFaq): Promise<void> {
-    if (!this.elasticsearchService.isServiceEnabled()) {
+    if (!this.elasticsearchService?.isServiceEnabled()) {
       return;
     }
 
     try {
-      await this.elasticsearchService.indexDocument({
+      await this.elasticsearchService?.indexDocument({
         index: 'faqs',
         id: faq.id,
         document: {
@@ -342,12 +343,12 @@ export class FaqService {
    * Remove FAQ from Elasticsearch index
    */
   async removeFaqFromIndex(faqId: string): Promise<void> {
-    if (!this.elasticsearchService.isServiceEnabled()) {
+    if (!this.elasticsearchService?.isServiceEnabled()) {
       return;
     }
 
     try {
-      await this.elasticsearchService.deleteDocument('faqs', faqId, true);
+      await this.elasticsearchService?.deleteDocument('faqs', faqId, true);
     } catch (error) {
       this.logger.error(`Failed to remove FAQ ${faqId} from index`, error);
       throw error;
@@ -551,7 +552,7 @@ export class FaqService {
     const indexName = 'faqs';
 
     // Check if index already exists
-    const indexExists = await this.elasticsearchService.indexExists(indexName);
+    const indexExists = await this.elasticsearchService?.indexExists(indexName);
     if (indexExists) {
       this.logger.log(`FAQ index '${indexName}' already exists`);
       return;
@@ -638,7 +639,7 @@ export class FaqService {
       },
     };
 
-    await this.elasticsearchService.createIndex(indexName, mappings, indexSettings);
+    await this.elasticsearchService?.createIndex(indexName, mappings, indexSettings);
 
     this.logger.log(`Created FAQ index '${indexName}'`);
   }
