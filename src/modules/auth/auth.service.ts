@@ -138,7 +138,7 @@ export class AuthService implements OnModuleInit {
         this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
       }
 
-      return {
+      const response: any = {
         user: {
           id: user.id,
           email: user.email,
@@ -153,6 +153,14 @@ export class AuthService implements OnModuleInit {
         },
         message: 'Login successful',
       };
+
+      // Only include tokens in development mode for manual handling
+      if (this.configService.get<string>('NODE_ENV') !== 'production') {
+        response.accessToken = tokens.accessToken;
+        response.refreshToken = tokens.refreshToken;
+      }
+
+      return response;
     } catch (error) {
       // Log failed login attempt
       if (req) {
@@ -190,7 +198,7 @@ export class AuthService implements OnModuleInit {
       await this.usersService.logUserActivity(user.id, 'register' as any, 'success' as any, { email: user.email, role: user.role }, req.ip, req.get('User-Agent'));
     }
 
-    return {
+    const response: any = {
       user: {
         id: user.id,
         email: user.email,
@@ -205,6 +213,14 @@ export class AuthService implements OnModuleInit {
       },
       message: 'Registration successful. Please check your email to verify your account.',
     };
+
+    // Only include tokens in development mode for manual handling
+    if (this.configService.get<string>('NODE_ENV') !== 'production') {
+      response.accessToken = tokens.accessToken;
+      response.refreshToken = tokens.refreshToken;
+    }
+
+    return response;
   }
 
   async refreshToken(req: Request, res?: Response): Promise<any> {
@@ -249,7 +265,7 @@ export class AuthService implements OnModuleInit {
         this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
       }
 
-      return {
+      const response: any = {
         message: 'Token refreshed successfully',
         user: {
           id: user.id,
@@ -257,6 +273,14 @@ export class AuthService implements OnModuleInit {
           role: user.role,
         },
       };
+
+      // Only include tokens in development mode for manual handling
+      if (this.configService.get<string>('NODE_ENV') !== 'production') {
+        response.accessToken = tokens.accessToken;
+        response.refreshToken = tokens.refreshToken;
+      }
+
+      return response;
     } catch (error) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -314,46 +338,72 @@ export class AuthService implements OnModuleInit {
   private setAuthCookies(res: Response, accessToken: string, refreshToken: string): void {
     const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
     const domain = this.configService.get<string>('COOKIE_DOMAIN');
+    const requestHost = res.req?.get?.('host') || 'localhost';
+
+    // For development cross-machine access, don't set domain at all
+    // This allows cookies to work across different IPs in the same network
+    const cookieDomain = isProduction ? domain || undefined : undefined;
+
+    // Log cookie configuration for debugging
+    this.logger.log(`🍪 Setting cookies - Production: ${isProduction}, Domain: ${cookieDomain || 'none'}`);
+    this.logger.log(`🍪 Request host: ${requestHost}`);
+
+    // For cross-machine access in development, we need 'none' for cross-origin requests
+    // This requires the request to be made with credentials but works with HTTP in development
+    const sameSitePolicy = isProduction ? 'strict' : 'none';
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: false, // Never use secure in development, even in production use false for local network
+      sameSite: sameSitePolicy as 'strict' | 'lax' | 'none',
+      domain: cookieDomain,
+      path: '/',
+    };
 
     // Access token cookie (short-lived, httpOnly, secure in production)
     res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      domain: domain || undefined,
+      ...cookieOptions,
       maxAge: 15 * 60 * 1000, // 15 minutes
-      path: '/',
     });
 
     // Refresh token cookie (longer-lived, httpOnly, secure in production)
     res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? 'strict' : 'lax',
-      domain: domain || undefined,
+      ...cookieOptions,
       maxAge: 10 * 24 * 60 * 60 * 1000, // 10 days
-      path: '/',
     });
+
+    this.logger.log(`🍪 Cookies set successfully with SameSite: ${sameSitePolicy}`);
+    this.logger.log(`🍪 Access Token: ${accessToken.substring(0, 20)}..., Refresh Token: ${refreshToken.substring(0, 20)}...`);
   }
 
   private clearAuthCookies(res: Response): void {
+    const isProduction = this.configService.get<string>('NODE_ENV') === 'production';
     const domain = this.configService.get<string>('COOKIE_DOMAIN');
+
+    // For development cross-machine access, don't set domain at all
+    // This allows cookies to work across different IPs in the same network
+    const cookieDomain = isProduction ? domain || undefined : undefined;
+
+    // Match the same SameSite policy used when setting cookies
+    const sameSitePolicy = isProduction ? 'strict' : 'none';
 
     res.clearCookie('accessToken', {
       httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
-      domain: domain || undefined,
+      secure: false, // Never use secure in development
+      sameSite: sameSitePolicy,
+      domain: cookieDomain,
       path: '/',
     });
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: this.configService.get<string>('NODE_ENV') === 'production',
-      sameSite: this.configService.get<string>('NODE_ENV') === 'production' ? 'strict' : 'lax',
-      domain: domain || undefined,
+      secure: false, // Never use secure in development
+      sameSite: sameSitePolicy,
+      domain: cookieDomain,
       path: '/',
     });
+
+    this.logger.log(`🍪 Cookies cleared successfully with SameSite: ${sameSitePolicy}`);
   }
 
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<any> {

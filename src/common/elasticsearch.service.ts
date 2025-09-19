@@ -46,10 +46,10 @@ export interface BulkResponse {
 export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(ElasticsearchService.name);
   private readonly isEnabled: boolean;
-  private client: Client;
+  private client: Client | null;
 
   constructor(
-    private readonly elasticsearchService: NestElasticsearchService,
+    private readonly elasticsearchService: NestElasticsearchService | null,
     private readonly configService: ConfigService
   ) {
     this.isEnabled = this.configService.get<boolean>('ELASTICSEARCH_ENABLED', false);
@@ -57,7 +57,7 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
-    if (this.isEnabled) {
+    if (this.isEnabled && this.elasticsearchService) {
       try {
         await this.checkConnection();
         this.logger.log('Elasticsearch service initialized successfully');
@@ -84,7 +84,7 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
    * Check Elasticsearch connection
    */
   async checkConnection(): Promise<boolean> {
-    if (!this.isEnabled) {
+    if (!this.isEnabled || !this.client) {
       return false;
     }
 
@@ -98,6 +98,16 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Check if client is available
+   */
+  private ensureClient(): Client {
+    if (!this.client) {
+      throw new Error('Elasticsearch client is not available. Make sure ELASTICSEARCH_ENABLED=true');
+    }
+    return this.client;
+  }
+
+  /**
    * Get cluster health information
    */
   async getClusterHealth(): Promise<any> {
@@ -106,7 +116,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.cluster.health();
+      const client = this.ensureClient();
+      const response = await client.cluster.health();
       return response;
     } catch (error) {
       this.logger.error('Failed to get cluster health', error);
@@ -127,7 +138,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
       if (mappings) body.mappings = mappings;
       if (settings) body.settings = settings;
 
-      const response = await this.client.indices.create({
+      const client = this.ensureClient();
+      const response = await client.indices.create({
         index,
         body,
       });
@@ -149,7 +161,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.indices.exists({ index });
+      const client = this.ensureClient();
+      const response = await client.indices.exists({ index });
       return response;
     } catch (error) {
       this.logger.error(`Failed to check index existence: ${index}`, error);
@@ -166,7 +179,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.indices.delete({ index });
+      const client = this.ensureClient();
+      const response = await client.indices.delete({ index });
       this.logger.log(`Index ${index} deleted successfully`);
       return response;
     } catch (error) {
@@ -196,7 +210,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
         body.id = id;
       }
 
-      const response = await this.client.index(body);
+      const client = this.ensureClient();
+      const response = await client.index(body);
       this.logger.debug(`Document indexed successfully in ${index}`);
       return response;
     } catch (error) {
@@ -214,7 +229,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.get({
+      const client = this.ensureClient();
+      const response = await client.get({
         index,
         id,
       });
@@ -234,7 +250,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.update({
+      const client = this.ensureClient();
+      const response = await client.update({
         index,
         id,
         body: document,
@@ -258,7 +275,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.delete({
+      const client = this.ensureClient();
+      const response = await client.delete({
         index,
         id,
         refresh,
@@ -297,7 +315,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
       if (highlight) (body.body as any).highlight = highlight;
       if (source !== undefined) (body.body as any)._source = source;
 
-      const response = await this.client.search(body);
+      const client = this.ensureClient();
+      const response = await client.search(body);
       return response;
     } catch (error) {
       this.logger.error('Search failed', error);
@@ -329,7 +348,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
         return result;
       });
 
-      const response = await this.client.bulk({ body });
+      const client = this.ensureClient();
+      const response = await client.bulk({ body });
       this.logger.debug(`Bulk operation completed: ${operations.length} operations`);
 
       // Transform the response to match our interface
@@ -371,7 +391,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.indices.refresh({ index });
+      const client = this.ensureClient();
+      const response = await client.indices.refresh({ index });
       this.logger.debug(`Index ${index} refreshed successfully`);
       return response;
     } catch (error) {
@@ -389,7 +410,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.indices.getMapping({ index });
+      const client = this.ensureClient();
+      const response = await client.indices.getMapping({ index });
       return response;
     } catch (error) {
       this.logger.error(`Failed to get mapping for index ${index}`, error);
@@ -406,7 +428,8 @@ export class ElasticsearchService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const response = await this.client.indices.putMapping({
+      const client = this.ensureClient();
+      const response = await client.indices.putMapping({
         index,
         body: mappings,
       });

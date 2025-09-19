@@ -153,9 +153,17 @@ Add these variables to your `.env` file:
 
 ```bash
 # Cookie Configuration
-COOKIE_DOMAIN=localhost  # or your domain in production
+COOKIE_DOMAIN=  # Leave empty for development to allow cross-machine access
 NODE_ENV=development     # or production
 ```
+
+### Cross-Machine Access
+
+For development environments where you need to access the API from different machines on the same network:
+
+1. **Leave `COOKIE_DOMAIN` empty** - This allows cookies to work across different IP addresses
+2. **Use `sameSite: 'none'`** - Automatically set in development mode for cross-machine access
+3. **Ensure CORS is configured** - The API automatically allows local network origins in development
 
 ## Backward Compatibility
 
@@ -199,6 +207,16 @@ curl -b cookies.txt http://localhost:3001/api/v1/auth/profile
 2. **CORS errors**: Verify CORS is configured with `credentials: true`
 3. **Cookie domain issues**: Check `COOKIE_DOMAIN` environment variable
 4. **HTTPS required**: In production, cookies require HTTPS
+
+### Cross-Machine Access Issues
+
+If cookies aren't working when accessing the API from another machine on the same network:
+
+1. **Check `COOKIE_DOMAIN`**: Leave it empty in development
+2. **Verify `sameSite` setting**: Should be `'none'` in development
+3. **Ensure CORS allows your origin**: The API automatically allows local network IPs
+4. **Check browser developer tools**: Look for cookie-related errors in the Network tab
+5. **Test with curl**: Use `curl -c cookies.txt -b cookies.txt` to test cookie handling
 
 ### Debug Mode
 

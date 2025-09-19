@@ -44,6 +44,8 @@ async function bootstrap() {
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:3001',
     'http://127.0.0.1:3002',
   ];
 
@@ -52,19 +54,17 @@ async function bootstrap() {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
-      // Log the origin for debugging
-      console.log(`🔍 CORS request from origin: ${origin}`);
-
-      if (allowedOrigins.includes(origin)) {
-        console.log(`✅ Origin ${origin} is in allowed origins list`);
-        return callback(null, true);
-      }
-
-      // In development, allow any localhost or 192.168.x.x origin
+      // In development, allow any localhost or local network origin
       if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
-        const isAllowed = origin.match(/^https?:\/\/localhost(:\d+)?$/) || origin.match(/^https?:\/\/127\.0\.0\.1(:\d+)?$/) || origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/) || origin.match(/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/);
+        const isAllowed =
+          origin.match(/^https?:\/\/localhost(:\d+)?$/) ||
+          origin.match(/^https?:\/\/127\.0\.0\.1(:\d+)?$/) ||
+          origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/) ||
+          origin.match(/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/) ||
+          origin.match(/^https?:\/\/172\.\d+\.\d+\.\d+(:\d+)?$/);
         if (isAllowed) {
-          console.log(`✅ Origin ${origin} matches development pattern`);
+          console.log(`🔍 CORS request from origin: ${origin}`);
+          console.log(`✅ Origin ${origin} is in allowed origins list`);
           return callback(null, true);
         }
       }
