@@ -11,8 +11,23 @@ import helmet from 'helmet';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Security middleware
-  app.use(helmet());
+  // Security middleware - relaxed for development
+  if (process.env.NODE_ENV === 'production') {
+    app.use(helmet());
+  } else {
+    // Relaxed security for development and local network access
+    app.use(
+      helmet({
+        crossOriginOpenerPolicy: false,
+        crossOriginResourcePolicy: false,
+        originAgentCluster: false,
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        // Disable strict transport security for local development
+        hsts: false,
+      })
+    );
+  }
   app.use(compression());
 
   // Cookie parser middleware
@@ -23,8 +38,9 @@ async function bootstrap() {
     process.env.FRONTEND_URL || 'http://localhost:3000',
     process.env.ADMIN_FRONTEND_URL || 'http://localhost:3002',
     // Development origins for network access
-    'http://192.168.70.188:3000',
-    'http://192.168.70.188:3001',
+    'http://192.168.70.174:3000',
+    'http://192.168.70.174:3001',
+    'http://192.168.70.174:3002',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
@@ -36,23 +52,31 @@ async function bootstrap() {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
 
+      // Log the origin for debugging
+      console.log(`🔍 CORS request from origin: ${origin}`);
+
       if (allowedOrigins.includes(origin)) {
+        console.log(`✅ Origin ${origin} is in allowed origins list`);
         return callback(null, true);
       }
 
       // In development, allow any localhost or 192.168.x.x origin
-      if (process.env.NODE_ENV === 'development') {
-        if (origin.match(/^https?:\/\/localhost(:\d+)?$/) || origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/)) {
+      if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production') {
+        const isAllowed = origin.match(/^https?:\/\/localhost(:\d+)?$/) || origin.match(/^https?:\/\/127\.0\.0\.1(:\d+)?$/) || origin.match(/^https?:\/\/192\.168\.\d+\.\d+(:\d+)?$/) || origin.match(/^https?:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/);
+        if (isAllowed) {
+          console.log(`✅ Origin ${origin} matches development pattern`);
           return callback(null, true);
         }
       }
 
+      console.log(`❌ Origin ${origin} is not allowed by CORS`);
       return callback(new Error('Not allowed by CORS'), false);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-CSRF-Token'],
     exposedHeaders: ['Authorization'],
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   });
 
   // Global validation pipe
@@ -121,7 +145,8 @@ async function bootstrap() {
     .setVersion('1.0.0')
     .setContact('Borzolini Clinic Team', 'https://borzolini.com', 'support@borzolini.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
-    .addServer('http://localhost:3001/api/v1', 'Development Server')
+    .addServer('http://localhost:3001/api/v1', 'Development Server (localhost)')
+    .addServer('http://192.168.70.174:3001/api/v1', 'Development Server (Network)')
     .addServer('https://api.borzolini.com/api/v1', 'Production Server')
     .addBearerAuth(
       {
@@ -151,10 +176,31 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+
+  // Custom Swagger UI options for local development
+  const swaggerOptions = {
+    swaggerOptions: {
+      // Ensure Swagger UI uses HTTP resources
+      url: '/api/docs-json',
+      // Disable HTTPS enforcement
+      validatorUrl: null,
+      // Custom CSS to handle mixed content
+      customCss: `
+        .swagger-ui .topbar { display: none; }
+        .swagger-ui .info { margin: 20px 0; }
+      `,
+    },
+    customSiteTitle: '🐾 Borzolini Clinic API Documentation',
+    customfavIcon: '/favicon.ico',
+    customJs: ['https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-bundle.js', 'https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui-standalone-preset.js'],
+    customCssUrl: ['https://unpkg.com/swagger-ui-dist@4.15.5/swagger-ui.css'],
+  };
+
+  SwaggerModule.setup('api/docs', app, document, swaggerOptions);
 
   const port = process.env.PORT || 3001;
-  await app.listen(port);
+  const host = process.env.HOST || '0.0.0.0'; // Bind to all network interfaces
+  await app.listen(port, host);
 
   // Use structured logging for production, formatted for development
   const isProduction = process.env.NODE_ENV === 'production';
@@ -171,9 +217,12 @@ async function bootstrap() {
       })
     );
   } else {
-    console.log(`🚀 Borzolini Service is running on: http://localhost:${port}`);
-    console.log(`📚 API Documentation: http://localhost:${port}/api/docs`);
+    console.log(`🚀 Borzolini Service is running on:`);
+    console.log(`📚 API Documentation (localhost): http://localhost:${port}/api/docs`);
+    console.log(`🌐 API Documentation (network): http://192.168.70.174:${port}/api/docs`);
+    console.log(`🔧 API Base URL: http://192.168.70.174:${port}/api/v1`);
     console.log(`🐱 AI-Powered Pet Health Monitoring Platform`);
+    console.log(`🔍 CORS Origins allowed: ${allowedOrigins.join(', ')}`);
   }
 }
 
