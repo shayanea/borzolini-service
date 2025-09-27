@@ -37,11 +37,24 @@ export class AiHealthController {
     description: 'Returns a maximum of 5 high-priority recommendations aggregated across all pets owned by the authenticated user. The server selects pets automatically.',
   })
   @ApiQuery({ name: 'limit', required: false, description: 'Max items to return (default 5)' })
+  @ApiQuery({ name: 'includeEmpty', required: false, description: 'When true, returns an object with helpful message if no items found', type: Boolean })
   @ApiResponse({ status: 200, description: 'Combined recommendations returned', type: [AiHealthInsight] })
-  async getCombinedRecommendations(@Req() req: any, @Query('limit') limit?: string): Promise<AiHealthInsight[]> {
+  async getCombinedRecommendations(@Req() req: any, @Query('limit') limit?: string, @Query('includeEmpty') includeEmpty?: string): Promise<AiHealthInsight[] | { items: AiHealthInsight[]; count: number; message: string }> {
     const userId: string = req.user?.id;
     const maxItems: number = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Math.min(Number(limit), 10) : 5;
-    return this.aiHealthService.getCombinedRecommendationsForUser(userId, maxItems);
+    const items = await this.aiHealthService.getCombinedRecommendationsForUser(userId, maxItems);
+
+    const includeEmptyBool = typeof includeEmpty === 'string' ? includeEmpty.toLowerCase() === 'true' : false;
+
+    if (items.length === 0 && includeEmptyBool) {
+      return {
+        items: [],
+        count: 0,
+        message: 'No recommendations found yet. Generate recommendations for your pets first, then try again.',
+      };
+    }
+
+    return items;
   }
 
   @Get('pets/:petId/insights')
