@@ -36,6 +36,12 @@ export interface AiRecommendation {
 export class AiHealthService {
   private readonly logger = new Logger(AiHealthService.name);
   private openai!: OpenAI;
+  private readonly dedupeLookbackDays: number;
+  private readonly aiMaxTokens: number;
+  private readonly cacheTtlMs: number;
+  private readonly semanticSimilarityThreshold: number;
+  private readonly aiCache: Map<string, { value: AiRecommendation[]; expiresAt: number }> = new Map();
+  private readonly inFlight: Map<string, Promise<AiRecommendation[]>> = new Map();
 
   constructor(
     @InjectRepository(AiHealthInsight)
@@ -52,6 +58,23 @@ export class AiHealthService {
     } else {
       this.logger.warn('OpenAI API key not found. AI features will be limited.');
     }
+
+    const dedupeDaysRaw = this.configService.get<string>('AI_RECOMMENDATION_DEDUPE_DAYS');
+    const parsed = dedupeDaysRaw ? parseInt(dedupeDaysRaw, 10) : NaN;
+    this.dedupeLookbackDays = Number.isFinite(parsed) && parsed > 0 ? parsed : 14;
+
+    const maxTokensRaw = this.configService.get<string>('AI_MAX_TOKENS');
+    const maxTokensParsed = maxTokensRaw ? parseInt(maxTokensRaw, 10) : NaN;
+    this.aiMaxTokens = Number.isFinite(maxTokensParsed) && maxTokensParsed > 200 ? Math.min(maxTokensParsed, 4000) : 1200;
+
+    const ttlSecondsRaw = this.configService.get<string>('AI_CACHE_TTL_SECONDS');
+    const ttlParsed = ttlSecondsRaw ? parseInt(ttlSecondsRaw, 10) : NaN;
+    const ttlSeconds = Number.isFinite(ttlParsed) && ttlParsed >= 0 ? ttlParsed : 300;
+    this.cacheTtlMs = ttlSeconds * 1000;
+
+    const similarityThresholdRaw = this.configService.get<string>('AI_SEMANTIC_SIMILARITY_THRESHOLD');
+    const similarityParsed = similarityThresholdRaw ? parseFloat(similarityThresholdRaw) : NaN;
+    this.semanticSimilarityThreshold = Number.isFinite(similarityParsed) && similarityParsed >= 0 && similarityParsed <= 1 ? similarityParsed : 0.9;
   }
 
   /**
@@ -65,12 +88,44 @@ export class AiHealthService {
         throw new NotFoundException(`Pet with ID ${dto.pet_id} not found`);
       }
 
+      // Fetch recent insights for deduplication and prompt conditioning
+      const recentInsights = await this.getRecentInsightsForPet(dto.pet_id, this.dedupeLookbackDays);
+
       // Generate AI recommendations
-      const recommendations = await this.generateAiRecommendations(petProfile, dto);
+      const recommendations = await this.generateAiRecommendations(petProfile, dto, recentInsights);
 
       // Save recommendations to database
       const savedInsights: AiHealthInsight[] = [];
+      const recentKeys = new Set(recentInsights.map((ri) => this.buildDeduplicationKey(ri.title, ri.suggested_action)));
+      const batchKeys = new Set<string>();
+
       for (const rec of recommendations) {
+        // Step 1: Exact string deduplication
+        const key = this.buildDeduplicationKey(rec.title, rec.suggestedAction);
+        if (!key) {
+          // If we cannot build a key, allow it
+        } else if (recentKeys.has(key) || batchKeys.has(key)) {
+          // Skip duplicates within lookback window or within current batch
+          this.logger.debug(`Skipping exact duplicate recommendation: ${rec.title}`);
+          continue;
+        } else {
+          batchKeys.add(key);
+        }
+
+        // Step 2: Semantic deduplication using embeddings
+        const embeddingText = this.buildEmbeddingText(rec.title, rec.suggestedAction);
+        const embedding = await this.generateEmbedding(embeddingText);
+
+        if (embedding) {
+          const semanticCheck = await this.checkSemanticSimilarity(embedding, dto.pet_id, this.dedupeLookbackDays);
+
+          if (semanticCheck.similar) {
+            this.logger.debug(`Skipping semantically similar recommendation: "${rec.title}" (similar to "${semanticCheck.insight?.title}", similarity: ${semanticCheck.similarity?.toFixed(3)})`);
+            continue;
+          }
+        }
+
+        // Step 3: Create and save insight with embedding
         const insight = this.aiInsightRepository.create({
           pet_id: dto.pet_id,
           insight_type: rec.type,
@@ -82,6 +137,7 @@ export class AiHealthService {
           suggested_action: rec.suggestedAction,
           context: rec.context,
           supporting_data: rec.supportingData,
+          embedding: embedding || null,
         });
 
         const savedInsight = await this.aiInsightRepository.save(insight);
@@ -304,37 +360,65 @@ export class AiHealthService {
   /**
    * Generate AI recommendations using OpenAI
    */
-  private async generateAiRecommendations(profile: PetHealthProfile, dto: GenerateRecommendationsDto): Promise<AiRecommendation[]> {
+  private async generateAiRecommendations(profile: PetHealthProfile, dto: GenerateRecommendationsDto, recentInsights: AiHealthInsight[]): Promise<AiRecommendation[]> {
     if (!this.openai) {
       // Fallback to rule-based recommendations if OpenAI is not available
       return this.generateFallbackRecommendations(profile, dto);
     }
 
     try {
-      const prompt = this.buildAiPrompt(profile, dto);
+      const prompt = this.buildAiPrompt(profile, dto, recentInsights);
 
-      const completion = await this.openai.chat.completions.create({
-        model: this.configService.get('OPENAI_MODEL', 'gpt-4'),
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert veterinary AI assistant. Generate personalized, actionable recommendations for pet owners based on their pet's profile, health history, and specific needs. Focus on practical, evidence-based advice that improves pet health and wellbeing.`,
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      });
+      // Build a cache key using pet id, key dto flags, and recent insight titles
+      const recentKeyPart = recentInsights
+        .slice(0, 5)
+        .map((ri) => `${ri.title}|${ri.suggested_action || ''}`)
+        .join('::');
+      const cacheKey = `pet:${profile.pet.id}|flags:${[dto.include_emergency_alerts, dto.include_preventive_care, dto.include_lifestyle_tips, (dto.categories || []).join(','), (dto.insight_types || []).join(',')].join(
+        '|'
+      )}|recent:${recentKeyPart}`;
 
-      const response = completion.choices[0]?.message?.content;
-      if (!response) {
-        throw new Error('No response from OpenAI');
+      const now = Date.now();
+      const cached = this.aiCache.get(cacheKey);
+      if (cached && cached.expiresAt > now) {
+        this.logger.debug('Returning AI recommendations from cache');
+        return cached.value;
       }
 
-      return this.parseAiResponse(response, profile, dto);
+      const existing = this.inFlight.get(cacheKey);
+      if (existing) {
+        this.logger.debug('Joining in-flight AI recommendation request');
+        return existing;
+      }
+
+      const promise = this.openai.chat.completions
+        .create({
+          model: this.configService.get('OPENAI_MODEL', 'gpt-4'),
+          messages: [
+            {
+              role: 'system',
+              content: `You are an expert veterinary AI assistant. Generate personalized, actionable recommendations for pet owners based on their pet's profile, health history, and specific needs. Focus on practical, evidence-based advice that improves pet health and wellbeing.`,
+            },
+            { role: 'user', content: prompt },
+          ],
+          temperature: 0.7,
+          max_tokens: this.aiMaxTokens,
+        })
+        .then((completion) => {
+          const response = completion.choices[0]?.message?.content;
+          if (!response) {
+            throw new Error('No response from OpenAI');
+          }
+          const parsed = this.parseAiResponse(response, profile, dto);
+          this.aiCache.set(cacheKey, { value: parsed, expiresAt: Date.now() + this.cacheTtlMs });
+          return parsed;
+        })
+        .finally(() => {
+          this.inFlight.delete(cacheKey);
+        });
+
+      this.inFlight.set(cacheKey, promise);
+      return await promise;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`OpenAI API error: ${errorMessage}`);
@@ -346,8 +430,19 @@ export class AiHealthService {
   /**
    * Build comprehensive prompt for AI analysis
    */
-  private buildAiPrompt(profile: PetHealthProfile, dto: GenerateRecommendationsDto): string {
+  private buildAiPrompt(profile: PetHealthProfile, dto: GenerateRecommendationsDto, recentInsights: AiHealthInsight[]): string {
     const { pet, owner, appointments, recentSymptoms, healthTrends, riskFactors } = profile;
+    const recentList = recentInsights
+      .slice(0, 10)
+      .map((ri) => `- ${ri.title}${ri.suggested_action ? ` (action: ${ri.suggested_action})` : ''}`)
+      .join('\n');
+
+    // Context minimization: limit and dedupe items to keep token usage low
+    const unique = <T>(arr: T[]) => Array.from(new Set(arr));
+    const limitedAppointments = appointments.slice(0, 8);
+    const limitedSymptoms = unique(recentSymptoms).slice(0, 6);
+    const limitedRiskFactors = unique(riskFactors).slice(0, 6);
+    const limitedTrends = this.safeStringifyCompact(healthTrends, 400);
 
     return `
 Generate personalized pet care recommendations for ${pet.name}, a ${pet.age || 'unknown age'} year old ${pet.gender} ${pet.breed || pet.species}.
@@ -366,16 +461,19 @@ PET PROFILE:
 - Medical History: ${pet.medical_history || 'None significant'}
 
 HEALTH HISTORY:
-- Recent Symptoms: ${recentSymptoms.join('; ') || 'None reported'}
-- Appointment Types: ${appointments.map((apt) => apt.appointment_type).join(', ')}
-- Health Trends: ${JSON.stringify(healthTrends)}
+- Recent Symptoms: ${limitedSymptoms.join('; ') || 'None reported'}
+- Appointment Types: ${limitedAppointments.map((apt) => apt.appointment_type).join(', ')}
+- Health Trends: ${limitedTrends}
 
 RISK FACTORS:
-${riskFactors.map((factor) => `- ${factor}`).join('\n')}
+${limitedRiskFactors.map((factor) => `- ${factor}`).join('\n')}
 
 OWNER CONTEXT:
 - Owner Experience: ${owner.role === UserRole.PATIENT ? 'Pet owner' : 'Veterinary professional'}
 - Location: ${owner.city || 'Unknown'}, ${owner.country || 'Unknown'}
+
+RECENT RECOMMENDATIONS (last ${this.dedupeLookbackDays} days) — DO NOT REPEAT:
+${recentList || '- None'}
 
 REQUIREMENTS:
 - Categories: ${dto.categories?.join(', ') || 'All categories'}
@@ -394,6 +492,8 @@ Generate 5-8 personalized recommendations covering:
 6. Emergency preparedness
 7. Breed-specific considerations
 8. Seasonal care tips
+
+Strictly avoid repeating items that match the RECENT RECOMMENDATIONS above. Prefer novel, complementary, or more specific actions.
 
 Format each recommendation as JSON with: title, description, category, type, urgency, suggestedAction, context, confidenceScore (0.0-1.0), supportingData.
     `;
@@ -627,5 +727,119 @@ Format each recommendation as JSON with: title, description, category, type, urg
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3)
       .map(([item]) => item);
+  }
+
+  /**
+   * Compact stringify for objects with a rough max length
+   */
+  private safeStringifyCompact(value: unknown, maxLen: number): string {
+    try {
+      const s = JSON.stringify(value);
+      if (s.length <= maxLen) return s;
+      return `${s.slice(0, Math.max(0, maxLen - 3))}...`;
+    } catch {
+      return '[unavailable]';
+    }
+  }
+
+  /**
+   * Fetch recent insights for a pet for deduplication and prompt conditioning
+   */
+  private async getRecentInsightsForPet(petId: string, lookbackDays: number): Promise<AiHealthInsight[]> {
+    const since = new Date();
+    since.setDate(since.getDate() - lookbackDays);
+    return await this.aiInsightRepository.find({
+      where: {
+        pet_id: petId,
+        dismissed: false,
+      },
+      order: { created_at: 'DESC' },
+      take: 50,
+    });
+  }
+
+  /**
+   * Build a simple deduplication key from title and action
+   */
+  private buildDeduplicationKey(title?: string, action?: string | null): string | null {
+    const norm = (s?: string | null) => (s ? s.toLowerCase().replace(/\s+/g, ' ').trim() : '');
+    const t = norm(title);
+    const a = norm(action || undefined);
+    if (!t && !a) return null;
+    return `${t}::${a}`;
+  }
+
+  /**
+   * Generate embedding vector for text using OpenAI
+   */
+  private async generateEmbedding(text: string): Promise<number[] | null> {
+    if (!this.openai) {
+      this.logger.warn('OpenAI not available for embedding generation');
+      return null;
+    }
+
+    try {
+      const response = await this.openai.embeddings.create({
+        model: this.configService.get('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small'),
+        input: text,
+        encoding_format: 'float',
+      });
+
+      return response.data[0]?.embedding || null;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Failed to generate embedding: ${errorMessage}`);
+      return null;
+    }
+  }
+
+  /**
+   * Build text for embedding from recommendation
+   */
+  private buildEmbeddingText(title: string, suggestedAction?: string): string {
+    return `${title}${suggestedAction ? ` | ${suggestedAction}` : ''}`;
+  }
+
+  /**
+   * Check if a recommendation is semantically similar to recent insights
+   * Returns the most similar insight if above threshold, null otherwise
+   */
+  private async checkSemanticSimilarity(embedding: number[], petId: string, lookbackDays: number): Promise<{ similar: boolean; insight?: AiHealthInsight; similarity?: number }> {
+    try {
+      const since = new Date();
+      since.setDate(since.getDate() - lookbackDays);
+
+      // Query for similar vectors using pgvector cosine similarity
+      // 1 - (embedding <=> vector) gives cosine similarity (0 to 1)
+      const query = `
+        SELECT *, 1 - (embedding <=> $1) as similarity
+        FROM ai_health_insights
+        WHERE pet_id = $2
+          AND dismissed = false
+          AND embedding IS NOT NULL
+          AND created_at >= $3
+        ORDER BY embedding <=> $1
+        LIMIT 1
+      `;
+
+      const result = await this.aiInsightRepository.query(query, [JSON.stringify(embedding), petId, since]);
+
+      if (result.length > 0) {
+        const topResult = result[0];
+        const similarity = parseFloat(topResult.similarity);
+
+        if (similarity >= this.semanticSimilarityThreshold) {
+          this.logger.debug(`Found semantically similar insight: ${topResult.title} (similarity: ${similarity.toFixed(3)})`);
+          return { similar: true, insight: topResult, similarity };
+        }
+      }
+
+      return { similar: false };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`Error checking semantic similarity: ${errorMessage}`);
+      // On error, don't block the insight
+      return { similar: false };
+    }
   }
 }
