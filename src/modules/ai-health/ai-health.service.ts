@@ -32,6 +32,14 @@ export interface AiRecommendation {
   supportingData: any;
 }
 
+export interface HealthFact {
+  text: string;
+  source: string;
+  timestamp: Date;
+  priority: number;
+  embedding?: number[] | undefined;
+}
+
 @Injectable()
 export class AiHealthService {
   private readonly logger = new Logger(AiHealthService.name);
@@ -40,6 +48,8 @@ export class AiHealthService {
   private readonly aiMaxTokens: number;
   private readonly cacheTtlMs: number;
   private readonly semanticSimilarityThreshold: number;
+  private readonly ragTopK: number;
+  private readonly ragEnabled: boolean;
   private readonly aiCache: Map<string, { value: AiRecommendation[]; expiresAt: number }> = new Map();
   private readonly inFlight: Map<string, Promise<AiRecommendation[]>> = new Map();
 
@@ -75,6 +85,13 @@ export class AiHealthService {
     const similarityThresholdRaw = this.configService.get<string>('AI_SEMANTIC_SIMILARITY_THRESHOLD');
     const similarityParsed = similarityThresholdRaw ? parseFloat(similarityThresholdRaw) : NaN;
     this.semanticSimilarityThreshold = Number.isFinite(similarityParsed) && similarityParsed >= 0 && similarityParsed <= 1 ? similarityParsed : 0.9;
+
+    const ragTopKRaw = this.configService.get<string>('AI_RAG_TOP_K');
+    const ragTopKParsed = ragTopKRaw ? parseInt(ragTopKRaw, 10) : NaN;
+    this.ragTopK = Number.isFinite(ragTopKParsed) && ragTopKParsed > 0 ? Math.min(ragTopKParsed, 10) : 5;
+
+    const ragEnabledRaw = this.configService.get<string>('AI_RAG_ENABLED');
+    this.ragEnabled = ragEnabledRaw === 'true' || ragEnabledRaw === '1' || !ragEnabledRaw;
   }
 
   /**
@@ -367,7 +384,7 @@ export class AiHealthService {
     }
 
     try {
-      const prompt = this.buildAiPrompt(profile, dto, recentInsights);
+      const prompt = await this.buildAiPrompt(profile, dto, recentInsights);
 
       // Build a cache key using pet id, key dto flags, and recent insight titles
       const recentKeyPart = recentInsights
@@ -428,21 +445,25 @@ export class AiHealthService {
   }
 
   /**
-   * Build comprehensive prompt for AI analysis
+   * Build comprehensive prompt for AI analysis with RAG-retrieved context
    */
-  private buildAiPrompt(profile: PetHealthProfile, dto: GenerateRecommendationsDto, recentInsights: AiHealthInsight[]): string {
-    const { pet, owner, appointments, recentSymptoms, healthTrends, riskFactors } = profile;
+  private async buildAiPrompt(profile: PetHealthProfile, dto: GenerateRecommendationsDto, recentInsights: AiHealthInsight[]): Promise<string> {
+    const { pet, owner } = profile;
     const recentList = recentInsights
       .slice(0, 10)
       .map((ri) => `- ${ri.title}${ri.suggested_action ? ` (action: ${ri.suggested_action})` : ''}`)
       .join('\n');
 
-    // Context minimization: limit and dedupe items to keep token usage low
-    const unique = <T>(arr: T[]) => Array.from(new Set(arr));
-    const limitedAppointments = appointments.slice(0, 8);
-    const limitedSymptoms = unique(recentSymptoms).slice(0, 6);
-    const limitedRiskFactors = unique(riskFactors).slice(0, 6);
-    const limitedTrends = this.safeStringifyCompact(healthTrends, 400);
+    // Build query for RAG retrieval based on requirements
+    const query = `Generate recommendations for ${pet.name}, focusing on ${dto.categories?.join(', ') || 'all health aspects'}${
+      dto.custom_context ? `. ${dto.custom_context}` : ''
+    }`;
+
+    // Build and retrieve relevant health facts
+    const allFacts = await this.buildHealthFacts(profile);
+    const relevantFacts = await this.retrieveRelevantFacts(query, allFacts, this.ragTopK);
+
+    const factsSection = relevantFacts.length > 0 ? relevantFacts.map((f) => `- [${f.source}] ${f.text}`).join('\n') : '- No recent health data available';
 
     return `
 Generate personalized pet care recommendations for ${pet.name}, a ${pet.age || 'unknown age'} year old ${pet.gender} ${pet.breed || pet.species}.
@@ -455,18 +476,9 @@ PET PROFILE:
 - Size: ${pet.size || 'Unknown'}
 - Spayed/Neutered: ${pet.is_spayed_neutered ? 'Yes' : 'No'}
 - Vaccinated: ${pet.is_vaccinated ? 'Yes' : 'No'}
-- Allergies: ${pet.allergies?.join(', ') || 'None known'}
-- Current Medications: ${pet.medications?.join(', ') || 'None'}
-- Dietary Requirements: ${pet.dietary_requirements || 'Standard diet'}
-- Medical History: ${pet.medical_history || 'None significant'}
 
-HEALTH HISTORY:
-- Recent Symptoms: ${limitedSymptoms.join('; ') || 'None reported'}
-- Appointment Types: ${limitedAppointments.map((apt) => apt.appointment_type).join(', ')}
-- Health Trends: ${limitedTrends}
-
-RISK FACTORS:
-${limitedRiskFactors.map((factor) => `- ${factor}`).join('\n')}
+KEY HEALTH FACTS (most relevant):
+${factsSection}
 
 OWNER CONTEXT:
 - Owner Experience: ${owner.role === UserRole.PATIENT ? 'Pet owner' : 'Veterinary professional'}
@@ -493,7 +505,7 @@ Generate 5-8 personalized recommendations covering:
 7. Breed-specific considerations
 8. Seasonal care tips
 
-Strictly avoid repeating items that match the RECENT RECOMMENDATIONS above. Prefer novel, complementary, or more specific actions.
+Base your recommendations on the KEY HEALTH FACTS provided above. Strictly avoid repeating items that match the RECENT RECOMMENDATIONS. Prefer novel, complementary, or more specific actions.
 
 Format each recommendation as JSON with: title, description, category, type, urgency, suggestedAction, context, confidenceScore (0.0-1.0), supportingData.
     `;
@@ -730,19 +742,6 @@ Format each recommendation as JSON with: title, description, category, type, urg
   }
 
   /**
-   * Compact stringify for objects with a rough max length
-   */
-  private safeStringifyCompact(value: unknown, maxLen: number): string {
-    try {
-      const s = JSON.stringify(value);
-      if (s.length <= maxLen) return s;
-      return `${s.slice(0, Math.max(0, maxLen - 3))}...`;
-    } catch {
-      return '[unavailable]';
-    }
-  }
-
-  /**
    * Fetch recent insights for a pet for deduplication and prompt conditioning
    */
   private async getRecentInsightsForPet(petId: string, lookbackDays: number): Promise<AiHealthInsight[]> {
@@ -841,5 +840,171 @@ Format each recommendation as JSON with: title, description, category, type, urg
       // On error, don't block the insight
       return { similar: false };
     }
+  }
+
+  /**
+   * Build health facts index from pet profile for RAG retrieval
+   */
+  private async buildHealthFacts(profile: PetHealthProfile): Promise<HealthFact[]> {
+    const facts: HealthFact[] = [];
+    const { pet, appointments } = profile;
+
+    // Fact 1: Last completed appointment summary (highest priority)
+    const lastCompleted = appointments.find((apt) => apt.status === AppointmentStatus.COMPLETED);
+    if (lastCompleted) {
+      facts.push({
+        text: `Last visit: ${lastCompleted.appointment_type} on ${lastCompleted.scheduled_date.toISOString().split('T')[0]}${
+          lastCompleted.symptoms ? `, symptoms: ${lastCompleted.symptoms}` : ''
+        }${lastCompleted.notes ? `, notes: ${lastCompleted.notes}` : ''}`,
+        source: 'last_appointment',
+        timestamp: lastCompleted.scheduled_date,
+        priority: 10,
+      });
+    }
+
+    // Fact 2: Active medications (high priority)
+    if (pet.medications && pet.medications.length > 0) {
+      facts.push({
+        text: `Current medications: ${pet.medications.join(', ')}`,
+        source: 'medications',
+        timestamp: new Date(),
+        priority: 9,
+      });
+    }
+
+    // Fact 3: Known allergies (high priority)
+    if (pet.allergies && pet.allergies.length > 0) {
+      facts.push({
+        text: `Known allergies: ${pet.allergies.join(', ')}`,
+        source: 'allergies',
+        timestamp: new Date(),
+        priority: 9,
+      });
+    }
+
+    // Fact 4: Last 3 acted-upon insights (medium-high priority)
+    const actedInsights = await this.aiInsightRepository.find({
+      where: {
+        pet_id: pet.id,
+        acted_upon: true,
+      },
+      order: { acted_upon_at: 'DESC' },
+      take: 3,
+    });
+
+    actedInsights.forEach((insight) => {
+      facts.push({
+        text: `Owner acted on: ${insight.title} (${insight.suggested_action || 'no action specified'})`,
+        source: 'acted_insight',
+        timestamp: insight.acted_upon_at || insight.created_at,
+        priority: 7,
+      });
+    });
+
+    // Fact 5: Recent appointments with symptoms (medium priority)
+    const symptomsAppointments = appointments.filter((apt) => apt.symptoms).slice(0, 2);
+
+    symptomsAppointments.forEach((apt) => {
+      facts.push({
+        text: `Symptoms recorded: ${apt.symptoms} on ${apt.scheduled_date.toISOString().split('T')[0]}`,
+        source: 'recent_symptom',
+        timestamp: apt.scheduled_date,
+        priority: 8,
+      });
+    });
+
+    // Fact 6: Medical history (medium priority)
+    if (pet.medical_history && pet.medical_history.trim().length > 10) {
+      facts.push({
+        text: `Medical history: ${pet.medical_history.slice(0, 200)}${pet.medical_history.length > 200 ? '...' : ''}`,
+        source: 'medical_history',
+        timestamp: new Date(),
+        priority: 6,
+      });
+    }
+
+    // Fact 7: Dietary requirements (medium priority)
+    if (pet.dietary_requirements && pet.dietary_requirements.trim().length > 5) {
+      facts.push({
+        text: `Dietary requirements: ${pet.dietary_requirements}`,
+        source: 'diet',
+        timestamp: new Date(),
+        priority: 6,
+      });
+    }
+
+    return facts.sort((a, b) => b.priority - a.priority);
+  }
+
+  /**
+   * Retrieve top-K relevant health facts using embedding similarity
+   */
+  private async retrieveRelevantFacts(query: string, facts: HealthFact[], topK: number): Promise<HealthFact[]> {
+    if (!this.ragEnabled || facts.length === 0) {
+      return facts.slice(0, topK);
+    }
+
+    try {
+      // Generate embedding for query
+      const queryEmbedding = await this.generateEmbedding(query);
+      if (!queryEmbedding) {
+        this.logger.warn('Could not generate query embedding for RAG, returning top facts by priority');
+        return facts.slice(0, topK);
+      }
+
+      // Generate embeddings for all facts in parallel
+      const factsWithEmbeddings = await Promise.all(
+        facts.map(async (fact) => {
+          const embedding = await this.generateEmbedding(fact.text);
+          return { ...fact, embedding: embedding || undefined };
+        })
+      );
+
+      // Calculate cosine similarity for each fact
+      const scoredFacts = factsWithEmbeddings
+        .filter((f) => f.embedding && Array.isArray(f.embedding))
+        .map((fact) => {
+          const similarity = this.cosineSimilarity(queryEmbedding, fact.embedding!);
+          // Combine similarity with priority (weighted: 70% similarity, 30% priority)
+          const score = similarity * 0.7 + (fact.priority / 10) * 0.3;
+          return { fact, score, similarity };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      this.logger.debug(
+        `RAG retrieval: top ${topK} facts (scores: ${scoredFacts
+          .slice(0, topK)
+          .map((f) => f.score.toFixed(2))
+          .join(', ')})`
+      );
+
+      return scoredFacts.slice(0, topK).map((sf) => sf.fact);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(`RAG retrieval error: ${errorMessage}`);
+      return facts.slice(0, topK);
+    }
+  }
+
+  /**
+   * Calculate cosine similarity between two vectors
+   */
+  private cosineSimilarity(a: number[], b: number[]): number {
+    if (!a || !b || a.length !== b.length) return 0;
+
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+
+    for (let i = 0; i < a.length; i++) {
+      const aVal = a[i] ?? 0;
+      const bVal = b[i] ?? 0;
+      dotProduct += aVal * bVal;
+      normA += aVal * aVal;
+      normB += bVal * bVal;
+    }
+
+    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+    return denominator === 0 ? 0 : dotProduct / denominator;
   }
 }
