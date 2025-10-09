@@ -9,8 +9,10 @@ import { SmsService } from '../../common/sms.service';
 import { SettingsConfigService } from '../settings/settings-config.service';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
+import { SaveConsentDto } from './dto/save-consent.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
 import { ActivityStatus, ActivityType, UserActivity } from './entities/user-activity.entity';
+import { UserConsent } from './entities/user-consent.entity';
 import { UserPreferences } from './entities/user-preferences.entity';
 import { User, UserRole } from './entities/user.entity';
 
@@ -1164,5 +1166,75 @@ export class UsersService implements OnModuleInit {
     const expiryDate = new Date(Date.now() - passwordExpiryDays * 24 * 60 * 60 * 1000);
 
     return await this.userRepository.createQueryBuilder('user').where('user.passwordUpdatedAt IS NULL OR user.passwordUpdatedAt < :expiryDate', { expiryDate }).andWhere('user.is_active = :isActive', { isActive: true }).getMany();
+  }
+
+  /**
+   * Save user consent (GDPR/CCPA compliance)
+   */
+  async saveConsent(userId: string, saveConsentDto: SaveConsentDto): Promise<{ message: string; consent: UserConsent }> {
+    const { type, version, acceptedAt, ipAddress, userAgent } = saveConsentDto;
+
+    // Check if user exists
+    const user = await this.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Insert consent record
+    const result = await this.userRepository.query(
+      `
+      INSERT INTO user_consents (user_id, consent_type, version, accepted_at, ip_address, user_agent)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+      `,
+      [userId, type, version, acceptedAt, ipAddress || null, userAgent || null]
+    );
+
+    const consent: UserConsent = {
+      id: result[0].id,
+      userId: result[0].user_id,
+      consentType: result[0].consent_type,
+      version: result[0].version,
+      acceptedAt: result[0].accepted_at,
+      withdrawnAt: result[0].withdrawn_at,
+      ipAddress: result[0].ip_address,
+      userAgent: result[0].user_agent,
+      createdAt: result[0].created_at,
+      updatedAt: result[0].updated_at,
+    };
+
+    this.logger.log(`Consent saved for user ${userId}: ${type} v${version}`);
+
+    return {
+      message: 'Consent saved successfully',
+      consent,
+    };
+  }
+
+  /**
+   * Get user consents
+   */
+  async getUserConsents(userId: string): Promise<UserConsent[]> {
+    const results = await this.userRepository.query(
+      `
+      SELECT * FROM user_consents
+      WHERE user_id = $1 AND withdrawn_at IS NULL
+      ORDER BY created_at DESC
+      `,
+      [userId]
+    );
+
+    return results.map((row: any) => ({
+      id: row.id,
+      userId: row.user_id,
+      consentType: row.consent_type,
+      version: row.version,
+      acceptedAt: row.accepted_at,
+      withdrawnAt: row.withdrawn_at,
+      ipAddress: row.ip_address,
+      userAgent: row.user_agent,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
   }
 }

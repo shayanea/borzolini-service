@@ -8,6 +8,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { CreateUserDto, UpdateUserDto } from './dto/create-user.dto';
 import { FindUsersDto } from './dto/find-users.dto';
 import { RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
+import { SaveConsentDto } from './dto/save-consent.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
 import { AdminDashboardActivityResponseDto, PhoneVerificationStatusResponseDto, UserResponseDto, UsersListResponseDto } from './dto/user-response.dto';
 import { UserRole } from './entities/user.entity';
@@ -401,6 +402,23 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   updateUserPreferences(@Request() req: AuthenticatedRequest, @Body() updatePreferencesDto: UpdateUserPreferencesDto) {
     return this.usersService.updateUserPreferences(req.user.id, updatePreferencesDto);
+  }
+
+  @Post('consents/me')
+  @ApiOperation({ summary: 'Save user consent (GDPR/CCPA compliance)' })
+  @ApiResponse({ status: 201, description: 'Consent saved successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async saveConsent(@Request() req: AuthenticatedRequest, @Body() saveConsentDto: SaveConsentDto) {
+    return this.usersService.saveConsent(req.user.id, saveConsentDto);
+  }
+
+  @Get('consents/me')
+  @ApiOperation({ summary: 'Get user consents' })
+  @ApiResponse({ status: 200, description: 'Consents retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getUserConsents(@Request() req: AuthenticatedRequest) {
+    return this.usersService.getUserConsents(req.user.id);
   }
 
   @Get('activities/me')

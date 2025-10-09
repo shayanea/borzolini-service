@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import OpenAI from 'openai';
 import { Repository } from 'typeorm';
 
+import { getDisclaimerForInsight } from '../../common/constants/ai-disclaimers';
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { Pet, PetSpecies } from '../pets/entities/pet.entity';
 import { User, UserRole } from '../users/entities/user.entity';
@@ -142,7 +143,8 @@ export class AiHealthService {
           }
         }
 
-        // Step 3: Create and save insight with embedding
+        // Step 3: Create and save insight with embedding and disclaimer
+        const disclaimer = getDisclaimerForInsight(rec.urgency, rec.type);
         const insight = this.aiInsightRepository.create({
           pet_id: dto.pet_id,
           insight_type: rec.type,
@@ -155,6 +157,7 @@ export class AiHealthService {
           context: rec.context,
           supporting_data: rec.supportingData,
           embedding: embedding || null,
+          disclaimer: disclaimer,
         });
 
         const savedInsight = await this.aiInsightRepository.save(insight);
@@ -455,9 +458,7 @@ export class AiHealthService {
       .join('\n');
 
     // Build query for RAG retrieval based on requirements
-    const query = `Generate recommendations for ${pet.name}, focusing on ${dto.categories?.join(', ') || 'all health aspects'}${
-      dto.custom_context ? `. ${dto.custom_context}` : ''
-    }`;
+    const query = `Generate recommendations for ${pet.name}, focusing on ${dto.categories?.join(', ') || 'all health aspects'}${dto.custom_context ? `. ${dto.custom_context}` : ''}`;
 
     // Build and retrieve relevant health facts
     const allFacts = await this.buildHealthFacts(profile);

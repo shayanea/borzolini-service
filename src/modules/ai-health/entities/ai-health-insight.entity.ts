@@ -112,6 +112,10 @@ export class AiHealthInsight {
   @Column({ type: 'vector' as any, nullable: true })
   embedding?: number[] | null;
 
+  @ApiProperty({ description: 'Medical/legal disclaimer for AI-generated content' })
+  @Column({ type: 'text', nullable: true })
+  disclaimer?: string;
+
   @ApiProperty({ description: 'Date when the insight was created' })
   @CreateDateColumn({ type: 'timestamp with time zone' })
   created_at!: Date;

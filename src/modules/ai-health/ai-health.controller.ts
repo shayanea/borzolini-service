@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Put, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
+import { getCombinedDisclaimer, getHealthDashboardDisclaimer } from '../../common/constants/ai-disclaimers';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiHealthService } from './ai-health.service';
 import { GenerateRecommendationsDto } from './dto/generate-recommendations.dto';
@@ -39,7 +40,11 @@ export class AiHealthController {
   @ApiQuery({ name: 'limit', required: false, description: 'Max items to return (default 5)' })
   @ApiQuery({ name: 'includeEmpty', required: false, description: 'When true, returns an object with helpful message if no items found', type: Boolean })
   @ApiResponse({ status: 200, description: 'Combined recommendations returned', type: [AiHealthInsight] })
-  async getCombinedRecommendations(@Req() req: any, @Query('limit') limit?: string, @Query('includeEmpty') includeEmpty?: string): Promise<AiHealthInsight[] | { items: AiHealthInsight[]; count: number; message: string }> {
+  async getCombinedRecommendations(
+    @Req() req: any,
+    @Query('limit') limit?: string,
+    @Query('includeEmpty') includeEmpty?: string
+  ): Promise<AiHealthInsight[] | { items: AiHealthInsight[]; count: number; message: string; disclaimer: string }> {
     const userId: string = req.user?.id;
     const maxItems: number = Number.isFinite(Number(limit)) && Number(limit) > 0 ? Math.min(Number(limit), 10) : 5;
     const items = await this.aiHealthService.getCombinedRecommendationsForUser(userId, maxItems);
@@ -51,6 +56,7 @@ export class AiHealthController {
         items: [],
         count: 0,
         message: 'No recommendations found yet. Generate recommendations for your pets first, then try again.',
+        disclaimer: getCombinedDisclaimer(),
       };
     }
 
@@ -251,6 +257,7 @@ export class AiHealthController {
       recentRecommendations,
       healthScore,
       nextActions,
+      disclaimer: getHealthDashboardDisclaimer(),
     };
   }
 
