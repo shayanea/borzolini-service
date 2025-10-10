@@ -85,15 +85,6 @@ export class User {
   @Column({ name: 'emergency_contact_relationship', nullable: true })
   emergencyContactRelationship?: string;
 
-  @Column({ name: 'medical_history', nullable: true })
-  medicalHistory?: string;
-
-  @Column({ nullable: true })
-  allergies?: string;
-
-  @Column({ nullable: true })
-  medications?: string;
-
   @Column({ name: 'insurance_provider', nullable: true })
   insuranceProvider?: string;
 

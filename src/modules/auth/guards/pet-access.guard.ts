@@ -11,7 +11,7 @@ import { Appointment } from '../../appointments/entities/appointment.entity';
 /**
  * PetAccessGuard ensures that users can only access pets that belong to them
  * or to their clinic (if they are staff/veterinarian).
- * 
+ *
  * Authorization logic:
  * - Pet owners can always access their own pets
  * - Global admins can access any pet
@@ -50,7 +50,7 @@ export class PetAccessGuard implements CanActivate {
     }
 
     const pet = await this.fetchPet(petId);
-    
+
     // Pet owners can always access their own pets
     if (this.isPetOwner(pet, user)) {
       return true;
@@ -99,9 +99,7 @@ export class PetAccessGuard implements CanActivate {
   private async validateStaffClinicAccess(userId: string, petId: string): Promise<void> {
     const hasClinicAccess = await this.validateClinicAccess(userId, petId);
     if (!hasClinicAccess) {
-      throw new ForbiddenException(
-        'Access denied: This pet is not associated with your clinic'
-      );
+      throw new ForbiddenException('Access denied: This pet is not associated with your clinic');
     }
   }
 
@@ -187,4 +185,3 @@ export class PetAccessGuard implements CanActivate {
     return false;
   }
 }
-

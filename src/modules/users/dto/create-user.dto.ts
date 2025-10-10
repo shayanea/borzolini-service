@@ -77,21 +77,6 @@ export class CreateUserDto {
   @IsString()
   emergencyContactRelationship?: string;
 
-  @ApiPropertyOptional({ description: 'User medical history' })
-  @IsOptional()
-  @IsString()
-  medicalHistory?: string;
-
-  @ApiPropertyOptional({ description: 'User allergies' })
-  @IsOptional()
-  @IsString()
-  allergies?: string;
-
-  @ApiPropertyOptional({ description: 'User medications' })
-  @IsOptional()
-  @IsString()
-  medications?: string;
-
   @ApiPropertyOptional({ description: 'User insurance provider' })
   @IsOptional()
   @IsString()

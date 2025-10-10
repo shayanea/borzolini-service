@@ -526,6 +526,32 @@ export class UsersService implements OnModuleInit {
     await this.userRepository.remove(user);
   }
 
+  /**
+   * Delete user's own profile (self-deletion)
+   * This method allows users to delete their own account
+   * @param userId The ID of the user to delete
+   */
+  async deleteOwnProfile(userId: string): Promise<void> {
+    const user = await this.findOne(userId);
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Log the deletion activity before removing the user
+    await this.logUserActivity(userId, ActivityType.LOGOUT, ActivityStatus.SUCCESS, {
+      action: 'profile_deletion',
+      deletedAt: new Date().toISOString(),
+      email: user.email,
+      role: user.role,
+    });
+
+    // Remove the user and all associated data (cascading deletes should handle related records)
+    await this.userRepository.remove(user);
+
+    this.logger.log(`User ${userId} (${user.email}) deleted their own profile`);
+  }
+
   async clearRefreshToken(userId: string): Promise<void> {
     const user = await this.findOne(userId);
     (user as any).refreshToken = undefined;
@@ -1053,12 +1079,6 @@ export class UsersService implements OnModuleInit {
       { field: 'avatar' as keyof User, weight: 3 },
     ];
 
-    const medicalFields = [
-      { field: 'medicalHistory' as keyof User, weight: 3 },
-      { field: 'allergies' as keyof User, weight: 3 },
-      { field: 'medications' as keyof User, weight: 3 },
-    ];
-
     const insuranceFields = [
       { field: 'insuranceProvider' as keyof User, weight: 2 },
       { field: 'insurancePolicyNumber' as keyof User, weight: 2 },
@@ -1066,7 +1086,7 @@ export class UsersService implements OnModuleInit {
       { field: 'insuranceExpiryDate' as keyof User, weight: 2 },
     ];
 
-    const allFields = [...requiredFields, ...importantFields, ...medicalFields, ...insuranceFields];
+    const allFields = [...requiredFields, ...importantFields, ...insuranceFields];
     let totalScore = 0;
     let maxPossibleScore = 0;
 

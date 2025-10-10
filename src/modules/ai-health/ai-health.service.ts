@@ -157,7 +157,7 @@ export class AiHealthService {
           context: rec.context,
           supporting_data: rec.supportingData,
           embedding: embedding || null,
-          disclaimer: disclaimer,
+          disclaimer,
         });
 
         const savedInsight = await this.aiInsightRepository.save(insight);

@@ -99,9 +99,6 @@ export class UsersSeeder {
         emergencyContactName: 'Dr. John Smith',
         emergencyContactPhone: '+1-555-0200',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
       {
         email: 'dr.johnson@borzolini.com',
@@ -125,9 +122,6 @@ export class UsersSeeder {
         emergencyContactName: 'Lisa Johnson',
         emergencyContactPhone: '+1-555-0201',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
       {
         email: 'dr.garcia@borzolini.com',
@@ -151,9 +145,6 @@ export class UsersSeeder {
         emergencyContactName: 'Carlos Garcia',
         emergencyContactPhone: '+1-555-0202',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
       {
         email: 'dr.wilson@borzolini.com',
@@ -177,9 +168,6 @@ export class UsersSeeder {
         emergencyContactName: 'Jennifer Wilson',
         emergencyContactPhone: '+1-555-0203',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
       {
         email: 'dr.brown@borzolini.com',
@@ -203,9 +191,6 @@ export class UsersSeeder {
         emergencyContactName: 'Robert Brown',
         emergencyContactPhone: '+1-555-0204',
         emergencyContactRelationship: 'Father',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
 
       // Staff Members
@@ -231,9 +216,6 @@ export class UsersSeeder {
         emergencyContactName: 'Robert Wilson',
         emergencyContactPhone: '+1-555-0300',
         emergencyContactRelationship: 'Father',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
       {
         email: 'receptionist.martinez@borzolini.com',
@@ -257,9 +239,6 @@ export class UsersSeeder {
         emergencyContactName: 'Carlos Martinez',
         emergencyContactPhone: '+1-555-0301',
         emergencyContactRelationship: 'Brother',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
       },
 
       // Patient Users
@@ -285,9 +264,6 @@ export class UsersSeeder {
         emergencyContactName: 'Jane Doe',
         emergencyContactPhone: '+1-555-0400',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Blue Cross Blue Shield',
         insurancePolicyNumber: 'BCBS123456',
         insuranceGroupNumber: 'GRP789',
@@ -315,9 +291,6 @@ export class UsersSeeder {
         emergencyContactName: 'John Smith',
         emergencyContactPhone: '+1-555-0401',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Aetna',
         insurancePolicyNumber: 'AET789012',
         insuranceGroupNumber: 'GRP456',
@@ -345,9 +318,6 @@ export class UsersSeeder {
         emergencyContactName: 'Sarah Brown',
         emergencyContactPhone: '+1-555-0402',
         emergencyContactRelationship: 'Sister',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Cigna',
         insurancePolicyNumber: 'CIG345678',
         insuranceGroupNumber: 'GRP123',
@@ -375,9 +345,6 @@ export class UsersSeeder {
         emergencyContactName: 'Mike Wilson',
         emergencyContactPhone: '+1-555-0403',
         emergencyContactRelationship: 'Brother',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'UnitedHealth',
         insurancePolicyNumber: 'UHC901234',
         insuranceGroupNumber: 'GRP567',
@@ -405,9 +372,6 @@ export class UsersSeeder {
         emergencyContactName: 'Jennifer Chen',
         emergencyContactPhone: '+1-555-0404',
         emergencyContactRelationship: 'Roommate',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Kaiser Permanente',
         insurancePolicyNumber: 'KP567890',
         insuranceGroupNumber: 'GRP890',
@@ -435,9 +399,6 @@ export class UsersSeeder {
         emergencyContactName: 'Carlos Garcia',
         emergencyContactPhone: '+1-555-0405',
         emergencyContactRelationship: 'Spouse',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Humana',
         insurancePolicyNumber: 'HUM123789',
         insuranceGroupNumber: 'GRP234',
@@ -465,9 +426,6 @@ export class UsersSeeder {
         emergencyContactName: 'Susan Miller',
         emergencyContactPhone: '+1-555-0406',
         emergencyContactRelationship: 'Wife',
-        medicalHistory: 'No significant medical history',
-        allergies: 'None known',
-        medications: 'None',
         insuranceProvider: 'Anthem',
         insurancePolicyNumber: 'ANT456123',
         insuranceGroupNumber: 'GRP345',
@@ -645,12 +603,6 @@ export class UsersSeeder {
       { field: 'avatar' as keyof User, weight: 3 },
     ];
 
-    const medicalFields = [
-      { field: 'medicalHistory' as keyof User, weight: 3 },
-      { field: 'allergies' as keyof User, weight: 3 },
-      { field: 'medications' as keyof User, weight: 3 },
-    ];
-
     const insuranceFields = [
       { field: 'insuranceProvider' as keyof User, weight: 2 },
       { field: 'insurancePolicyNumber' as keyof User, weight: 2 },
@@ -658,7 +610,7 @@ export class UsersSeeder {
       { field: 'insuranceExpiryDate' as keyof User, weight: 2 },
     ];
 
-    const allFields = [...requiredFields, ...importantFields, ...medicalFields, ...insuranceFields];
+    const allFields = [...requiredFields, ...importantFields, ...insuranceFields];
     let totalScore = 0;
     let maxPossibleScore = 0;
 

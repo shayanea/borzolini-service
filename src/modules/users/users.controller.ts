@@ -404,6 +404,30 @@ export class UsersController {
     return this.usersService.updateUserPreferences(req.user.id, updatePreferencesDto);
   }
 
+  @Delete('profile/me')
+  @ApiOperation({
+    summary: 'Delete own profile',
+    description: 'Allows users to permanently delete their own account and all associated data. This action cannot be undone.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile deleted successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', example: 'Your profile has been deleted successfully' },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - Invalid or missing JWT token' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async deleteOwnProfile(@Request() req: AuthenticatedRequest) {
+    await this.usersService.deleteOwnProfile(req.user.id);
+    return {
+      message: 'Your profile has been deleted successfully',
+    };
+  }
+
   @Post('consents/me')
   @ApiOperation({ summary: 'Save user consent (GDPR/CCPA compliance)' })
   @ApiResponse({ status: 201, description: 'Consent saved successfully' })
