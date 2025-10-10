@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
 import { ExportService } from '../../common/services/export.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PetAccessGuard } from '../auth/guards/pet-access.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 import { CreatePetDto } from './dto/create-pet.dto';
@@ -253,9 +254,10 @@ export class PetsController {
   }
 
   @Get(':id')
+  @UseGuards(PetAccessGuard)
   @ApiOperation({
     summary: 'Get pet by ID',
-    description: 'Retrieve a specific pet by its ID',
+    description: 'Retrieve a specific pet by its ID. Owners can access their own pets. Veterinarians and staff can only access pets associated with their clinic through cases or appointments.',
   })
   @ApiResponse({
     status: 200,
@@ -263,23 +265,19 @@ export class PetsController {
     type: Pet,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Pet not associated with your clinic' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async findOne(@Param('id', ParseUUIDPipe) id: string, @Request() req: any): Promise<Pet> {
-    const pet = await this.petsService.findOne(id);
-
-    // Check if user owns the pet or is admin/staff
-    if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new ForbiddenException('Access denied: You can only access your own pets');
-    }
-
-    return pet;
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<Pet> {
+    // PetAccessGuard handles all authorization logic
+    return this.petsService.findOne(id);
   }
 
   @Patch(':id')
+  @UseGuards(PetAccessGuard)
   @ApiOperation({
     summary: 'Update pet',
-    description: 'Update a specific pet by its ID',
+    description: 'Update a specific pet by its ID. Owners can update their own pets. Veterinarians and staff can only update pets associated with their clinic through cases or appointments.',
   })
   @ApiResponse({
     status: 200,
@@ -291,36 +289,27 @@ export class PetsController {
     description: 'Bad request - invalid update data',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Pet not associated with your clinic' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePetDto: UpdatePetDto, @Request() req: any): Promise<Pet> {
-    const pet = await this.petsService.findOne(id);
-
-    // Check if user owns the pet or is admin/staff
-    if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new ForbiddenException('Access denied: You can only access your own pets');
-    }
-
+  async update(@Param('id', ParseUUIDPipe) id: string, @Body() updatePetDto: UpdatePetDto): Promise<Pet> {
+    // PetAccessGuard handles all authorization logic
     return this.petsService.update(id, updatePetDto);
   }
 
   @Delete(':id')
+  @UseGuards(PetAccessGuard)
   @ApiOperation({
     summary: 'Delete pet',
-    description: 'Soft delete a specific pet by its ID',
+    description: 'Soft delete a specific pet by its ID. Only pet owners can delete their pets. Veterinarians and staff can only delete pets associated with their clinic through cases or appointments.',
   })
   @ApiResponse({ status: 200, description: 'Pet deleted successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Pet not associated with your clinic' })
   @ApiResponse({ status: 404, description: 'Pet not found' })
   @ApiParam({ name: 'id', description: 'Pet ID' })
-  async remove(@Param('id', ParseUUIDPipe) id: string, @Request() req: any): Promise<{ message: string }> {
-    const pet = await this.petsService.findOne(id);
-
-    // Check if user owns the pet or is admin/staff
-    if (pet.owner_id !== req.user.id && ![UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF].includes(req.user.role)) {
-      throw new ForbiddenException('Access denied: You can only access your own pets');
-    }
-
+  async remove(@Param('id', ParseUUIDPipe) id: string): Promise<{ message: string }> {
+    // PetAccessGuard handles all authorization logic
     await this.petsService.remove(id);
     return { message: 'Pet deleted successfully' };
   }
