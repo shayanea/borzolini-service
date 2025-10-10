@@ -1,8 +1,8 @@
-# 🏥 Clinics Module
+# Clinics Module
 
-The Clinics Module is a comprehensive solution for managing veterinary clinics in the Borzolini Pet Clinic platform. It provides full CRUD operations for clinics, staff management, services, reviews, photos, and operating hours.
+Manages veterinary clinics including CRUD operations, staff management, services, reviews, photos, and operating hours.
 
-## 🚀 Features
+## Features
 
 ### Core Clinic Management
 
@@ -49,7 +49,7 @@ The Clinics Module is a comprehensive solution for managing veterinary clinics i
 - **Statistics**: Comprehensive clinic statistics and metrics
 - **Geographic Search**: Search clinics by city, state, and location
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Core Tables
 
@@ -69,7 +69,7 @@ The Clinics Module is a comprehensive solution for managing veterinary clinics i
 - Reviews are linked to both clinics and users
 - Photos are organized by category and can be designated as primary
 
-## 🔧 API Endpoints
+## API Endpoints
 
 ### Clinic Management
 

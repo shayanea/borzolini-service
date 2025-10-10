@@ -1,10 +1,10 @@
-# 🐱 Borzolini Service - AI-Powered Pet Clinic Platform
+# Borzolini Service - Pet Clinic Management Platform
 
-A professional NestJS backend for managing pet clinics, telemedicine consultations, and AI-powered health monitoring.
+NestJS backend for managing pet clinics, telemedicine consultations, and AI-powered health monitoring.
 
-## 🎯 MVP Configuration
+## MVP Configuration
 
-**For the MVP release, Elasticsearch and Kibana are DISABLED by default** to reduce complexity and resource requirements. See [MVP Configuration Guide](docs/MVP_CONFIGURATION.md) for details.
+For the MVP release, Elasticsearch and Kibana are disabled by default to reduce complexity and resource requirements. See [MVP Configuration Guide](docs/MVP_CONFIGURATION.md) for details.
 
 ### Quick MVP Start:
 
@@ -19,41 +19,30 @@ docker-compose up -d clinic-db
 pnpm run start:dev
 ```
 
-## 🚀 Features
+## Features
 
 ### Core Platform
-
-- **Multi-role Clinic Management** - Admin, Doctor, Assistant dashboards
-- **Pet Health Profiles** - Comprehensive health tracking and history
-- **Appointment Management** - Booking, scheduling, and reminders
-- **User Authentication** - JWT-based secure authentication system
+- Multi-role clinic management (Admin, Doctor, Assistant, Staff)
+- Pet health profiles with medical history tracking
+- Appointment booking and scheduling
+- JWT-based authentication and authorization
 
 ### AI Health Monitoring
-
-- **Proactive Health Alerts** - AI-powered symptom analysis
-- **Breed-Specific Insights** - Pet specialization
-- **Health Pattern Recognition** - Predictive health modeling
-- **Personalized Recommendations** - AI-driven care suggestions
+- AI-powered health recommendations using OpenAI GPT-4
+- Breed-specific health insights
+- Proactive health alerts based on pet profile analysis
 
 ### Telemedicine
+- Video consultation support via Daily.co API
+- Consultation record management
+- Follow-up appointment scheduling
 
-- **Video Consultations** - Integration with Daily.co for video calls
-- **Consultation Records** - Detailed consultation documentation
-- **Follow-up Management** - Seamless consultation-to-visit conversion
+### Analytics
+- Privacy-focused analytics via Umami
+- API usage tracking
+- User activity monitoring
 
-### Social Media Integration
-
-- **Instagram API Integration** - Clinic showcase automation
-- **Content Management** - Social media content scheduling
-- **Brand Building** - Visual trust and authenticity
-
-### Analytics & Monitoring
-
-- **Privacy-Focused Analytics** - Umami integration for GDPR-compliant tracking
-- **Performance Monitoring** - API usage and response time tracking
-- **Business Intelligence** - User behavior and clinic performance insights
-
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Framework**: NestJS 10+ with TypeScript
 - **Database**: PostgreSQL with TypeORM
@@ -64,7 +53,7 @@ pnpm run start:dev
 - **Email**: SMTP for notifications
 - **Documentation**: Swagger/OpenAPI
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 src/
@@ -84,7 +73,7 @@ src/
 └── main.ts           # Application entry point
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -167,7 +156,7 @@ pnpm run start:dev
 open http://localhost:3001/api/docs
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -190,20 +179,18 @@ The application uses TypeORM entities for:
 - Appointments and consultations
 - AI health insights and patterns
 
-## 📚 API Documentation
+## API Documentation
 
 Once running, access the interactive API documentation at:
 
 - **Swagger UI**: `http://localhost:3001/api/docs`
 - **API Base URL**: `http://localhost:3001/api/v1`
 
-## 🔧 Development Scripts
+## Development Scripts
 
-For development and testing utilities, see:
+See [docs/SCRIPTS.md](docs/SCRIPTS.md) for available development utilities including token generation, database migrations, and testing tools.
 
-- **Scripts Documentation**: [docs/SCRIPTS.md](docs/SCRIPTS.md) - Token generation, migrations, and other utilities
-
-## 🧪 Testing
+## Testing
 
 ```bash
 # Unit tests
@@ -216,7 +203,7 @@ pnpm run test:e2e
 pnpm run test:cov
 ```
 
-## 🚀 Deployment
+## Deployment
 
 ### Docker (Recommended)
 
@@ -235,42 +222,41 @@ docker run -p 3001:3001 --env-file .env borzolini-service
 3. Use PM2 or similar process manager
 4. Configure reverse proxy (Nginx)
 
-## 🔒 Security Features
+## Security Features
 
-- **Helmet.js** - Security headers
-- **Rate Limiting** - API abuse prevention
-- **Input Validation** - Request sanitization
-- **JWT Authentication** - Secure token-based auth
-- **CORS Configuration** - Cross-origin protection
-- **Role-Based Access Control** - Comprehensive user permission management
-- **Data Isolation** - Users can only access appropriate resources
-- **User Security Implementation** - [docs/USER_SECURITY_IMPLEMENTATION.md](docs/USER_SECURITY_IMPLEMENTATION.md)
-- **Security Quick Reference** - [docs/USER_SECURITY_QUICK_REFERENCE.md](docs/USER_SECURITY_QUICK_REFERENCE.md)
+- Helmet.js for security headers
+- Rate limiting to prevent API abuse
+- Input validation and sanitization
+- JWT-based authentication with refresh tokens
+- CORS configuration
+- Role-based access control (RBAC)
+- Data isolation by user and role
 
-## 🤖 AI Health Monitoring
+See [docs/USER_SECURITY_IMPLEMENTATION.md](docs/USER_SECURITY_IMPLEMENTATION.md) for detailed security implementation.
 
-The platform includes sophisticated AI-powered health monitoring:
+## AI Health Monitoring
 
-- **Symptom Analysis** - GPT-4 powered health assessment
-- **Pattern Recognition** - Health trend analysis
-- **Predictive Alerts** - Proactive health warnings
-- **Breed-Specific Insights** - Specialized care recommendations
+AI-powered health monitoring using OpenAI GPT-4:
+- Symptom analysis and health assessment
+- Breed-specific health recommendations
+- Proactive health alerts
+- Health trend analysis
 
-## 📱 Telemedicine Features
+## Telemedicine
 
-- **Video Consultations** - High-quality video calls
-- **Consultation Records** - Detailed visit documentation
-- **Follow-up Management** - Seamless care continuity
-- **Emergency Triage** - Urgency assessment
+Video consultation features via Daily.co:
+- Remote video consultations
+- Consultation documentation
+- Follow-up scheduling
 
-## 📊 Monitoring & Logging
+## Monitoring & Logging
 
-- **Health Checks** - Application status monitoring
-- **Error Logging** - Comprehensive error tracking
-- **Performance Metrics** - Response time monitoring
-- **Audit Trails** - User action logging
+- Application health checks
+- Error tracking and logging
+- Performance metrics
+- User activity audit trails
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -278,14 +264,6 @@ The platform includes sophisticated AI-powered health monitoring:
 4. Add tests
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
-
-## 🐱 Special Thanks
-
-Built with love for **Fariborz** and all the pets who will benefit from AI-powered health monitoring! 🐾
-
----
-
-**Ready to revolutionize pet healthcare?** 🚀
