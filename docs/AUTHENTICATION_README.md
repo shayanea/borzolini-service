@@ -1,47 +1,46 @@
-# 🔐 Borzolini Clinic Authentication System
+# Authentication System
 
 ## Overview
 
-The Borzolini Clinic authentication system provides a comprehensive, secure, and feature-rich user management solution with role-based access control, email verification, phone verification, and activity tracking.
+This handles all the user authentication stuff - JWT tokens, role-based permissions, email/phone verification, and tracking who did what. Pretty standard auth setup, but with some nice extras like account locking and activity logging.
 
-## 🚀 Features
+## What It Does
 
 ### Core Authentication
 
-- ✅ User registration with email verification
-- ✅ Secure login with JWT tokens
-- ✅ Refresh token management
-- ✅ Password reset functionality
-- ✅ Account locking after failed attempts
-- ✅ Multi-role user management (admin, veterinarian, staff, patient)
+- **User registration** - creates account and sends verification email
+- **Login** - returns JWT access token (15min) and refresh token (7 days)
+- **Token refresh** - so users don't get logged out constantly
+- **Password reset** - via email token
+- **Account locking** - locks after 5 failed login attempts for 30 minutes
+- **Multiple roles** - admin, veterinarian, staff, and patient (each with different permissions)
 
-### Security Features
+### Security
 
-- ✅ Bcrypt password hashing (12 rounds)
-- ✅ JWT-based authentication
-- ✅ Role-based access control (RBAC)
-- ✅ Account activity monitoring
-- ✅ IP address and user agent tracking
-- ✅ Session management
+- **Password hashing** - using bcrypt with 12 rounds (takes ~100-200ms to hash, makes brute force impractical)
+- **JWT tokens** - stateless auth, no session storage needed
+- **RBAC** - role guards on controllers and services
+- **Activity tracking** - logs every login, logout, profile update with IP and user agent
+- **Session management** - refresh tokens stored in DB, can be revoked
 
 ### User Management
 
-- ✅ Comprehensive user profiles
-- ✅ User preferences management
-- ✅ Notification settings
-- ✅ Privacy controls
-- ✅ Activity logging and analytics
-- ✅ Profile completion tracking
+- **Profiles** - name, email, phone, address, DOB, etc.
+- **Preferences** - notification settings, privacy options, UI theme
+- **Notifications** - granular control per channel (email, SMS, push)
+- **Privacy** - who can see their profile and contact them
+- **Activity logs** - full audit trail of everything they do
+- **Profile completion** - calculates percentage based on filled fields (helps encourage users to complete their profiles)
 
 ### Communication
 
-- ✅ Email verification system
-- ✅ Phone verification with OTP
-- ✅ Welcome emails
-- ✅ Password reset emails
-- ✅ Notification preferences
+- **Email verification** - token valid for 24 hours
+- **Phone verification** - 6-digit OTP, expires in 10 minutes
+- **Welcome emails** - sent after registration
+- **Password reset** - token link via email
+- **Notification preferences** - users can opt out of marketing emails, etc.
 
-## 🏗️ Architecture
+## Architecture
 
 ### Entities
 
@@ -119,7 +118,7 @@ export class UserActivity {
 }
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 ### Authentication Endpoints
 
@@ -130,12 +129,12 @@ POST /auth/register
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "securePassword123",
-  "firstName": "John",
-  "lastName": "Doe",
-  "phone": "+1234567890",
-  "role": "patient"
+ "email": "user@example.com",
+ "password": "securePassword123",
+ "firstName": "John",
+ "lastName": "Doe",
+ "phone": "+1234567890",
+ "role": "patient"
 }
 ```
 
@@ -167,8 +166,8 @@ POST /auth/login
 Content-Type: application/json
 
 {
-  "email": "user@example.com",
-  "password": "securePassword123"
+ "email": "user@example.com",
+ "password": "securePassword123"
 }
 ```
 
@@ -213,15 +212,15 @@ POST /auth/request-phone-verification
 Content-Type: application/json
 
 {
-  "phone": "+1234567890"
+ "phone": "+1234567890"
 }
 
 POST /auth/verify-phone
 Content-Type: application/json
 
 {
-  "phone": "+1234567890",
-  "otp": "123456"
+ "phone": "+1234567890",
+ "otp": "123456"
 }
 ```
 
@@ -232,15 +231,15 @@ POST /auth/forgot-password
 Content-Type: application/json
 
 {
-  "email": "user@example.com"
+ "email": "user@example.com"
 }
 
 POST /auth/reset-password
 Content-Type: application/json
 
 {
-  "token": "reset_token",
-  "newPassword": "newSecurePassword123"
+ "token": "reset_token",
+ "newPassword": "newSecurePassword123"
 }
 ```
 
@@ -251,7 +250,7 @@ POST /auth/refresh
 Content-Type: application/json
 
 {
-  "refreshToken": "refresh_token"
+ "refreshToken": "refresh_token"
 }
 ```
 
@@ -279,13 +278,13 @@ Authorization: Bearer <access_token>
 Content-Type: application/json
 
 {
-  "firstName": "John",
-  "lastName": "Smith",
-  "phone": "+1234567890",
-  "address": "123 Main St",
-  "city": "New York",
-  "postalCode": "10001",
-  "country": "USA"
+ "firstName": "John",
+ "lastName": "Smith",
+ "phone": "+1234567890",
+ "address": "123 Main St",
+ "city": "New York",
+ "postalCode": "10001",
+ "country": "USA"
 }
 ```
 
@@ -323,16 +322,16 @@ Authorization: Bearer <access_token>
 Content-Type: application/json
 
 {
-  "notificationSettings": {
-    "email": {
-      "appointments": true,
-      "reminders": true,
-      "healthAlerts": true,
-      "marketing": false,
-      "newsletter": true
-    }
-  },
-  "theme": "dark"
+ "notificationSettings": {
+ "email": {
+ "appointments": true,
+ "reminders": true,
+ "healthAlerts": true,
+ "marketing": false,
+ "newsletter": true
+ }
+ },
+ "theme": "dark"
 }
 ```
 
@@ -368,7 +367,7 @@ Authorization: Bearer <access_token>
 }
 ```
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -401,51 +400,47 @@ The system requires PostgreSQL with the following extensions:
 - `uuid-ossp` for UUID generation
 - JSONB support for flexible data storage
 
-## 🚀 Getting Started
+## Getting Started
 
-### 1. Database Setup
+### 1. Set Up the Database
 
-Run the migration script:
+TypeORM will create the tables automatically, but if you want to run migrations manually:
 
 ```bash
 psql -U postgres -d your_database -f src/database/migrations/001-create-user-tables.sql
 ```
 
-### 2. Environment Configuration
-
-Copy and configure the environment variables:
+### 2. Configure Environment
 
 ```bash
 cp config.env.example config.env
-# Edit config.env with your values
+# Open config.env and set your JWT secrets, SMTP settings, etc.
 ```
 
-### 3. Install Dependencies
+**Important:** Change the JWT_SECRET and JWT_REFRESH_SECRET from the defaults!
+
+### 3. Install and Run
 
 ```bash
 pnpm install
+pnpm run start:dev  # starts on port 3001
 ```
 
-### 4. Run the Application
+### 4. Seed Test Users (Optional)
 
-```bash
-# Development
-pnpm run start:dev
-
-# Production
-pnpm run build
-pnpm run start:prod
-```
-
-### 5. Seed Sample Data
+This creates some test accounts you can use right away:
 
 ```bash
 pnpm run seed
 ```
 
-## 📊 Sample Users
+You'll get admin, vet, staff, and patient accounts all with password `Password123!`
 
-After seeding, the following test users are available:
+## Test Accounts
+
+After running the seed script, you can log in with any of these:
+
+**Pro tip:** All test accounts use password `Password123!`
 
 | Email                      | Role         | Password     | Status         |
 | -------------------------- | ------------ | ------------ | -------------- |
@@ -460,47 +455,49 @@ After seeding, the following test users are available:
 | sarah.wilson@example.com   | Patient      | Password123! | Fully Verified |
 | alex.chen@example.com      | Patient      | Password123! | Fully Verified |
 
-## 🔒 Security Features
+## Security Implementation
 
-### Password Security
+### Passwords
 
-- Bcrypt hashing with 12 rounds
-- Minimum 8 character requirement
-- Account locking after 5 failed attempts
-- 30-minute lock duration
+- **Bcrypt with 12 rounds** - takes ~100-200ms to hash, makes brute force attacks impractical
+- **Min 8 characters** - validated on registration and password change
+- **Account locking** - after 5 failed attempts, locked for 30 minutes
+- **No password in responses** - we exclude it from all serialized user objects
 
-### Token Security
+### Tokens
 
-- JWT access tokens (15 minutes)
-- JWT refresh tokens (7 days)
-- Secure token storage
-- Automatic token refresh
+- **Access tokens** - expire in 15 minutes (keeps attack window small)
+- **Refresh tokens** - expire in 7 days (stored in DB so we can revoke them)
+- **Token storage** - access token in memory/localStorage, refresh token in httpOnly cookie (if using cookie auth)
+- **Auto-refresh** - frontend should refresh access token before it expires
 
 ### Account Protection
 
-- Email verification required for login
-- Phone verification for enhanced security
-- Account deactivation capability
-- Activity monitoring and logging
+- **Email verification** - can't log in until email is verified (prevents fake signups)
+- **Phone verification** - optional extra security layer
+- **Deactivation** - admins can deactivate accounts without deleting data
+- **Activity logs** - tracks everything for audit purposes (IP, user agent, timestamp)
 
-## 📧 Email Templates
+## Email Templates
 
-The system includes professionally designed email templates for:
+Email templates included:
 
-- Email verification
-- Password reset
-- Welcome messages
-- HTML and text versions
+- Email verification with token link
+- Password reset with token link
+- Welcome message after registration
+- Both HTML and plain text versions
 
-## 📱 Phone Verification
+## Phone Verification
 
-Phone verification uses:
+How phone verification works:
 
-- 6-digit OTP codes
-- 10-minute expiration
-- SMS delivery (placeholder for Twilio integration)
+- **6-digit OTP** - random code generated server-side
+- **10-minute expiry** - code becomes invalid after that
+- **SMS delivery** - currently has placeholder code, but ready for Twilio/SNS integration
 
-## 🎯 Role-Based Access Control
+**Note:** You'll need to integrate with an SMS provider (Twilio, AWS SNS, etc.) to actually send the codes. The endpoint structure is ready to go.
+
+## Role-Based Access Control
 
 ### Admin
 
@@ -514,7 +511,7 @@ Phone verification uses:
 - Patient management
 - Appointment handling
 - Medical records
-- Professional profile
+- profile
 
 ### Staff
 
@@ -530,7 +527,7 @@ Phone verification uses:
 - Medical history access
 - Communication preferences
 
-## 📈 Activity Tracking
+## Activity Tracking
 
 The system tracks:
 
@@ -542,61 +539,115 @@ The system tracks:
 - IP addresses and user agents
 - Geographic locations
 
-## 🧪 Testing
+## Testing
 
-### API Testing
+### Using Swagger UI
 
-Use the provided Swagger documentation at `/api` endpoint for testing all endpoints.
+Easiest way to test is through Swagger at `http://localhost:3001/api/docs`
 
-### Sample Requests
+Click on an endpoint, hit "Try it out", fill in the request body, and execute. It'll even handle the JWT tokens for you.
+
+### Using cURL
+
+If you prefer the command line:
 
 ```bash
 # Register a new user
 curl -X POST http://localhost:3001/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "password": "Password123!",
-    "firstName": "Test",
-    "lastName": "User",
-    "role": "patient"
+  "email": "test@example.com",
+  "password": "Password123!",
+  "firstName": "Test",
+  "lastName": "User",
+  "role": "patient"
   }'
 
-# Login
+# Login (save the accessToken from the response)
 curl -X POST http://localhost:3001/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "email": "test@example.com",
-    "password": "Password123!"
+  "email": "test@example.com",
+  "password": "Password123!"
   }'
+
+# Use the token in subsequent requests
+curl -X GET http://localhost:3001/users/profile \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-## 🚨 Error Handling
+## Error Handling
 
-The system provides comprehensive error handling:
+How we handle errors:
 
-- Validation errors with detailed messages
-- Authentication errors with appropriate HTTP status codes
-- Rate limiting for security
-- Graceful degradation for missing services
+- **Validation errors** (400) - tells you exactly which field failed and why
+- **Auth errors** (401) - invalid/expired token or wrong credentials
+- **Forbidden** (403) - you're authenticated but don't have permission
+- **Rate limiting** (429) - too many requests, try again later
+- **Service errors** (503) - if email service is down, we log it and return a friendly message
 
-## 🔄 Future Enhancements
+All errors follow a consistent format:
 
-- [ ] Two-factor authentication (2FA)
-- [ ] Social login integration
-- [ ] Advanced analytics dashboard
-- [ ] Real-time notifications
-- [ ] Multi-language support
-- [ ] Advanced security features (IP whitelisting, device management)
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "errors": ["email must be a valid email"]
+}
+```
 
-## 📚 Additional Resources
+## Quick Reference for Developers
+
+If you're implementing auth in your code:
+
+```typescript
+// Protect a controller
+@UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
+export class MyController {}
+
+// Require specific roles
+@Roles(UserRole.ADMIN)
+@Post()
+createSomething() {}
+
+// Multiple roles allowed
+@Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+@Get()
+listSomething() {}
+
+// All authenticated users (no decorator needed)
+@Get('profile')
+getProfile() {}
+```
+
+**Role Permissions Summary:**
+
+- **ADMIN** - full access to everything
+- **VETERINARIAN** - can view/update patients, vets, and staff (not admins)
+- **STAFF** - can view/update patients and staff only
+- **PATIENT** - can only access their own data
+
+## What's Next
+
+Things we're planning to add:
+
+- **2FA** - TOTP-based (like Google Authenticator)
+- **Social login** - Google, Apple, maybe GitHub
+- **Analytics dashboard** - see login patterns, user growth, etc.
+- **Real-time notifications** - WebSocket-based push notifications
+- **Multi-language** - i18n for email templates and error messages
+- **Device management** - see all active sessions, revoke tokens per device
+- **IP whitelisting** - for clinic staff who only log in from known IPs
+
+## Additional Resources
 
 - [NestJS Documentation](https://docs.nestjs.com/)
 - [TypeORM Documentation](https://typeorm.io/)
 - [JWT.io](https://jwt.io/)
 - [Bcrypt Documentation](https://github.com/dcodeIO/bcrypt.js)
 
-## 🤝 Support
+## Support
 
 For questions or issues:
 
@@ -607,4 +658,10 @@ For questions or issues:
 
 ---
 
-**Note:** This authentication system is production-ready and follows security best practices. Always use HTTPS in production and regularly rotate JWT secrets.
+**Important Notes:**
+
+- Always use HTTPS in production (no exceptions!)
+- Rotate your JWT secrets periodically
+- Keep bcrypt rounds at 12 (don't go lower for performance)
+- Monitor failed login attempts for potential attacks
+- Back up your refresh tokens table (users will have to re-login if you lose it)

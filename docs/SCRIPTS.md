@@ -11,10 +11,10 @@ The `generate-tokens.ts` script allows you to generate JWT access and refresh to
 1. Make sure your environment variables are properly configured (see `config.env.example`)
 2. Ensure your database is running and migrations have been applied
 3. The script requires the following environment variables:
-   - `JWT_SECRET`
-   - `JWT_REFRESH_SECRET`
-   - `JWT_EXPIRES_IN` (optional, defaults to 30m)
-   - `JWT_REFRESH_EXPIRES_IN` (optional, defaults to 7d)
+ - `JWT_SECRET`
+ - `JWT_REFRESH_SECRET`
+ - `JWT_EXPIRES_IN` (optional, defaults to 30m)
+ - `JWT_REFRESH_EXPIRES_IN` (optional, defaults to 7d)
 
 ### Usage
 
@@ -74,13 +74,13 @@ curl -H "Cookie: accessToken=<ACCESS_TOKEN>" http://localhost:3001/api/users/pro
 #### JavaScript/TypeScript
 ```typescript
 const headers = {
-  'Authorization': 'Bearer <ACCESS_TOKEN>'
+ 'Authorization': 'Bearer <ACCESS_TOKEN>'
 };
 
 // Or with cookies
 const cookies = {
-  accessToken: '<ACCESS_TOKEN>',
-  refreshToken: '<REFRESH_TOKEN>'
+ accessToken: '<ACCESS_TOKEN>',
+ refreshToken: '<REFRESH_TOKEN>'
 };
 ```
 
@@ -96,15 +96,15 @@ export USER_ID="<USER_ID>"
 The system comes with pre-seeded users for testing:
 
 1. **Admin User**
-   - Email: `admin@borzolini.com`
-   - Password: `Password123!`
-   - Role: `admin`
+ - Email: `admin@borzolini.com`
+ - Password: `Password123!`
+ - Role: `admin`
 
 2. **Veterinarian Users**
-   - Email: `dr.smith@borzolini.com`
-   - Email: `dr.johnson@borzolini.com`
-   - Password: `Password123!`
-   - Role: `veterinarian`
+ - Email: `dr.smith@borzolini.com`
+ - Email: `dr.johnson@borzolini.com`
+ - Password: `Password123!`
+ - Role: `veterinarian`
 
 ### Security Notes
 
@@ -119,22 +119,22 @@ The system comes with pre-seeded users for testing:
 #### Common Issues
 
 1. **"JWT secrets not configured"**
-   - Check your environment variables
-   - Ensure `JWT_SECRET` and `JWT_REFRESH_SECRET` are set
+ - Check your environment variables
+ - Ensure `JWT_SECRET` and `JWT_REFRESH_SECRET` are set
 
 2. **"User not found"**
-   - Verify the email address
-   - Check if the user exists in the database
-   - Run `npm run generate-tokens list` to see available users
+ - Verify the email address
+ - Check if the user exists in the database
+ - Run `npm run generate-tokens list` to see available users
 
 3. **"Invalid password"**
-   - Use the correct password for seeded users: `Password123!`
-   - Check if the user account is active and verified
+ - Use the correct password for seeded users: `Password123!`
+ - Check if the user account is active and verified
 
 4. **"Database connection error"**
-   - Ensure your database is running
-   - Check database configuration in environment variables
-   - Run migrations if needed: `npm run migrate`
+ - Ensure your database is running
+ - Check database configuration in environment variables
+ - Run migrations if needed: `npm run migrate`
 
 ### Other Scripts
 

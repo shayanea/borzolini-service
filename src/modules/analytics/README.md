@@ -8,7 +8,7 @@ This module integrates [Umami Analytics](https://umami.is/) into the Borzolini C
 - **Automatic API Tracking**: Tracks all API requests automatically via interceptor
 - **Custom Event Tracking**: Support for custom business events
 - **Role-Based Access**: Admin-only access to analytics status and configuration
-- **Comprehensive Logging**: Detailed logging for debugging and monitoring
+- **Logging**: Detailed logging for debugging and monitoring
 
 ## Configuration
 
@@ -39,9 +39,9 @@ POST /api/v1/analytics/track/event
 Content-Type: application/json
 
 {
-  "eventName": "user_action",
-  "eventData": { "action": "button_click", "page": "dashboard" },
-  "url": "https://clinic.com/dashboard"
+ "eventName": "user_action",
+ "eventData": { "action": "button_click", "page": "dashboard" },
+ "url": "https://clinic.com/dashboard"
 }
 ```
 
@@ -52,8 +52,8 @@ POST /api/v1/analytics/track/pageview
 Content-Type: application/json
 
 {
-  "url": "https://clinic.com/dashboard",
-  "referrer": "https://clinic.com/login"
+ "url": "https://clinic.com/dashboard",
+ "referrer": "https://clinic.com/login"
 }
 ```
 
@@ -113,20 +113,20 @@ The module automatically tracks:
 ```typescript
 // Track custom events
 const trackEvent = async (eventName: string, data?: any) => {
-  await fetch('/api/v1/analytics/track/event', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ eventName, eventData: data }),
-  });
+ await fetch('/api/v1/analytics/track/event', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ eventName, eventData: data }),
+ });
 };
 
 // Track page views
 const trackPageView = async (url: string) => {
-  await fetch('/api/v1/analytics/track/pageview', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ url }),
-  });
+ await fetch('/api/v1/analytics/track/pageview', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ url }),
+ });
 };
 ```
 
@@ -137,16 +137,16 @@ import { AnalyticsService } from '../analytics/analytics.service';
 
 @Injectable()
 export class AppointmentService {
-  constructor(private readonly analyticsService: AnalyticsService) {}
+ constructor(private readonly analyticsService: AnalyticsService) {}
 
-  async createAppointment(data: CreateAppointmentDto) {
-    const appointment = await this.appointmentRepository.save(data);
+ async createAppointment(data: CreateAppointmentDto) {
+ const appointment = await this.appointmentRepository.save(data);
 
-    // Track the event
-    await this.analyticsService.trackAppointmentEvent('created', appointment.id, appointment.clinicId);
+ // Track the event
+ await this.analyticsService.trackAppointmentEvent('created', appointment.id, appointment.clinicId);
 
-    return appointment;
-  }
+ return appointment;
+ }
 }
 ```
 
@@ -161,7 +161,7 @@ export class AppointmentService {
 
 ### Logs
 
-The module provides comprehensive logging:
+The module provides logging:
 
 ```bash
 # Enable debug logging
@@ -185,7 +185,7 @@ Admin users can check configuration status:
 
 ```bash
 curl -H "Authorization: Bearer <token>" \
-  http://localhost:3001/api/v1/analytics/status
+ http://localhost:3001/api/v1/analytics/status
 ```
 
 ## Troubleshooting
@@ -193,18 +193,18 @@ curl -H "Authorization: Bearer <token>" \
 ### Common Issues
 
 1. **Analytics Not Working**
-   - Check `UMAMI_ENABLED` is set to `true`
-   - Verify `UMAMI_WEBSITE_ID` and `UMAMI_API_URL` are correct
-   - Check network connectivity to Umami instance
+ - Check `UMAMI_ENABLED` is set to `true`
+ - Verify `UMAMI_WEBSITE_ID` and `UMAMI_API_URL` are correct
+ - Check network connectivity to Umami instance
 
 2. **Permission Denied**
-   - Ensure user has ADMIN role for status endpoint
-   - Check JWT token validity
+ - Ensure user has ADMIN role for status endpoint
+ - Check JWT token validity
 
 3. **High Latency**
-   - Monitor API response times
-   - Check Umami instance performance
-   - Consider using local Umami deployment
+ - Monitor API response times
+ - Check Umami instance performance
+ - Consider using local Umami deployment
 
 ### Debug Mode
 
@@ -227,5 +227,5 @@ UMAMI_DEBUG=true
 - [ ] Real-time analytics dashboard
 - [ ] Custom metrics and KPIs
 - [ ] Export functionality
-- [ ] Advanced filtering and segmentation
+- [ ] filtering and segmentation
 - [ ] Integration with other analytics platforms

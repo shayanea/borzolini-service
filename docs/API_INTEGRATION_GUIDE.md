@@ -1,97 +1,94 @@
-# 🔗 **API Integration Guide - August 2025**
+# API Integration Guide
 
-## 🎯 **Multi-Platform API Integration Overview**
+How to integrate your frontend (web, mobile, PWA) with the Borzolini API.
 
-**Project:** AI-Powered Pet Clinic Management Platform  
-**API Base:** NestJS Backend with RESTful endpoints  
-**Authentication:** JWT-based with role-based access control  
-**Documentation:** Swagger/OpenAPI 3.0 specification  
-**Last Updated:** August 2025
+**Stack:** NestJS backend with REST endpoints  
+**Auth:** JWT tokens with refresh  
+**Docs:** Interactive Swagger at /api/docs  
+**Updated:** August 2025
 
----
+## API Basics
 
-## **API Architecture Overview**
-
-### **Base Configuration**
+### URLs and Config
 
 ```
-Base URL: http://localhost:3001/api/v1 (Development)
-Production URL: https://api.borzolini.com/api/v1
-Documentation: http://localhost:3001/api/docs
-Content-Type: application/json
-Authentication: Bearer <jwt-token>
+Dev:    http://localhost:3001/api/v1
+Prod:   https://api.borzolini.com/api/v1
+Docs:   http://localhost:3001/api/docs (Swagger UI)
+
+All requests: Content-Type: application/json
+Auth: Authorization: Bearer <jwt-token>
 ```
 
-### **API Structure**
+### Endpoints Structure
 
 ```
 /api/v1/
-├── auth/           # Authentication & authorization
-├── users/          # User management & profiles
-├── clinics/        # Clinic management & staff
-├── pets/           # Pet profiles & health records
-├── appointments/   # Booking & scheduling system
-├── ai-health/      # AI health monitoring
-├── telemedicine/   # Video consultation system
-├── social-media/   # Social content management
-├── analytics/      # Data analytics & reporting
-├── payments/       # Payment processing (planned)
-├── scheduled-tasks/ # Automated task execution
-└── health/         # System health monitoring
+├── auth/           - login, register, refresh tokens
+├── users/          - user profiles and preferences
+├── clinics/        - clinic info and staff
+├── pets/           - pet profiles and health records
+├── appointments/   - booking and scheduling
+├── ai-health/      - AI health recommendations
+├── telemedicine/   - video calls (Daily.co)
+├── social-media/   - Instagram integration
+├── analytics/      - usage tracking
+├── payments/       - (coming soon)
+└── health/         - API health check
 ```
 
----
+## Authentication
 
-## **Authentication & Authorization**
-
-### **JWT Token Flow**
+### How Login Works
 
 ```typescript
-// 1. User Login
+// 1. Send credentials
 POST /api/v1/auth/login
 {
   "email": "user@example.com",
   "password": "SecurePass123!"
 }
 
-// 2. Response with Tokens
+// 2. Get tokens back
 {
-  "user": { /* user data */ },
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "user": { id, email, role, etc },
+  "accessToken": "eyJ...",  // expires in 15min
+  "refreshToken": "eyJ..."  // expires in 7 days
 }
 
-// 3. Use Access Token in Headers
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+// 3. Use access token for requests
+Authorization: Bearer eyJ...
 ```
 
-### **Role-Based Access Control**
+**Important:** Store the access token in memory/state and refresh token in httpOnly cookie or secure storage. Don't put the refresh token in localStorage (XSS risk).
+
+### Roles and Permissions
 
 ```typescript
-// User Roles
+// We have 4 user roles
 enum UserRole {
-  PATIENT = 'patient',
-  ADMIN = 'admin',
-  VETERINARIAN = 'veterinarian',
-  STAFF = 'staff',
+  PATIENT = 'patient', // pet owners
+  STAFF = 'staff', // front desk
+  VETERINARIAN = 'veterinarian', // vets
+  ADMIN = 'admin', // clinic owner
 }
 
-// Permission Levels
-interface Permissions {
-  patient: ['read:own_pets', 'create:appointments', 'read:own_appointments', 'read:clinics'];
-  admin: ['manage:clinic', 'manage:staff', 'read:all_appointments', 'manage:all'];
-  veterinarian: ['read:patient_records', 'update:appointments', 'create:consultations', 'read:clinics'];
-  staff: ['read:appointments', 'update:appointment_status', 'read:clinics'];
-}
+// What each role can do:
+// Patient: manage own pets, book appointments, view own data
+// Staff: view all appointments, manage bookings, basic clinic info
+// Vet: all of staff + medical records, consultations, prescriptions
+// Admin: everything + user management, clinic settings, analytics
 ```
+
+The backend enforces these automatically. Your frontend just needs to show/hide UI based on the user's role.
 
 ---
 
-## 📱 **Frontend Platform Integration**
+## Frontend Platform Integration
 
-### **1. Web Platform (Next.js 14)**
+### 1. Web Platform (Next.js 14)
 
-#### **API Service Configuration**
+#### API Service Configuration
 
 ```typescript
 // services/api.ts
@@ -150,7 +147,7 @@ class ApiService {
 export const apiService = new ApiService();
 ```
 
-#### **React Hooks for API Integration**
+#### React Hooks for API Integration
 
 ```typescript
 // hooks/useApi.ts
@@ -202,9 +199,9 @@ export function useClinics(searchParams: ClinicSearchParams) {
 
 ---
 
-### **2. Mobile App (React Native)**
+### 2. Mobile App (React Native)
 
-#### **API Service for Mobile**
+#### API Service for Mobile
 
 ```typescript
 // services/api.ts
@@ -301,9 +298,9 @@ export const mobileApiService = new MobileApiService();
 
 ---
 
-### **3. Admin Dashboard (Vite + React)**
+### 3. Admin Dashboard (Vite + React)
 
-#### **Admin API Service**
+#### Admin API Service
 
 ```typescript
 // services/adminApi.ts
@@ -358,9 +355,9 @@ export const adminApiService = new AdminApiService();
 
 ---
 
-### **4. PWA (Progressive Web App)**
+### 4. PWA (Progressive Web App)
 
-#### **PWA API Service with Offline Support**
+#### PWA API Service with Offline Support
 
 ```typescript
 // services/pwaApi.ts
@@ -471,9 +468,9 @@ export const pwaApiService = new PwaApiService();
 
 ---
 
-## 🔄 **Real-Time Features Integration**
+## Real-Time Features Integration
 
-### **WebSocket Integration for Real-Time Updates**
+### WebSocket Integration for Real-Time Updates
 
 ```typescript
 // services/websocket.ts
@@ -582,9 +579,9 @@ export const websocketService = new WebSocketService();
 
 ---
 
-## **Error Handling & Retry Logic**
+## Error Handling & Retry Logic
 
-### **Global Error Handler**
+### Global Error Handler
 
 ```typescript
 // utils/errorHandler.ts
@@ -624,7 +621,7 @@ export function handleApiError(error: any): ApiError {
 }
 ```
 
-### **Retry Logic with Exponential Backoff**
+### Retry Logic with Exponential Backoff
 
 ```typescript
 // utils/retry.ts
@@ -660,23 +657,23 @@ const result = await withRetry(() => apiService.createAppointment(appointmentDat
 
 ---
 
-## 🧪 **Testing & Mocking**
+## Testing & Mocking
 
-### **API Mocking for Development**
+### API Mocking for Development
 
 ```typescript
 // mocks/apiMocks.ts
 export const mockApiResponses = {
-  '/auth/login': {
-    user: {
-      id: 'user-123',
-      email: 'test@example.com',
-      role: 'pet_owner',
-      firstName: 'John',
-      lastName: 'Doe',
-    },
-    accessToken: 'mock-jwt-token',
-    refreshToken: 'mock-refresh-token',
-  },
+ '/auth/login': {
+ user: {
+ id: 'user-123',
+ email: 'test@example.com',
+ role: 'pet_owner',
+ firstName: 'John',
+ lastName: 'Doe',
+ },
+ accessToken: 'mock-jwt-token',
+ refreshToken: 'mock-refresh-token',
+ },
 
 ```

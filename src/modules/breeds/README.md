@@ -1,14 +1,14 @@
 # Breeds Module
 
-This module provides comprehensive breed management for the pet clinic platform, including detailed breed information, health data, and API endpoints for breed operations.
+This module provides breed management for the pet clinic platform, including detailed breed information, health data, and API endpoints for breed operations.
 
 ## Features
 
-- **Comprehensive Breed Database**: Detailed breed information including temperament, health risks, size, and care requirements
+- **Breed Database**: Detailed breed information including temperament, health risks, size, and care requirements
 - **Multi-Species Support**: Supports dogs, cats, birds, rabbits, hamsters, fish, reptiles, horses, and other pets
 - **Health Information**: Breed-specific health risks and life expectancy data
 - **Care Guidelines**: Grooming and exercise needs for each breed
-- **Search & Filter**: Advanced search capabilities and filtering by species
+- **Search & Filter**: search capabilities and filtering by species
 - **Statistics**: Breed statistics and analytics
 
 ## Database Schema
@@ -16,25 +16,25 @@ This module provides comprehensive breed management for the pet clinic platform,
 ### Breeds Table
 ```sql
 CREATE TABLE breeds (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name VARCHAR(100) NOT NULL,
-  species VARCHAR(50) NOT NULL,
-  size_category VARCHAR(20),
-  temperament TEXT,
-  health_risks JSONB DEFAULT '[]',
-  life_expectancy_min INTEGER,
-  life_expectancy_max INTEGER,
-  weight_min DECIMAL(5,2),
-  weight_max DECIMAL(5,2),
-  origin_country VARCHAR(100),
-  description TEXT,
-  grooming_needs VARCHAR(50),
-  exercise_needs VARCHAR(50),
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
-  CONSTRAINT unique_breed_per_species UNIQUE (name, species)
+ id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+ name VARCHAR(100) NOT NULL,
+ species VARCHAR(50) NOT NULL,
+ size_category VARCHAR(20),
+ temperament TEXT,
+ health_risks JSONB DEFAULT '[]',
+ life_expectancy_min INTEGER,
+ life_expectancy_max INTEGER,
+ weight_min DECIMAL(5,2),
+ weight_max DECIMAL(5,2),
+ origin_country VARCHAR(100),
+ description TEXT,
+ grooming_needs VARCHAR(50),
+ exercise_needs VARCHAR(50),
+ is_active BOOLEAN DEFAULT TRUE,
+ created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ 
+ CONSTRAINT unique_breed_per_species UNIQUE (name, species)
 );
 ```
 
@@ -55,34 +55,34 @@ Authorization: Bearer <token>
 **Response:**
 ```json
 {
-  "breeds_by_species": [
-    {
-      "species": "dog",
-      "breeds": [
-        {
-          "id": "uuid",
-          "name": "Golden Retriever",
-          "species": "dog",
-          "size_category": "large",
-          "temperament": "Intelligent, friendly, and devoted",
-          "health_risks": ["Hip dysplasia", "Elbow dysplasia", "Cancer"],
-          "life_expectancy_min": 10,
-          "life_expectancy_max": 12,
-          "weight_min": 55,
-          "weight_max": 75,
-          "origin_country": "Scotland",
-          "description": "A large-sized gun dog...",
-          "grooming_needs": "moderate",
-          "exercise_needs": "high",
-          "is_active": true,
-          "created_at": "2024-01-01T00:00:00Z",
-          "updated_at": "2024-01-01T00:00:00Z"
-        }
-      ]
-    }
-  ],
-  "total_breeds": 25,
-  "total_species": 8
+ "breeds_by_species": [
+ {
+ "species": "dog",
+ "breeds": [
+ {
+ "id": "uuid",
+ "name": "Golden Retriever",
+ "species": "dog",
+ "size_category": "large",
+ "temperament": "Intelligent, friendly, and devoted",
+ "health_risks": ["Hip dysplasia", "Elbow dysplasia", "Cancer"],
+ "life_expectancy_min": 10,
+ "life_expectancy_max": 12,
+ "weight_min": 55,
+ "weight_max": 75,
+ "origin_country": "Scotland",
+ "description": "A large-sized gun dog...",
+ "grooming_needs": "moderate",
+ "exercise_needs": "high",
+ "is_active": true,
+ "created_at": "2024-01-01T00:00:00Z",
+ "updated_at": "2024-01-01T00:00:00Z"
+ }
+ ]
+ }
+ ],
+ "total_breeds": 25,
+ "total_species": 8
 }
 ```
 
@@ -107,24 +107,24 @@ Authorization: Bearer <token>
 **Response:**
 ```json
 {
-  "total_breeds": 25,
-  "breeds_by_species": {
-    "dog": 8,
-    "cat": 6,
-    "bird": 3,
-    "rabbit": 2,
-    "hamster": 1,
-    "fish": 2,
-    "reptile": 2,
-    "other": 1
-  },
-  "breeds_by_size": {
-    "tiny": 3,
-    "small": 8,
-    "medium": 7,
-    "large": 5,
-    "giant": 2
-  }
+ "total_breeds": 25,
+ "breeds_by_species": {
+ "dog": 8,
+ "cat": 6,
+ "bird": 3,
+ "rabbit": 2,
+ "hamster": 1,
+ "fish": 2,
+ "reptile": 2,
+ "other": 1
+ },
+ "breeds_by_size": {
+ "tiny": 3,
+ "small": 8,
+ "medium": 7,
+ "large": 5,
+ "giant": 2
+ }
 }
 ```
 
@@ -135,19 +135,19 @@ Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {
-  "name": "New Breed",
-  "species": "dog",
-  "size_category": "medium",
-  "temperament": "Friendly and energetic",
-  "health_risks": ["Hip dysplasia"],
-  "life_expectancy_min": 10,
-  "life_expectancy_max": 14,
-  "weight_min": 30,
-  "weight_max": 50,
-  "origin_country": "United States",
-  "description": "A new breed description",
-  "grooming_needs": "moderate",
-  "exercise_needs": "high"
+ "name": "New Breed",
+ "species": "dog",
+ "size_category": "medium",
+ "temperament": "Friendly and energetic",
+ "health_risks": ["Hip dysplasia"],
+ "life_expectancy_min": 10,
+ "life_expectancy_max": 14,
+ "weight_min": 30,
+ "weight_max": 50,
+ "origin_country": "United States",
+ "description": "A new breed description",
+ "grooming_needs": "moderate",
+ "exercise_needs": "high"
 }
 ```
 
@@ -158,7 +158,7 @@ Authorization: Bearer <admin_token>
 Content-Type: application/json
 
 {
-  "temperament": "Updated temperament description"
+ "temperament": "Updated temperament description"
 }
 ```
 
@@ -193,7 +193,7 @@ Each breed includes:
 ```typescript
 // Get all breeds for a dropdown
 const response = await fetch('/api/breeds', {
-  headers: { 'Authorization': `Bearer ${token}` }
+ headers: { 'Authorization': `Bearer ${token}` }
 });
 const { breeds_by_species } = await response.json();
 
@@ -205,16 +205,16 @@ const dogBreeds = breeds_by_species.find(s => s.species === 'dog')?.breeds || []
 ```typescript
 // When creating a pet, reference the breed
 const petData = {
-  name: "Buddy",
-  species: "dog",
-  breed_id: "golden-retriever-uuid", // Reference to breed
-  // ... other pet data
+ name: "Buddy",
+ species: "dog",
+ breed_id: "golden-retriever-uuid", // Reference to breed
+ // ... other pet data
 };
 ```
 
 ## Seeding
 
-The module includes a comprehensive seeder with real breed data:
+The module includes a seeder with real breed data:
 
 ```bash
 # Run the seeder

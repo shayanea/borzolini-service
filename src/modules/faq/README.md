@@ -1,18 +1,18 @@
 # FAQ Module
 
-This module provides comprehensive FAQ (Frequently Asked Questions) management for the pet clinic platform, containing the most common questions about the 4 most popular animal types: Dogs, Cats, Birds, and Rabbits.
+This module provides FAQ (Frequently Asked Questions) management for the pet clinic platform, containing the most common questions about the 4 most popular animal types: Dogs, Cats, Birds, and Rabbits.
 
 ## Features
 
-- **Comprehensive FAQ Database**: 50+ most asked questions about popular pet types
+- **FAQ Database**: 50+ most asked questions about popular pet types
 - **Multi-Species Support**: Covers dogs, cats, birds, and rabbits
 - **Categorized Questions**: Organized by health care, feeding, training, exercise, housing, and general care
-- **Advanced Search**: Elasticsearch-powered full-text search with fuzzy matching and relevance scoring
-- **Autocomplete Suggestions**: Intelligent autocomplete for search queries with completion suggestions
+- **Search**: Elasticsearch-powered full-text search with fuzzy matching and relevance scoring
+- **AutoSuggestions**: Intelligent autofor search queries with completion suggestions
 - **Smart Ranking**: Results ranked by relevance with question matches prioritized over answer matches
 - **Fallback Support**: Database fallback when Elasticsearch is unavailable
 - **Statistics**: FAQ analytics and usage statistics
-- **RESTful API**: Complete CRUD operations with proper authentication
+- **RESTful API**: CRUD operations with proper authentication
 
 ## Database Schema
 
@@ -20,17 +20,17 @@ This module provides comprehensive FAQ (Frequently Asked Questions) management f
 
 ```sql
 CREATE TABLE animal_faqs (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  species VARCHAR(50) NOT NULL,
-  category VARCHAR(100) NOT NULL,
-  question TEXT NOT NULL,
-  answer TEXT NOT NULL,
-  order_index INTEGER,
-  is_active BOOLEAN DEFAULT TRUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+ species VARCHAR(50) NOT NULL,
+ category VARCHAR(100) NOT NULL,
+ question TEXT NOT NULL,
+ answer TEXT NOT NULL,
+ order_index INTEGER,
+ is_active BOOLEAN DEFAULT TRUE,
+ created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+ updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
 
-  CONSTRAINT unique_question_per_species_category UNIQUE (species, category, question)
+ CONSTRAINT unique_question_per_species_category UNIQUE (species, category, question)
 );
 ```
 
@@ -47,21 +47,21 @@ Authorization: Bearer <token>
 
 ```json
 [
-  {
-    "species": "dog",
-    "faqs": [
-      {
-        "id": "uuid",
-        "species": "dog",
-        "category": "health_care",
-        "question": "What is the average lifespan of a dog?",
-        "answer": "Typically 10-13 years, varying by breed and size...",
-        "order_index": 1,
-        "created_at": "2024-01-01T00:00:00Z",
-        "updated_at": "2024-01-01T00:00:00Z"
-      }
-    ]
-  }
+ {
+ "species": "dog",
+ "faqs": [
+ {
+ "id": "uuid",
+ "species": "dog",
+ "category": "health_care",
+ "question": "What is the average lifespan of a dog?",
+ "answer": "Typically 10-13 years, varying by breed and size...",
+ "order_index": 1,
+ "created_at": "2024-01-01T00:00:00Z",
+ "updated_at": "2024-01-01T00:00:00Z"
+ }
+ ]
+ }
 ]
 ```
 
@@ -90,20 +90,20 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "query": "lifespan",
-  "total": 4,
-  "results": [
-    {
-      "id": "uuid",
-      "species": "dog",
-      "category": "health_care",
-      "question": "What is the average lifespan of a dog?",
-      "answer": "Typically 10-13 years...",
-      "order_index": 1,
-      "created_at": "2024-01-01T00:00:00Z",
-      "updated_at": "2024-01-01T00:00:00Z"
-    }
-  ]
+ "query": "lifespan",
+ "total": 4,
+ "results": [
+ {
+ "id": "uuid",
+ "species": "dog",
+ "category": "health_care",
+ "question": "What is the average lifespan of a dog?",
+ "answer": "Typically 10-13 years...",
+ "order_index": 1,
+ "created_at": "2024-01-01T00:00:00Z",
+ "updated_at": "2024-01-01T00:00:00Z"
+ }
+ ]
 }
 ```
 
@@ -118,21 +118,21 @@ Authorization: Bearer <token>
 
 ```json
 {
-  "total_faqs": 50,
-  "faqs_by_species": {
-    "dog": 15,
-    "cat": 15,
-    "bird": 12,
-    "rabbit": 8
-  },
-  "faqs_by_category": {
-    "health_care": 20,
-    "feeding_nutrition": 12,
-    "training_behavior": 10,
-    "exercise_activity": 5,
-    "housing_environment": 2,
-    "general_care": 1
-  }
+ "total_faqs": 50,
+ "faqs_by_species": {
+ "dog": 15,
+ "cat": 15,
+ "bird": 12,
+ "rabbit": 8
+ },
+ "faqs_by_category": {
+ "health_care": 20,
+ "feeding_nutrition": 12,
+ "training_behavior": 10,
+ "exercise_activity": 5,
+ "housing_environment": 2,
+ "general_care": 1
+ }
 }
 ```
 
@@ -143,7 +143,7 @@ GET /faq/{id}
 Authorization: Bearer <token>
 ```
 
-### Get Autocomplete Suggestions
+### Get AutoSuggestions
 
 ```http
 GET /faq/autocomplete/suggestions?q={query}&species={species}&size={size}
@@ -158,21 +158,21 @@ Authorization: Bearer <token>
 **Response:**
 ```json
 {
-  "query": "vaccin",
-  "suggestions": [
-    {
-      "text": "What vaccinations does my dog need?",
-      "score": 0.95,
-      "frequency": 1
-    },
-    {
-      "text": "What vaccinations does my cat need?",
-      "score": 0.89,
-      "frequency": 1
-    }
-  ],
-  "total": 2,
-  "species": "dog"
+ "query": "vaccin",
+ "suggestions": [
+ {
+ "text": "What vaccinations does my dog need?",
+ "score": 0.95,
+ "frequency": 1
+ },
+ {
+ "text": "What vaccinations does my cat need?",
+ "score": 0.89,
+ "frequency": 1
+ }
+ ],
+ "total": 2,
+ "species": "dog"
 }
 ```
 
@@ -186,8 +186,8 @@ Authorization: Bearer <admin_token>
 **Response:**
 ```json
 {
-  "message": "Successfully indexed all FAQs in Elasticsearch",
-  "indexed_count": 54
+ "message": "Successfully indexed all FAQs in Elasticsearch",
+ "indexed_count": 54
 }
 ```
 
@@ -201,7 +201,7 @@ Authorization: Bearer <admin_token>
 **Response:**
 ```json
 {
-  "message": "Successfully indexed FAQ \"What vaccinations does my dog need?\" in Elasticsearch"
+ "message": "Successfully indexed FAQ \"What vaccinations does my dog need?\" in Elasticsearch"
 }
 ```
 
@@ -228,18 +228,18 @@ Authorization: Bearer <admin_token>
 ```typescript
 // Get all FAQs for a dropdown
 const response = await fetch('/api/faq', {
-  headers: { Authorization: `Bearer ${token}` },
+ headers: { Authorization: `Bearer ${token}` },
 });
 const faqsBySpecies = await response.json();
 
 // Get FAQs for a specific species
 const dogFaqs = await fetch('/api/faq/species/dog', {
-  headers: { Authorization: `Bearer ${token}` },
+ headers: { Authorization: `Bearer ${token}` },
 });
 
 // Search FAQs
 const searchResults = await fetch('/api/faq/search?q=lifespan', {
-  headers: { Authorization: `Bearer ${token}` },
+ headers: { Authorization: `Bearer ${token}` },
 });
 ```
 
@@ -249,14 +249,14 @@ const searchResults = await fetch('/api/faq/search?q=lifespan', {
 // Display FAQs in a mobile-friendly format
 const faqs = await faqService.getFaqsBySpecies('dog');
 faqs.forEach((faq) => {
-  console.log(`Q: ${faq.question}`);
-  console.log(`A: ${faq.answer}`);
+ console.log(`Q: ${faq.question}`);
+ console.log(`A: ${faq.answer}`);
 });
 ```
 
 ## Seeding
 
-The module includes a comprehensive seeder with real FAQ data:
+The module includes a seeder with real FAQ data:
 
 ```bash
 # Run the seeder

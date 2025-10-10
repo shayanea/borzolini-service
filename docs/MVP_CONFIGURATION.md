@@ -1,57 +1,57 @@
 # MVP Configuration Guide
 
-This document outlines the simplified configuration for the Borzolini Clinic API MVP release.
+For the MVP, we've stripped out the complex stuff to keep things simple and cheap to run.
 
-## 🎯 MVP Philosophy
+## MVP Philosophy
 
-The MVP focuses on core functionality with minimal complexity:
+Keep it simple:
 
-- **Database**: PostgreSQL only (no Elasticsearch)
-- **Search**: Database-based search (no advanced search features)
-- **Analytics**: Basic analytics (no advanced indexing)
-- **Deployment**: Simplified Docker setup
+- **Database**: Just PostgreSQL (Elasticsearch adds complexity and costs)
+- **Search**: Use Postgres LIKE queries for now (good enough for MVP)
+- **Analytics**: Basic tracking only (no fancy analytics yet)
+- **Deployment**: Minimal Docker setup (runs on cheap servers)
 
-## 🚫 Disabled Features for MVP
+## What's Turned Off
 
 ### Elasticsearch & Kibana
 
-- **Status**: Disabled by default
-- **Reason**: Reduces resource requirements and deployment complexity
-- **Impact**: Search functionality uses database queries instead of advanced indexing
+- **Status**: Commented out in docker-compose.yml
+- **Why**: Saves ~1GB RAM and makes deployment way simpler
+- **Impact**: Search is slower on large datasets, but you won't notice until you have 10k+ records
 
-### Advanced Analytics
+### Analytics
 
-- **Status**: Basic analytics only
-- **Reason**: Focus on core clinic management features
-- **Impact**: Standard reporting without advanced data insights
+- **Status**: Basic only (Umami for page views)
+- **Why**: Focus on getting the core features working first
+- **Impact**: You get basic analytics, just not the fancy dashboards and insights
 
-## ✅ Enabled Features for MVP
+## Enabled Features for MVP
 
 ### Core Functionality
 
-- ✅ User authentication and authorization
-- ✅ Clinic management
-- ✅ Pet health monitoring
-- ✅ Appointment scheduling
-- ✅ Basic analytics and reporting
-- ✅ Email notifications
-- ✅ File uploads
-- ✅ API documentation (Swagger)
+- User authentication and authorization
+- Clinic management
+- Pet health monitoring
+- Appointment scheduling
+- Basic analytics and reporting
+- Email notifications
+- File uploads
+- API documentation (Swagger)
 
 ### Database
 
-- ✅ PostgreSQL with TypeORM
-- ✅ Database migrations
-- ✅ Seed data
+- PostgreSQL with TypeORM
+- Database migrations
+- Seed data
 
 ### Security
 
-- ✅ JWT authentication
-- ✅ Rate limiting
-- ✅ CORS configuration
-- ✅ Input validation
+- JWT authentication
+- Rate limiting
+- CORS configuration
+- Input validation
 
-## 🔧 Configuration Files
+## Configuration Files
 
 ### Environment Variables
 
@@ -66,31 +66,33 @@ The MVP focuses on core functionality with minimal complexity:
 
 - `src/common/common.module.ts` - Elasticsearch conditionally loaded
 
-## 🚀 Quick Start (MVP)
+## Quick Start (MVP)
 
 1. **Copy environment template:**
 
-   ```bash
-   cp config.env.local.template config.env.local
-   ```
+```bash
+cp config.env.local.template config.env.local
+```
 
 2. **Update configuration:**
-   - Set your database credentials
-   - Configure JWT secrets
-   - Set up email settings (optional)
+
+- Set your database credentials
+- Configure JWT secrets
+- Set up email settings (optional)
 
 3. **Start services:**
 
-   ```bash
-   docker-compose up -d clinic-db
-   ```
+```bash
+docker-compose up -d clinic-db
+```
 
 4. **Run the application:**
-   ```bash
-   pnpm run start:dev
-   ```
 
-## 📈 Post-MVP: Enabling Advanced Features
+```bash
+pnpm run start:dev
+```
+
+## Post-MVP: Enabling Features
 
 ### To Enable Elasticsearch:
 
@@ -99,13 +101,13 @@ The MVP focuses on core functionality with minimal complexity:
 3. Configure Elasticsearch connection settings
 4. Restart the application
 
-### To Enable Advanced Analytics:
+### To Enable Analytics:
 
 1. Enable Elasticsearch first
 2. Configure Umami analytics
-3. Set up advanced reporting features
+3. Set up reporting features
 
-## 🔍 Verification
+## Verification
 
 ### Check Elasticsearch Status:
 
@@ -127,14 +129,14 @@ docker-compose ps
 - Health check: `http://localhost:3001/api/v1/health`
 - Database connection: Check application logs
 
-## 📝 Notes
+## Notes
 
 - All Elasticsearch-related code remains in the codebase but is conditionally loaded
 - No breaking changes when enabling Elasticsearch post-MVP
 - Database search functionality provides adequate search capabilities for MVP
 - Resource usage significantly reduced without Elasticsearch
 
-## 🆘 Troubleshooting
+## Troubleshooting
 
 ### If Elasticsearch is still trying to connect:
 

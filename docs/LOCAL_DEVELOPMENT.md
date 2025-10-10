@@ -1,86 +1,100 @@
-# 🚀 Local Development Setup Guide
+# Local Development Setup
 
-This guide will help you set up the Borzolini Clinic API locally for development.
+Setting up the API on your local machine is pretty straightforward. You have a couple of options depending on whether you want to use Docker or not.
 
-## 📋 Prerequisites
+## What You'll Need
 
-- **Node.js** (v18 or higher)
-- **pnpm** (recommended package manager)
-- **Docker & Docker Compose** (for local PostgreSQL)
-- **Git**
+- Node.js 18+ (check with `node -v`)
+- pnpm (`npm install -g pnpm` if you don't have it)
+- Docker & Docker Compose (easiest way to run PostgreSQL)
+- Git (obviously)
 
-## 🐳 Quick Start with Docker
+## Quick Start with Docker
 
-### 1. Start Local PostgreSQL Database
+### 1. Fire Up PostgreSQL
 
 ```bash
-# Start PostgreSQL container
+# Start PostgreSQL in Docker
 docker compose up -d postgres
 
-# Check status
+# Check if it's running
 docker compose ps
 
-# View logs
+# If something's wrong, check the logs
 docker compose logs postgres
 ```
 
-### 2. Environment Configuration
+**Tip:** The database will persist data even when you stop the container. If you want a fresh start, run `docker compose down -v` to wipe everything.
+
+### 2. Configure Your Environment
 
 ```bash
-# Copy local environment file
+# Copy the local config (it has good defaults)
 cp config.env.local .env.local
 
-# Edit if needed (defaults are already configured for local development)
+# Open it and add your OpenAI key if you want AI features
 nano .env.local
 ```
 
-### 3. Install Dependencies
+The defaults work out of the box for local dev. You only need to change things if you're testing specific features.
+
+### 3. Install and Build
 
 ```bash
-# Install all dependencies
+# Install dependencies
 pnpm install
-```
 
-### 4. Build the Project
-
-```bash
-# Build TypeScript
+# Build TypeScript (or skip this and just use start:dev)
 pnpm run build
 ```
 
-### 5. Run Database Migrations
+**Note:** `start:dev` watches for changes and rebuilds automatically, so you don't need to run `build` manually during development.
+
+### 4. Run Migrations
 
 ```bash
-# Run all migrations
+# Create the database tables
 pnpm run migrate
 ```
 
-### 6. Start Development Server
+If you get connection errors, make sure PostgreSQL is running (`docker compose ps`).
+
+### 5. Start the Server
 
 ```bash
-# Start in development mode
+# This will watch for changes and auto-reload
 pnpm run start:dev
 ```
 
-## 🌐 Access Points
+You should see output like:
 
-- **API Base URL**: `http://localhost:3001/api/v1`
-- **Health Check**: `http://localhost:3001/api/v1/health`
-- **Swagger UI**: `http://localhost:3001/api/docs`
-- **PostgreSQL**: `localhost:5432`
-- **PgAdmin**: `http://localhost:5050` (if enabled)
+```
+[Nest] 12345  - Application is running on: http://localhost:3001
+```
 
-## 🗄️ Database Configuration
+## Where Everything Lives
 
-### Local PostgreSQL (Default)
-- **Host**: `localhost`
-- **Port**: `5432`
-- **Database**: `borzolini_clinic`
-- **Username**: `postgres`
-- **Password**: `postgres`
+Once it's running, here's what you can access:
 
-### Environment Variables
+- **Swagger UI**: http://localhost:3001/api/docs (start here - it's interactive!)
+- **API Base**: http://localhost:3001/api/v1
+- **Health Check**: http://localhost:3001/api/v1/health (returns 200 if everything's ok)
+- **PostgreSQL**: localhost:5432 (use TablePlus, pgAdmin, or any Postgres client)
+- **PgAdmin**: http://localhost:5050 (if you uncommented it in docker-compose.yml)
+
+## Database Config
+
+The Docker setup uses these defaults:
+
+- **Host**: localhost
+- **Port**: 5432
+- **Database**: borzolini_clinic
+- **User/Pass**: postgres/postgres
+
+You can connect with any Postgres client using these credentials. If you want to change them, edit `docker-compose.yml` and update your `.env.local` to match.
+
 ```bash
+# These are already set in config.env.local
 USE_LOCAL_DB=true
 LOCAL_DB_HOST=localhost
 LOCAL_DB_PORT=5432
@@ -89,102 +103,123 @@ LOCAL_DB_PASSWORD=postgres
 LOCAL_DB_NAME=borzolini_clinic
 ```
 
-## 🔄 Switching Between Local and Supabase
+**Pro tip:** Use TablePlus or DBeaver for a nice GUI to browse your database.
 
-To switch back to Supabase later:
+## Switching to Supabase
+
+If you want to test against Supabase instead of local Postgres:
 
 ```bash
-# Set environment variable
-export USE_LOCAL_DB=false
-
-# Or update .env.local
+# In your .env.local, change this
 USE_LOCAL_DB=false
-SUPABASE_URL=your-supabase-url
+
+# And add your Supabase credentials
+SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
-## 📁 File Storage Options
+Restart the server and it'll connect to Supabase instead.
+
+## Test Data
+
+After running `pnpm run seed`, you get a bunch of test accounts:
+
+**Test Accounts** (all use password `Password123!`):
+
+- `admin@borzolini.com` - Admin user
+- `dr.smith@borzolini.com` - Veterinarian
+- `nurse.wilson@borzolini.com` - Staff member
+- `john.doe@example.com` - Patient (pet owner)
+- `jane.smith@example.com` - Patient (verified)
+- Plus a few more patients and vets
+
+**Test Data Includes:**
+
+- 5 clinics across different cities
+- 10+ pets (dogs, cats) with profiles
+- Multiple appointments (past and upcoming)
+- User preferences and activity logs
+
+This gives you realistic data to test with. If you need a fresh start, just drop the database and re-run migrations + seed.
+
+## File Storage Options
 
 Since Firebase Storage has costs, consider these alternatives:
 
 ### **Local Storage (Development)**
+
 - Store files in local `./uploads` directory
 - Good for development and testing
 - No external costs
 
 ### **Supabase Storage (Production)**
+
 - 1GB free storage included
 - 2GB bandwidth/month free
 - Integrated with your existing Supabase setup
 
 ### **Cloud Storage Alternatives**
+
 - **AWS S3**: Pay per use, very cost-effective
 - **Google Cloud Storage**: Similar pricing to Firebase
 - **Azure Blob Storage**: Microsoft's cloud storage solution
 
-## 🛠️ Development Commands
+## Development Commands
 
 ```bash
 # Build project
 pnpm run build
-
 # Run migrations
 pnpm run migrate
-
 # Generate Swagger documentation
 pnpm run docs:generate
-
 # Run tests
 pnpm run test
-
 # Run tests in watch mode
 pnpm run test:watch
-
 # Lint code
 pnpm run lint
-
 # Format code
 pnpm run format
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Database Connection Issues
+
 ```bash
 # Check if PostgreSQL is running
 docker compose ps
-
 # Restart PostgreSQL
 docker compose restart postgres
-
 # Check logs
 docker compose logs postgres
-
 # Test connection
 docker compose exec postgres pg_isready -U postgres -d borzolini_clinic
 ```
 
 ### Port Conflicts
+
 If port 3001 is already in use:
+
 ```bash
 # Check what's using the port
 lsof -i :3001
-
 # Kill the process or change PORT in .env.local
 PORT=3002
 ```
 
 ### Migration Issues
+
 ```bash
 # Check migration status
 pnpm run migrate:show
-
 # Revert last migration if needed
 pnpm run migrate:revert
 ```
 
-## 📊 Database Schema
+## Database Schema
 
 The local database includes all tables:
 
@@ -194,7 +229,7 @@ The local database includes all tables:
 - **Appointments**: `appointments`, `clinic_appointments`
 - **AI Health**: `ai_health_insights`
 
-## 🔐 Authentication
+## Authentication
 
 For testing protected endpoints:
 
@@ -202,7 +237,7 @@ For testing protected endpoints:
 2. **Login**: `POST /api/v1/auth/login`
 3. **Use JWT token**: Add `Authorization: Bearer <token>` header
 
-## 🤖 AI Health Module
+## AI Health Module
 
 The new AI Health module provides:
 
@@ -212,64 +247,59 @@ The new AI Health module provides:
 - **Fallback System**: Rule-based recommendations when AI is unavailable
 
 ### Key Endpoints
+
 - `POST /api/v1/ai-health/recommendations` - Generate AI recommendations
 - `GET /api/v1/ai-health/pets/{petId}/insights` - Get pet insights
 - `GET /api/v1/ai-health/dashboard/{petId}` - Health dashboard
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run unit tests
 pnpm run test
-
 # Run e2e tests
 pnpm run test:e2e
-
 # Run tests with coverage
 pnpm run test:cov
 ```
 
-## 📝 Code Quality
+## Code Quality
 
 ```bash
 # Lint code
 pnpm run lint
-
 # Fix linting issues
 pnpm run lint:fix
-
 # Format code
 pnpm run format
-
 # Check for type errors
 pnpm run build
 ```
 
-## 🚀 Production Build
+## Production Build
 
 ```bash
 # Build for production
 pnpm run build:prod
-
 # Start production server
 pnpm run start:prod
 ```
 
-## 📚 Additional Resources
+## Additional Resources
 
 - **API Documentation**: [Swagger UI](http://localhost:3001/api/docs)
 - **Database Schema**: Check `src/database/migrations/`
 - **Module Documentation**: Check `src/modules/*/README.md`
 - **Configuration**: Check `src/config/`
 
-## 🤝 Contributing
+## Contributing
 
 1. Create a feature branch
 2. Make your changes
 3. Run tests and linting
 4. Submit a pull request
 
-## 📞 Support
+## Support
 
 If you encounter issues:
 
@@ -280,6 +310,5 @@ If you encounter issues:
 
 ---
 
-**Happy coding! 🚀**
-
-The Borzolini Clinic API is now ready for local development with a complete PostgreSQL database and all modules including the new AI Health system.
+**Happy coding! **
+The Borzolini Clinic API is now ready for local development with a PostgreSQL database and all modules including the new AI Health system.
