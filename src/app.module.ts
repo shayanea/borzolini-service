@@ -7,25 +7,25 @@ import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { BreedsModule } from './modules/breeds/breeds.module';
 import { ClinicsModule } from './modules/clinics/clinics.module';
-import { ContactModule } from './modules/contact/contact.module';
 // Common modules
 import { CommonModule } from './common/common.module';
+import { ContactModule } from './modules/contact/contact.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { FaqModule } from './modules/faq/faq.module';
 import { HealthModule } from './modules/health/health.module';
 // Core modules
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ThrottlerModule } from '@nestjs/throttler';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SupabaseModule } from './common/supabase.module';
-import { getDatabaseConfig } from './config/database.config';
 import { PetsModule } from './modules/pets/pets.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
-import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
+import { ScheduleModule } from '@nestjs/schedule';
+// import { ScheduledTasksModule } from './modules/scheduled-tasks/scheduled-tasks.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { SocialMediaModule } from './modules/social-media/social-media.module';
+import { SupabaseModule } from './common/supabase.module';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -80,7 +80,7 @@ import { UsersModule } from './modules/users/users.module';
     AppointmentsModule,
     AiHealthModule,
     ReviewsModule,
-    ScheduledTasksModule,
+    // ScheduledTasksModule,
     SettingsModule,
     SocialMediaModule,
     // TelemedicineModule,

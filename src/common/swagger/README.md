@@ -5,7 +5,7 @@ This directory contains centralized examples for Swagger documentation to keep D
 ## Files
 
 - `dto-examples.ts` - Contains all DTO-specific examples
-- `swagger-examples.ts` - Contains comprehensive API examples that reference DTO examples
+- `swagger-examples.ts` - Contains API examples that reference DTO examples
 - `README.md` - This documentation file
 
 ## Usage
@@ -18,11 +18,11 @@ Instead of inline examples, import from the centralized examples:
 import { PET_DTO_EXAMPLES } from '../../../common/swagger/dto-examples';
 
 export class CreatePetDto {
-  @ApiProperty({
-    description: 'Name of the pet',
-    example: PET_DTO_EXAMPLES.NAME,
-  })
-  name!: string;
+ @ApiProperty({
+ description: 'Name of the pet',
+ example: PET_DTO_EXAMPLES.NAME,
+ })
+ name!: string;
 }
 ```
 
@@ -77,7 +77,7 @@ COMMON_DTO_EXAMPLES.STRING; // "example string"
 When adding new examples:
 
 1. **Add to `dto-examples.ts`** if it's a DTO-specific example
-2. **Add to `swagger-examples.ts`** if it's a comprehensive API example
+2. **Add to `swagger-examples.ts`** if it's a API example
 3. **Use existing constants** when possible to maintain consistency
 
 Example:
@@ -85,16 +85,16 @@ Example:
 ```typescript
 // In dto-examples.ts
 export const NEW_MODULE_DTO_EXAMPLES = {
-  FIELD_NAME: 'example value',
-  ANOTHER_FIELD: 123
+ FIELD_NAME: 'example value',
+ ANOTHER_FIELD: 123
 };
 
 // In your DTO
 import { NEW_MODULE_DTO_EXAMPLES } from "../../../common/swagger/dto-examples";
 
 @ApiProperty({
-  description: "Field description",
-  example: NEW_MODULE_DTO_EXAMPLES.FIELD_NAME
+ description: "Field description",
+ example: NEW_MODULE_DTO_EXAMPLES.FIELD_NAME
 })
 fieldName!: string;
 ```
@@ -130,17 +130,17 @@ To migrate existing DTOs:
 
 ```typescript
 export class CreatePetDto {
-  @ApiProperty({
-    description: 'Name of the pet',
-    example: 'Buddy',
-  })
-  name!: string;
+ @ApiProperty({
+ description: 'Name of the pet',
+ example: 'Buddy',
+ })
+ name!: string;
 
-  @ApiProperty({
-    description: 'Species of the pet',
-    example: 'dog',
-  })
-  species!: string;
+ @ApiProperty({
+ description: 'Species of the pet',
+ example: 'dog',
+ })
+ species!: string;
 }
 ```
 
@@ -150,17 +150,17 @@ export class CreatePetDto {
 import { PET_DTO_EXAMPLES } from '../../../common/swagger/dto-examples';
 
 export class CreatePetDto {
-  @ApiProperty({
-    description: 'Name of the pet',
-    example: PET_DTO_EXAMPLES.NAME,
-  })
-  name!: string;
+ @ApiProperty({
+ description: 'Name of the pet',
+ example: PET_DTO_EXAMPLES.NAME,
+ })
+ name!: string;
 
-  @ApiProperty({
-    description: 'Species of the pet',
-    example: PET_DTO_EXAMPLES.SPECIES,
-  })
-  species!: string;
+ @ApiProperty({
+ description: 'Species of the pet',
+ example: PET_DTO_EXAMPLES.SPECIES,
+ })
+ species!: string;
 }
 ```
 

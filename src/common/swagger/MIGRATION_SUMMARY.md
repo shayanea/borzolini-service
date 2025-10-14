@@ -6,7 +6,7 @@
 
 - `src/common/swagger/dto-examples.ts` - Contains all DTO-specific examples
 - `src/common/swagger/swagger-examples.ts` - Updated to use centralized examples
-- `src/common/swagger/README.md` - Comprehensive documentation
+- `src/common/swagger/README.md` - documentation
 - `src/common/swagger/migrate-dto-examples.ts` - Migration helper script
 
 ✅ **Refactored example DTO**
@@ -49,11 +49,11 @@
 
 ```typescript
 export class CreatePetDto {
-  @ApiProperty({
-    description: 'Name of the pet',
-    example: 'Buddy',
-  })
-  name!: string;
+ @ApiProperty({
+ description: 'Name of the pet',
+ example: 'Buddy',
+ })
+ name!: string;
 }
 ```
 
@@ -63,11 +63,11 @@ export class CreatePetDto {
 import { PET_DTO_EXAMPLES } from '../../../common/swagger/dto-examples';
 
 export class CreatePetDto {
-  @ApiProperty({
-    description: 'Name of the pet',
-    example: PET_DTO_EXAMPLES.NAME,
-  })
-  name!: string;
+ @ApiProperty({
+ description: 'Name of the pet',
+ example: PET_DTO_EXAMPLES.NAME,
+ })
+ name!: string;
 }
 ```
 
