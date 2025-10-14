@@ -2,6 +2,7 @@ import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGenerat
 
 import { ApiProperty } from '@nestjs/swagger';
 import { Pet } from '../../pets/entities/pet.entity';
+import { VectorTransformer } from '../../../common/database/vector.column-type';
 
 export enum InsightType {
   RECOMMENDATION = 'recommendation',
@@ -109,7 +110,13 @@ export class AiHealthInsight {
   owner_rating?: number;
 
   @ApiProperty({ description: 'Embedding vector for semantic similarity' })
-  @Column({ type: 'vector' as any, nullable: true })
+  @Column({
+    type: 'jsonb',
+    nullable: true,
+    insert: false,
+    select: false,
+    transformer: VectorTransformer,
+  })
   embedding?: number[] | null;
 
   @ApiProperty({ description: 'Medical/legal disclaimer for AI-generated content' })

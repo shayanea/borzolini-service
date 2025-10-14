@@ -40,6 +40,7 @@ export class Settings {
 
   @Column({
     type: 'jsonb',
+    name: 'general_settings',
     default: {
       clinicName: 'Borzolini Veterinary Clinic',
       currency: 'USD',
@@ -51,6 +52,7 @@ export class Settings {
 
   @Column({
     type: 'jsonb',
+    name: 'notification_settings',
     default: {
       enableNotifications: true,
       emailNotifications: true,
@@ -62,6 +64,7 @@ export class Settings {
 
   @Column({
     type: 'jsonb',
+    name: 'appointment_settings',
     default: {
       defaultAppointmentDuration: 30,
       bookingLeadTime: 24,
@@ -73,6 +76,7 @@ export class Settings {
 
   @Column({
     type: 'jsonb',
+    name: 'security_settings',
     default: {
       sessionTimeout: 30,
       passwordExpiry: 90,
@@ -81,15 +85,15 @@ export class Settings {
   })
   securitySettings!: SecuritySettings;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', name: 'is_active', default: true })
   isActive!: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'boolean', name: 'is_default', default: false })
   isDefault!: boolean;
 
-  @CreateDateColumn({ type: 'timestamp with time zone' })
+  @CreateDateColumn({ type: 'timestamp with time zone', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  @UpdateDateColumn({ type: 'timestamp with time zone', name: 'updated_at' })
   updatedAt!: Date;
 }
