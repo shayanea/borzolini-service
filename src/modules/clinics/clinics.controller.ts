@@ -1,5 +1,6 @@
 import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
 import { ExportService } from '../../common/services/export.service';
 import { RequiredStaffRoles } from '../auth/decorators/required-staff-roles.decorator';
@@ -31,6 +32,18 @@ export class ClinicsController {
     private readonly clinicPetCaseService: ClinicPetCaseService,
     private readonly exportService: ExportService
   ) {}
+
+  @Post('public/register')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Public: Register a new clinic (rate-limited)' })
+  @ApiBody({ type: CreateClinicDto })
+  @ApiResponse({ status: 201, description: 'Clinic registered successfully', type: Clinic })
+  @ApiResponse({ status: 429, description: 'Too many requests' })
+  async publicRegister(@Body() createClinicDto: CreateClinicDto): Promise<Clinic> {
+    return await this.clinicsService.create(createClinicDto);
+  }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
