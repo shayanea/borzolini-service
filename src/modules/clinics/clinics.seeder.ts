@@ -535,7 +535,8 @@ export class ClinicsSeeder {
     const staffData: StaffData[] = [];
 
     // Add admin to Borzolini Pet Clinic only
-    if (clinicId === (await this.clinicRepository.findOne({ where: { name: 'Borzolini Pet Clinic' } }))?.id) {
+    const borzoliniClinic = await this.clinicRepository.findOne({ where: { name: 'Borzolini Pet Clinic' } });
+    if (clinicId === borzoliniClinic?.id) {
       staffData.push({
         clinic_id: clinicId,
         user_id: users.admin.id,
@@ -548,22 +549,22 @@ export class ClinicsSeeder {
         hire_date: '2023-01-01',
         is_active: true,
       });
-    }
 
-    // Add clinic owner to Borzolini Pet Clinic only
-    if (clinicId === (await this.clinicRepository.findOne({ where: { name: 'Borzolini Pet Clinic' } }))?.id) {
-      staffData.push({
-        clinic_id: clinicId,
-        user_id: users.clinicOwner.id,
-        role: StaffRole.ADMIN,
-        specialization: 'Clinic Ownership',
-        license_number: 'OWN-001',
-        experience_years: 10,
-        education: ['Business Administration', 'Veterinary Practice Management'],
-        bio: 'Clinic owner with extensive experience in veterinary business management.',
-        hire_date: '2022-01-01',
-        is_active: true,
-      });
+      // Add clinic owner to Borzolini Pet Clinic only (if different from admin)
+      if (users.clinicOwner.id !== users.admin.id) {
+        staffData.push({
+          clinic_id: clinicId,
+          user_id: users.clinicOwner.id,
+          role: StaffRole.ADMIN,
+          specialization: 'Clinic Ownership',
+          license_number: 'OWN-001',
+          experience_years: 10,
+          education: ['Business Administration', 'Veterinary Practice Management'],
+          bio: 'Clinic owner with extensive experience in veterinary business management.',
+          hire_date: '2022-01-01',
+          is_active: true,
+        });
+      }
     }
 
     // Assign veterinarians to different clinics

@@ -428,9 +428,9 @@ export class PetsSeeder {
       await this.aiHealthInsightRepository.createQueryBuilder().delete().execute();
       this.logger.log('AI health insights cleared');
 
-      // Clear clinic appointments that reference pets
-      await this.petRepository.manager.query('DELETE FROM clinic_appointments WHERE pet_id IS NOT NULL');
-      this.logger.log('Clinic appointments cleared');
+      // Clear appointments that reference pets
+      await this.petRepository.manager.query('DELETE FROM appointments WHERE pet_id IS NOT NULL');
+      this.logger.log('Appointments cleared');
 
       // Clear clinic pet cases that reference pets
       await this.petRepository.manager.query('DELETE FROM clinic_pet_cases WHERE pet_id IS NOT NULL');

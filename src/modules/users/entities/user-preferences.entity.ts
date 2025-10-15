@@ -1,14 +1,6 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  OneToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-import { User } from "./user.entity";
+import { User } from './user.entity';
 
 export interface NotificationSettings {
   email: {
@@ -31,7 +23,7 @@ export interface NotificationSettings {
 }
 
 export interface PrivacySettings {
-  profileVisibility: "public" | "private" | "friends";
+  profileVisibility: 'public' | 'private' | 'friends';
   showPhone: boolean;
   showAddress: boolean;
   showEmail: boolean;
@@ -40,7 +32,7 @@ export interface PrivacySettings {
 
 export interface CommunicationPreferences {
   preferredLanguage: string;
-  preferredContactMethod: "email" | "sms" | "phone";
+  preferredContactMethod: 'email' | 'sms' | 'phone';
   timezone: string;
   quietHours: {
     enabled: boolean;
@@ -49,20 +41,21 @@ export interface CommunicationPreferences {
   };
 }
 
-@Entity("user_preferences")
+@Entity('user_preferences')
 export class UserPreferences {
-  @PrimaryGeneratedColumn("uuid")
+  @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @OneToOne(() => User, { onDelete: "CASCADE" })
-  @JoinColumn({ name: "user_id" })
+  @OneToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @Column({ name: "user_id", type: "uuid" })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId!: string;
 
   @Column({
-    type: "jsonb",
+    name: 'notification_settings',
+    type: 'jsonb',
     default: {
       email: {
         appointments: true,
@@ -86,9 +79,10 @@ export class UserPreferences {
   notificationSettings!: NotificationSettings;
 
   @Column({
-    type: "jsonb",
+    name: 'privacy_settings',
+    type: 'jsonb',
     default: {
-      profileVisibility: "public",
+      profileVisibility: 'public',
       showPhone: true,
       showAddress: false,
       showEmail: false,
@@ -98,29 +92,30 @@ export class UserPreferences {
   privacySettings!: PrivacySettings;
 
   @Column({
-    type: "jsonb",
+    name: 'communication_preferences',
+    type: 'jsonb',
     default: {
-      preferredLanguage: "en",
-      preferredContactMethod: "email",
-      timezone: "UTC",
+      preferredLanguage: 'en',
+      preferredContactMethod: 'email',
+      timezone: 'UTC',
       quietHours: {
         enabled: false,
-        startTime: "22:00",
-        endTime: "08:00",
+        startTime: '22:00',
+        endTime: '08:00',
       },
     } as CommunicationPreferences,
   })
   communicationPreferences!: CommunicationPreferences;
 
-  @Column({ type: "varchar", length: 100, nullable: true })
-  theme!: "light" | "dark" | "auto";
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  theme!: 'light' | 'dark' | 'auto';
 
-  @Column({ type: "boolean", default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }

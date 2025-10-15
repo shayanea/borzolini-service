@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 // Appointment relationship (forward declaration to avoid circular dependencies)
 import { Appointment } from '../../appointments/entities/appointment.entity';
@@ -160,7 +160,6 @@ export class User {
   @OneToOne(() => UserPreferences, (preferences) => preferences.user, {
     cascade: true,
   })
-  @JoinColumn({ name: 'preferences_id' })
   preferences!: UserPreferences;
 
   @OneToMany(() => UserActivity, (activity) => activity.user, { cascade: true })
