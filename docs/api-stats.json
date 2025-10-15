@@ -1,26 +1,33 @@
 {
-  "totalEndpoints": 112,
-  "totalControllers": 11,
+  "totalEndpoints": 210,
+  "totalControllers": 18,
   "tags": [
+    "Analytics",
+    "Appointments",
+    "Auth",
+    "Breeds",
+    "Clinics",
+    "Dashboard",
+    "FAQ",
+    "Health",
+    "Pets",
+    "Rate-limit-monitor",
+    "Reviews",
+    "Settings",
+    "Static-files",
+    "Users",
     "ai-health",
-    "appointments",
-    "auth",
-    "clinics",
+    "contact",
     "file-upload",
-    "health",
-    "pets",
-    "rate-limit-monitor",
-    "scheduled-tasks",
-    "static-files",
-    "users"
+    "social-media"
   ],
   "methods": {
-    "GET": 56,
-    "POST": 35,
-    "PUT": 4,
-    "DELETE": 9,
-    "PATCH": 8
+    "GET": 114,
+    "POST": 58,
+    "PUT": 6,
+    "DELETE": 15,
+    "PATCH": 17
   },
-  "authEndpoints": 92,
-  "publicEndpoints": 20
+  "authEndpoints": 175,
+  "publicEndpoints": 35
 }
