@@ -23,18 +23,18 @@ export class Contact {
   @Column({ type: 'varchar', length: 50, default: 'pending' })
   status!: 'pending' | 'in_progress' | 'resolved' | 'closed';
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ name: 'admin_notes', type: 'text', nullable: true })
   adminNotes?: string;
 
-  @Column({ type: 'varchar', length: 45, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress?: string;
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({ name: 'user_agent', type: 'varchar', length: 500, nullable: true })
   userAgent?: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt!: Date;
 }
