@@ -176,6 +176,79 @@ export class ClinicPetCaseService {
     };
   }
 
+  async getAllCases(filters: CaseFilters = {}, page: number = 1, limit: number = 10) {
+    const query = this.petCaseRepository
+      .createQueryBuilder('case')
+      .leftJoinAndSelect('case.pet', 'pet')
+      .leftJoinAndSelect('case.owner', 'owner')
+      .leftJoinAndSelect('case.veterinarian', 'vet')
+      .leftJoinAndSelect('case.clinic', 'clinic')
+      .where('case.is_active = :isActive', { isActive: true });
+
+    // Apply filters
+    if (filters.status && filters.status.length > 0) {
+      query.andWhere('case.status IN (:...statuses)', { statuses: filters.status });
+    }
+
+    if (filters.priority && filters.priority.length > 0) {
+      query.andWhere('case.priority IN (:...priorities)', { priorities: filters.priority });
+    }
+
+    if (filters.case_type && filters.case_type.length > 0) {
+      query.andWhere('case.case_type IN (:...caseTypes)', { caseTypes: filters.case_type });
+    }
+
+    if (filters.pet_id) {
+      query.andWhere('case.pet_id = :petId', { petId: filters.pet_id });
+    }
+
+    if (filters.owner_id) {
+      query.andWhere('case.owner_id = :ownerId', { ownerId: filters.owner_id });
+    }
+
+    if (filters.vet_id) {
+      query.andWhere('case.vet_id = :vetId', { vetId: filters.vet_id });
+    }
+
+    if (filters.is_urgent) {
+      query.andWhere('case.priority IN (:...urgentPriorities)', {
+        urgentPriorities: [CasePriority.URGENT, CasePriority.EMERGENCY],
+      });
+    }
+
+    if (filters.is_resolved) {
+      query.andWhere('case.status IN (:...resolvedStatuses)', {
+        resolvedStatuses: [CaseStatus.RESOLVED, CaseStatus.CLOSED],
+      });
+    }
+
+    if (filters.date_from) {
+      query.andWhere('case.created_at >= :dateFrom', { dateFrom: filters.date_from });
+    }
+
+    if (filters.date_to) {
+      query.andWhere('case.created_at <= :dateTo', { dateTo: filters.date_to });
+    }
+
+    // Get total count
+    const total = await query.getCount();
+
+    // Apply pagination and sorting
+    const cases = await query
+      .orderBy('case.priority', 'DESC')
+      .addOrderBy('case.created_at', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
+
+    return {
+      cases,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async getCaseById(clinicId: string, caseId: string): Promise<ClinicPetCase> {
     const petCase = await this.petCaseRepository.findOne({
       where: { id: caseId, clinic_id: clinicId, is_active: true },

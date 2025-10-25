@@ -1044,6 +1044,50 @@ export class ClinicsController {
     return await this.clinicPetCaseService.createCase(clinicId, createCaseDto, req.user.id);
   }
 
+  @Get('cases/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all pet cases across all clinics (admin only)' })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (default: 1)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Items per page (default: 10)' })
+  @ApiQuery({ name: 'status', required: false, type: String, description: 'Filter by status (comma-separated)' })
+  @ApiQuery({ name: 'priority', required: false, type: String, description: 'Filter by priority (comma-separated)' })
+  @ApiQuery({ name: 'case_type', required: false, type: String, description: 'Filter by case type (comma-separated)' })
+  @ApiQuery({ name: 'pet_id', required: false, type: String, description: 'Filter by pet ID' })
+  @ApiQuery({ name: 'owner_id', required: false, type: String, description: 'Filter by owner ID' })
+  @ApiQuery({ name: 'vet_id', required: false, type: String, description: 'Filter by veterinarian ID' })
+  @ApiQuery({ name: 'is_urgent', required: false, type: Boolean, description: 'Filter urgent cases' })
+  @ApiQuery({ name: 'is_resolved', required: false, type: Boolean, description: 'Filter resolved cases' })
+  @ApiResponse({ status: 200, description: 'All pet cases retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getAllPetCases(
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+    @Query('case_type') case_type?: string,
+    @Query('pet_id') pet_id?: string,
+    @Query('owner_id') owner_id?: string,
+    @Query('vet_id') vet_id?: string,
+    @Query('is_urgent') is_urgent?: boolean,
+    @Query('is_resolved') is_resolved?: boolean
+  ) {
+    const filters: CaseFilters = {
+      status: status ? (status.split(',') as any) : undefined,
+      priority: priority ? (priority.split(',') as any) : undefined,
+      case_type: case_type ? (case_type.split(',') as any) : undefined,
+      pet_id,
+      owner_id,
+      vet_id,
+      is_urgent,
+      is_resolved,
+    };
+
+    return await this.clinicPetCaseService.getAllCases(filters, page, limit);
+  }
+
   @Get(':id/cases')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
