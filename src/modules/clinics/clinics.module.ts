@@ -1,3 +1,5 @@
+import * as redisStore from 'cache-manager-redis-store';
+import { CacheModule } from '@nestjs/cache-manager';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '../../common/common.module';
@@ -19,7 +21,22 @@ import { ClinicPetCase } from './entities/pet-case.entity';
 import { ClinicPetCaseService } from './services/clinic-pet-case.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Clinic, ClinicStaff, ClinicService, ClinicReview, ClinicPhoto, ClinicOperatingHours, ClinicPetCase, ClinicCaseTimeline, Pet, User]), UsersModule, PetsModule, CommonModule],
+  imports: [
+    TypeOrmModule.forFeature([Clinic, ClinicStaff, ClinicService, ClinicReview, ClinicPhoto, ClinicOperatingHours, ClinicPetCase, ClinicCaseTimeline, Pet, User]),
+    UsersModule,
+    PetsModule,
+    CommonModule,
+    CacheModule.registerAsync({
+      useFactory: () => ({
+        store: redisStore,
+        host: process.env.REDIS_HOST || 'localhost',
+        port: process.env.REDIS_PORT || 6379,
+        ttl: 300, // 5 minutes default TTL
+        max: 1000, // Maximum number of items in cache
+      }),
+      isGlobal: false, // Module-scoped cache
+    }),
+  ],
   controllers: [ClinicsController],
   providers: [ClinicsService, ClinicsSeeder, ClinicPetCaseService],
   exports: [ClinicsService, ClinicsSeeder, ClinicPetCaseService],

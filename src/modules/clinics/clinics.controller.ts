@@ -1077,6 +1077,18 @@ export class ClinicsController {
     return await this.clinicPetCaseService.getAllCases(filters, page, limit);
   }
 
+  @Get('cases/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get pet cases statistics across all clinics (admin only)' })
+  @ApiResponse({ status: 200, description: 'Pet cases statistics retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  async getAllCasesStats() {
+    return await this.clinicPetCaseService.getAllCasesStats();
+  }
+
   @Post(':id/cases')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)

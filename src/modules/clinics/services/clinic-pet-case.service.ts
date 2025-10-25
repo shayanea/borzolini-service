@@ -1,5 +1,7 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Cache } from 'cache-manager';
 import { Repository } from 'typeorm';
 import { Pet } from '../../pets/entities/pet.entity';
 import { User } from '../../users/entities/user.entity';
@@ -25,6 +27,12 @@ export interface CaseFilters {
 @Injectable()
 export class ClinicPetCaseService {
   private readonly logger = new Logger(ClinicPetCaseService.name);
+  private readonly CACHE_TTL = 300; // 5 minutes
+  private readonly CACHE_KEYS = {
+    ALL_CASES_STATS: 'pet_cases:all_stats',
+    CLINIC_CASES_STATS: 'pet_cases:clinic_stats',
+    CASE_DETAILS: 'pet_cases:details',
+  };
 
   constructor(
     @InjectRepository(ClinicPetCase)
@@ -36,7 +44,9 @@ export class ClinicPetCaseService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     @InjectRepository(Clinic)
-    private readonly clinicRepository: Repository<Clinic>
+    private readonly clinicRepository: Repository<Clinic>,
+    @Inject(CACHE_MANAGER)
+    private readonly cacheManager: Cache
   ) {}
 
   async createCase(clinicId: string, createCaseDto: CreatePetCaseDto, ownerId: string): Promise<ClinicPetCase> {
@@ -100,6 +110,10 @@ export class ClinicPetCaseService {
     });
 
     this.logger.log(`Created pet case ${savedCase.case_number} for clinic ${clinicId}`);
+    
+    // Invalidate cache after creating a new case
+    await this.invalidateCaseStatsCache(clinicId);
+    
     return savedCase;
   }
 
@@ -303,6 +317,10 @@ export class ClinicPetCaseService {
     }
 
     this.logger.log(`Updated pet case ${petCase.case_number} in clinic ${clinicId}`);
+    
+    // Invalidate cache after updating a case
+    await this.invalidateCaseStatsCache(clinicId);
+    
     return updatedCase;
   }
 
@@ -333,6 +351,15 @@ export class ClinicPetCaseService {
   }
 
   async getCaseStats(clinicId: string): Promise<any> {
+    const cacheKey = `${this.CACHE_KEYS.CLINIC_CASES_STATS}:${clinicId}`;
+
+    // Try to get from cache first
+    const cachedStats = await this.cacheManager.get<any>(cacheKey);
+    if (cachedStats) {
+      this.logger.debug(`Returning cached stats for clinic ${clinicId}`);
+      return cachedStats;
+    }
+
     const query = this.petCaseRepository.createQueryBuilder('case').where('case.clinic_id = :clinicId', { clinicId }).andWhere('case.is_active = :isActive', { isActive: true });
 
     const cases = await query.getMany();
@@ -384,7 +411,118 @@ export class ClinicPetCaseService {
       stats.averageResolutionTime = Math.round(totalResolutionTime / resolvedCount / (1000 * 60 * 60 * 24)); // days
     }
 
+    // Cache the results
+    await this.cacheManager.set(cacheKey, stats, this.CACHE_TTL);
+
     return stats;
+  }
+
+  async getAllCasesStats(): Promise<any> {
+    const cacheKey = this.CACHE_KEYS.ALL_CASES_STATS;
+
+    // Try to get from cache first
+    const cachedStats = await this.cacheManager.get<any>(cacheKey);
+    if (cachedStats) {
+      this.logger.debug('Returning cached all cases stats');
+      return cachedStats;
+    }
+
+    const query = this.petCaseRepository.createQueryBuilder('case').where('case.is_active = :isActive', { isActive: true });
+
+    const cases = await query.getMany();
+
+    const stats = {
+      total: cases.length,
+      byStatus: {} as Record<CaseStatus, number>,
+      byPriority: {} as Record<CasePriority, number>,
+      byType: {} as Record<CaseType, number>,
+      urgent: 0,
+      resolved: 0,
+      open: 0,
+      averageResolutionTime: 0,
+      casesThisWeek: 0,
+      casesThisMonth: 0,
+      averageDaysOpen: 0,
+    };
+
+    // Initialize counters
+    Object.values(CaseStatus).forEach((status) => {
+      stats.byStatus[status] = 0;
+    });
+    Object.values(CasePriority).forEach((priority) => {
+      stats.byPriority[priority] = 0;
+    });
+    Object.values(CaseType).forEach((type) => {
+      stats.byType[type] = 0;
+    });
+
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    let totalResolutionTime = 0;
+    let resolvedCount = 0;
+    let totalDaysOpen = 0;
+
+    cases.forEach((case_) => {
+      stats.byStatus[case_.status]++;
+      stats.byPriority[case_.priority]++;
+      stats.byType[case_.case_type]++;
+
+      if (case_.isUrgent) {
+        stats.urgent++;
+      }
+
+      if (case_.isResolved) {
+        stats.resolved++;
+        if (case_.resolved_at) {
+          const resolutionTime = case_.resolved_at.getTime() - case_.created_at.getTime();
+          totalResolutionTime += resolutionTime;
+          resolvedCount++;
+        }
+      }
+
+      if (case_.status === CaseStatus.OPEN || case_.status === CaseStatus.IN_PROGRESS) {
+        stats.open++;
+      }
+
+      // Check if created this week/month
+      if (case_.created_at >= weekAgo) {
+        stats.casesThisWeek++;
+      }
+      if (case_.created_at >= monthAgo) {
+        stats.casesThisMonth++;
+      }
+
+      // Calculate days open for all cases
+      const daysOpen = Math.floor((now.getTime() - case_.created_at.getTime()) / (1000 * 60 * 60 * 24));
+      totalDaysOpen += daysOpen;
+    });
+
+    if (resolvedCount > 0) {
+      stats.averageResolutionTime = Math.round(totalResolutionTime / resolvedCount / (1000 * 60 * 60 * 24)); // days
+    }
+
+    if (cases.length > 0) {
+      stats.averageDaysOpen = Math.round(totalDaysOpen / cases.length);
+    }
+
+    // Cache the results
+    await this.cacheManager.set(cacheKey, stats, this.CACHE_TTL);
+
+    return stats;
+  }
+
+  // Cache invalidation methods
+  async invalidateCaseStatsCache(clinicId?: string): Promise<void> {
+    if (clinicId) {
+      const cacheKey = `${this.CACHE_KEYS.CLINIC_CASES_STATS}:${clinicId}`;
+      await this.cacheManager.del(cacheKey);
+      this.logger.debug(`Invalidated cache for clinic ${clinicId}`);
+    }
+    // Always invalidate all cases stats when any clinic is updated
+    await this.cacheManager.del(this.CACHE_KEYS.ALL_CASES_STATS);
+    this.logger.debug('Invalidated all cases stats cache');
   }
 
   private async generateCaseNumber(clinicId: string): Promise<string> {
