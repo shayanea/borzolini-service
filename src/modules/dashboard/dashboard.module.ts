@@ -6,6 +6,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { CommonModule } from '../../common/common.module';
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
+import { ClinicService } from '../clinics/entities/clinic-service.entity';
+import { ClinicReview } from '../clinics/entities/clinic-review.entity';
+import { ClinicPetCase } from '../clinics/entities/pet-case.entity';
 import { Pet } from '../pets/entities/pet.entity';
 import { User } from '../users/entities/user.entity';
 import { DashboardController } from './dashboard.controller';
@@ -13,7 +17,7 @@ import { DashboardService } from './dashboard.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Clinic, Appointment, Pet]),
+    TypeOrmModule.forFeature([User, Clinic, Appointment, Pet, ClinicStaff, ClinicService, ClinicReview, ClinicPetCase]),
     CommonModule,
     CacheModule.registerAsync({
       useFactory: () => ({

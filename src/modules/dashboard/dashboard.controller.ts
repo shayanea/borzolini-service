@@ -1,5 +1,5 @@
-import { Controller, Get, HttpCode, HttpStatus, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, HttpCode, HttpStatus, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -7,7 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
 
 import { DashboardService } from './dashboard.service';
-import { DashboardFiltersDto, DashboardStatsDto } from './dto/dashboard-stats.dto';
+import { DashboardFiltersDto, DashboardStatsDto, ClinicDashboardStatsDto } from './dto/dashboard-stats.dto';
 
 @ApiTags('Dashboard')
 @Controller('dashboard')
@@ -138,6 +138,26 @@ export class DashboardController {
     }
 
     return this.dashboardService.getDashboardCharts(filters);
+  }
+
+  @Get('clinic/:clinicId')
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF, UserRole.CLINIC_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get clinic-specific dashboard statistics',
+    description: 'Retrieve dashboard statistics for a specific clinic (Clinic Admin, Staff, Veterinarian access)',
+  })
+  @ApiParam({ name: 'clinicId', description: 'Clinic ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinic dashboard statistics retrieved successfully',
+    type: ClinicDashboardStatsDto,
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Insufficient permissions' })
+  @ApiResponse({ status: 404, description: 'Clinic not found' })
+  async getClinicDashboard(@Param('clinicId') clinicId: string): Promise<ClinicDashboardStatsDto> {
+    return this.dashboardService.getClinicDashboardStats(clinicId);
   }
 
   @Get('health')

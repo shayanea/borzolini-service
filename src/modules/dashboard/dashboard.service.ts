@@ -7,10 +7,25 @@ import { ElasticsearchService } from '../../common/elasticsearch.service';
 
 import { Appointment, AppointmentStatus } from '../appointments/entities/appointment.entity';
 import { Clinic } from '../clinics/entities/clinic.entity';
+import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
+import { ClinicService } from '../clinics/entities/clinic-service.entity';
+import { ClinicReview } from '../clinics/entities/clinic-review.entity';
+import { ClinicPetCase, CaseStatus } from '../clinics/entities/pet-case.entity';
 
 import { User, UserRole } from '../users/entities/user.entity';
 
-import { DashboardFiltersDto, DashboardStatsDto, ElasticsearchAggregationBucket, ElasticsearchHit, ElasticsearchQuery, RecentActivityItemDto, TopPerformingClinicDto } from './dto/dashboard-stats.dto';
+import {
+  DashboardFiltersDto,
+  DashboardStatsDto,
+  ElasticsearchAggregationBucket,
+  ElasticsearchHit,
+  ElasticsearchQuery,
+  RecentActivityItemDto,
+  TopPerformingClinicDto,
+  ClinicDashboardStatsDto,
+  RecentClinicActivityDto,
+  TopStaffMemberDto,
+} from './dto/dashboard-stats.dto';
 
 @Injectable()
 export class DashboardService {
@@ -32,6 +47,14 @@ export class DashboardService {
     private readonly clinicRepository: Repository<Clinic>,
     @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(ClinicStaff)
+    private readonly clinicStaffRepository: Repository<ClinicStaff>,
+    @InjectRepository(ClinicService)
+    private readonly clinicServiceRepository: Repository<ClinicService>,
+    @InjectRepository(ClinicReview)
+    private readonly clinicReviewRepository: Repository<ClinicReview>,
+    @InjectRepository(ClinicPetCase)
+    private readonly clinicPetCaseRepository: Repository<ClinicPetCase>,
 
     @Optional()
     private readonly elasticsearchService: ElasticsearchService,
@@ -592,5 +615,153 @@ export class DashboardService {
     const cacheKey = `${this.CACHE_KEYS.DASHBOARD_CHARTS}:${JSON.stringify(filters)}`;
     await this.cacheManager.del(cacheKey);
     this.logger.debug('Dashboard charts cache invalidated');
+  }
+
+  /**
+   * Get clinic-specific dashboard statistics
+   */
+  async getClinicDashboardStats(clinicId: string): Promise<ClinicDashboardStatsDto> {
+    const cacheKey = `clinic_dashboard:${clinicId}`;
+
+    // Try to get from cache first
+    const cachedStats = await this.cacheManager.get<ClinicDashboardStatsDto>(cacheKey);
+    if (cachedStats) {
+      this.logger.debug(`Returning cached clinic dashboard stats for clinic ${clinicId}`);
+      return cachedStats;
+    }
+
+    try {
+      const [
+        totalStaff,
+        totalServices,
+        totalReviews,
+        clinicRating,
+        totalAppointments,
+        appointmentsToday,
+        pendingAppointments,
+        completedAppointments,
+        cancelledAppointments,
+        avgDuration,
+        totalPetCases,
+        activePetCases,
+        resolvedPetCases,
+        recentAppointments,
+        topStaff,
+      ] = await Promise.all([
+        this.clinicStaffRepository.count({ where: { clinic_id: clinicId, is_active: true } }),
+        this.clinicServiceRepository.count({ where: { clinic_id: clinicId, is_active: true } }),
+        this.clinicReviewRepository.count({ where: { clinic_id: clinicId } }),
+        this.clinicRepository.findOne({ where: { id: clinicId }, select: ['rating'] }),
+        this.appointmentRepository.count({ where: { clinic_id: clinicId } }),
+        this.getAppointmentsToday(clinicId),
+        this.appointmentRepository.count({ where: { clinic_id: clinicId, status: AppointmentStatus.PENDING } }),
+        this.appointmentRepository.count({ where: { clinic_id: clinicId, status: AppointmentStatus.COMPLETED } }),
+        this.appointmentRepository.count({ where: { clinic_id: clinicId, status: AppointmentStatus.CANCELLED } }),
+        this.getAverageAppointmentDuration(clinicId),
+        this.clinicPetCaseRepository.count({ where: { clinic_id: clinicId } }),
+        this.clinicPetCaseRepository.count({ where: { clinic_id: clinicId, status: CaseStatus.RESOLVED } }),
+        this.clinicPetCaseRepository.count({ where: { clinic_id: clinicId, status: CaseStatus.CLOSED } }),
+        this.getRecentClinicAppointments(clinicId),
+        this.getTopStaffMembers(clinicId),
+      ]);
+
+      const stats: ClinicDashboardStatsDto = {
+        totalStaff,
+        totalServices,
+        totalReviews,
+        averageRating: clinicRating?.rating || 0,
+        totalAppointments,
+        appointmentsToday,
+        pendingAppointments,
+        completedAppointments,
+        cancelledAppointments,
+        averageAppointmentDuration: avgDuration,
+        totalPetCases,
+        activePetCases,
+        resolvedPetCases,
+        recentAppointments,
+        topStaffMembers: topStaff,
+      };
+
+      // Cache the results
+      await this.cacheManager.set(cacheKey, stats, this.CACHE_TTL);
+
+      return stats;
+    } catch (error) {
+      this.logger.error(`Error fetching clinic dashboard stats for clinic ${clinicId}:`, error);
+      throw error;
+    }
+  }
+
+  private async getAppointmentsToday(clinicId: string): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return this.appointmentRepository.count({
+      where: {
+        clinic_id: clinicId,
+        scheduled_date: Between(today, tomorrow),
+      },
+    });
+  }
+
+  private async getAverageAppointmentDuration(clinicId: string): Promise<number> {
+    const result = await this.appointmentRepository
+      .createQueryBuilder('appointment')
+      .select('AVG(appointment.duration_minutes)', 'avg_duration')
+      .where('appointment.clinic_id = :clinicId', { clinicId })
+      .andWhere('appointment.duration_minutes IS NOT NULL')
+      .andWhere('appointment.duration_minutes > 0')
+      .getRawOne();
+
+    return Math.round(result?.avg_duration || 0);
+  }
+
+  private async getRecentClinicAppointments(clinicId: string): Promise<RecentClinicActivityDto[]> {
+    const appointments = await this.appointmentRepository.find({
+      where: { clinic_id: clinicId },
+      relations: ['owner', 'pet', 'staff'],
+      order: { created_at: 'DESC' },
+      take: 10,
+    });
+
+    return appointments.map((appointment) => ({
+      id: appointment.id,
+      type: 'appointment',
+      description: `Appointment scheduled`,
+      timestamp: appointment.created_at.toISOString(),
+      petName: appointment.pet?.name || '',
+      ownerName: appointment.owner ? `${appointment.owner.firstName} ${appointment.owner.lastName}` : '',
+      staffName: appointment.staff ? `${appointment.staff.user.firstName} ${appointment.staff.user.lastName}` : '',
+    }));
+  }
+
+  private async getTopStaffMembers(clinicId: string): Promise<TopStaffMemberDto[]> {
+    const staffMembers = await this.clinicStaffRepository.find({
+      where: { clinic_id: clinicId, is_active: true },
+      relations: ['user'],
+      take: 5,
+    });
+
+    const topStaff: TopStaffMemberDto[] = [];
+
+    for (const staff of staffMembers) {
+      const appointmentCount = await this.appointmentRepository.count({
+        where: { clinic_id: clinicId, staff_id: staff.id },
+      });
+
+      topStaff.push({
+        id: staff.id,
+        userId: staff.user_id,
+        name: `${staff.user.firstName} ${staff.user.lastName}`,
+        role: staff.role,
+        totalAppointments: appointmentCount,
+        specialization: staff.specialization,
+      });
+    }
+
+    return topStaff.sort((a, b) => b.totalAppointments - a.totalAppointments);
   }
 }

@@ -431,6 +431,31 @@ export class ClinicsController {
     return await this.clinicsService.addStaff(createClinicStaffDto, req.user?.id);
   }
 
+  @Post(':clinicId/staff')
+  @UseGuards(JwtAuthGuard, ClinicAccessGuard)
+  @RequiredStaffRoles(StaffRole.ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add staff member to clinic (Clinic Admin only)' })
+  @ApiParam({ name: 'clinicId', description: 'Clinic ID' })
+  @ApiBody({ type: CreateClinicStaffDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Staff member added successfully',
+    type: ClinicStaff,
+  })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Clinic Admin role required' })
+  @ApiResponse({ status: 404, description: 'Clinic or user not found' })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflict - User already staff member',
+  })
+  async addStaffByClinicAdmin(@Param('clinicId') clinicId: string, @Body() createClinicStaffDto: CreateClinicStaffDto, @Request() req: any): Promise<ClinicStaff> {
+    createClinicStaffDto.clinic_id = clinicId;
+    return await this.clinicsService.addStaff(createClinicStaffDto, req.user?.id);
+  }
+
   @Delete(':clinicId/staff/:userId')
   @UseGuards(JwtAuthGuard, ClinicAccessGuard)
   @RequiredStaffRoles(StaffRole.ADMIN)
@@ -579,7 +604,10 @@ export class ClinicsController {
 
   // Statistics
   @Get(':id/stats')
-  @ApiOperation({ summary: 'Get clinic statistics' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF, UserRole.CLINIC_ADMIN, UserRole.PATIENT)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get clinic statistics (Authenticated users only)' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
   @ApiResponse({
     status: 200,
@@ -595,6 +623,8 @@ export class ClinicsController {
       },
     },
   })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden' })
   @ApiResponse({ status: 404, description: 'Clinic not found' })
   async getClinicStats(@Param('id') id: string) {
     return await this.clinicsService.getClinicStats(id);

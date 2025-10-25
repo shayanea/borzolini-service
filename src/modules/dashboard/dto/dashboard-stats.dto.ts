@@ -98,6 +98,96 @@ export class DashboardFiltersDto {
   clinicId?: string;
 }
 
+export class ClinicDashboardStatsDto {
+  @ApiProperty({ description: 'Total number of staff members' })
+  totalStaff!: number;
+
+  @ApiProperty({ description: 'Total number of services offered' })
+  totalServices!: number;
+
+  @ApiProperty({ description: 'Total number of reviews' })
+  totalReviews!: number;
+
+  @ApiProperty({ description: 'Average rating' })
+  averageRating!: number;
+
+  @ApiProperty({ description: 'Total appointments' })
+  totalAppointments!: number;
+
+  @ApiProperty({ description: 'Appointments scheduled for today' })
+  appointmentsToday!: number;
+
+  @ApiProperty({ description: 'Pending appointments' })
+  pendingAppointments!: number;
+
+  @ApiProperty({ description: 'Completed appointments' })
+  completedAppointments!: number;
+
+  @ApiProperty({ description: 'Cancelled appointments' })
+  cancelledAppointments!: number;
+
+  @ApiProperty({ description: 'Average appointment duration in minutes' })
+  averageAppointmentDuration!: number;
+
+  @ApiProperty({ description: 'Total pet cases' })
+  totalPetCases!: number;
+
+  @ApiProperty({ description: 'Active pet cases' })
+  activePetCases!: number;
+
+  @ApiProperty({ description: 'Resolved pet cases' })
+  resolvedPetCases!: number;
+
+  @ApiProperty({ description: 'Recent appointments' })
+  recentAppointments!: RecentClinicActivityDto[];
+
+  @ApiProperty({ description: 'Top performing staff members' })
+  topStaffMembers!: TopStaffMemberDto[];
+}
+
+export class RecentClinicActivityDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiProperty()
+  description!: string;
+
+  @ApiProperty()
+  timestamp!: string;
+
+  @ApiProperty({ required: false })
+  petName?: string | '';
+
+  @ApiProperty({ required: false })
+  ownerName?: string | '';
+
+  @ApiProperty({ required: false })
+  staffName?: string | '';
+}
+
+export class TopStaffMemberDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  userId!: string;
+
+  @ApiProperty()
+  name!: string;
+
+  @ApiProperty()
+  role!: string;
+
+  @ApiProperty()
+  totalAppointments!: number;
+
+  @ApiProperty()
+  specialization?: string;
+}
+
 // Elasticsearch interfaces (matching SearchQuery from ElasticsearchService)
 export interface ElasticsearchQuery {
   index: string;
