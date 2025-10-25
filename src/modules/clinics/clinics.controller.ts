@@ -1032,18 +1032,7 @@ export class ClinicsController {
     await this.exportService.exportData(transformedData, 'excel', 'clinics', res);
   }
 
-  // Pet Case Management Endpoints
-  @Post(':id/cases')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create a new pet case for clinic' })
-  @ApiParam({ name: 'id', description: 'Clinic ID' })
-  @ApiResponse({ status: 201, description: 'Pet case created successfully' })
-  async createPetCase(@Param('id') clinicId: string, @Body() createCaseDto: CreatePetCaseDto, @Request() req: any) {
-    return await this.clinicPetCaseService.createCase(clinicId, createCaseDto, req.user.id);
-  }
-
+  // Pet Case Management Endpoints - All Cases Endpoint (must be before dynamic routes)
   @Get('cases/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -1086,6 +1075,17 @@ export class ClinicsController {
     };
 
     return await this.clinicPetCaseService.getAllCases(filters, page, limit);
+  }
+
+  @Post(':id/cases')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new pet case for clinic' })
+  @ApiParam({ name: 'id', description: 'Clinic ID' })
+  @ApiResponse({ status: 201, description: 'Pet case created successfully' })
+  async createPetCase(@Param('id') clinicId: string, @Body() createCaseDto: CreatePetCaseDto, @Request() req: any) {
+    return await this.clinicPetCaseService.createCase(clinicId, createCaseDto, req.user.id);
   }
 
   @Get(':id/cases')
