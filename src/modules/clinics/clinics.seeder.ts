@@ -116,7 +116,8 @@ export class ClinicsSeeder {
       this.logger.log('Creating sample clinics...');
       const clinics = await this.createSampleClinics(requiredUsers);
 
-      // Create sample staff, services, photos, operating hours, and pet cases for each clinic
+      // Create sample staff, services, photos, operating hours for each clinic
+      // Note: Pet cases are created separately after pets are seeded
       for (const clinic of clinics) {
         this.logger.log(`Setting up clinic: ${clinic.name}`);
 
@@ -124,10 +125,10 @@ export class ClinicsSeeder {
         await this.createSampleServices(clinic.id);
         await this.createSamplePhotos(clinic.id);
         await this.createSampleOperatingHours(clinic.id);
-        await this.createSamplePetCases(clinic.id, requiredUsers);
       }
 
       this.logger.log(`✅ Clinics seeding completed! Created ${clinics.length} clinics`);
+      this.logger.log('📝 Note: Pet cases will be created after pets are seeded');
     } catch (error) {
       this.logger.error('❌ Error seeding clinics:', error instanceof Error ? error.message : String(error));
       throw error;
@@ -842,6 +843,34 @@ export class ClinicsSeeder {
         this.logger.error(`Failed to create operating hours for ${day} for clinic ${clinicId}:`, error);
         throw error;
       }
+    }
+  }
+
+  async seedPetCases(): Promise<void> {
+    try {
+      // Get all clinics and required users
+      const requiredUsers = await this.validateRequiredUsers();
+      if (!requiredUsers) {
+        throw new Error('Required users not found. Please run users seeder first.');
+      }
+
+      const clinics = await this.clinicRepository.find({ where: { is_active: true } });
+      
+      if (clinics.length === 0) {
+        this.logger.warn('No clinics found for creating pet cases');
+        return;
+      }
+
+      this.logger.log('Creating pet cases for all clinics...');
+      
+      for (const clinic of clinics) {
+        await this.createSamplePetCases(clinic.id, requiredUsers);
+      }
+
+      this.logger.log(`✅ Pet cases seeding completed for ${clinics.length} clinics`);
+    } catch (error) {
+      this.logger.error('❌ Error seeding pet cases:', error instanceof Error ? error.message : String(error));
+      throw error;
     }
   }
 

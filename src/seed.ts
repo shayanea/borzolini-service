@@ -45,6 +45,9 @@ async function seed() {
     console.log('🐕 Seeding pets...');
     await petsSeeder.seed();
 
+    console.log('📋 Seeding pet cases...');
+    await clinicsSeeder.seedPetCases();
+
     console.log('📅 Seeding appointments...');
     await appointmentsSeeder.seed();
 
