@@ -1,15 +1,15 @@
-import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 // Appointment relationship (forward declaration to avoid circular dependencies)
 import { Appointment } from '../../appointments/entities/appointment.entity';
-import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
+import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { Clinic } from '../../clinics/entities/clinic.entity';
+import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
+import { ClinicReview } from '../../clinics/entities/clinic-review.entity';
 // Clinic relationships (forward declarations to avoid circular dependencies)
 import { ClinicStaff } from '../../clinics/entities/clinic-staff.entity';
-import { ClinicPetCase } from '../../clinics/entities/pet-case.entity';
 // Pet relationship (forward declaration to avoid circular dependencies)
 import { Pet } from '../../pets/entities/pet.entity';
-import { AppointmentReview } from '../../reviews/entities/appointment-review.entity';
 import { UserActivity } from './user-activity.entity';
 import { UserPreferences } from './user-preferences.entity';
 
@@ -151,6 +151,9 @@ export class User {
   @Column({ name: 'account_status', default: 'active' })
   accountStatus!: string;
 
+  @Column({ name: 'clinic_id', type: 'uuid', nullable: true })
+  clinic_id?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
@@ -166,6 +169,10 @@ export class User {
   activities!: UserActivity[];
 
   // Clinic relationships
+  @ManyToOne(() => Clinic, { nullable: true })
+  @JoinColumn({ name: 'clinic_id' })
+  clinic?: Clinic;
+
   @OneToMany(() => Clinic, (clinic) => clinic.owner)
   owned_clinics!: Clinic[];
 

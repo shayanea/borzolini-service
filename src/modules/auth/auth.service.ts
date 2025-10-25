@@ -307,6 +307,9 @@ export class AuthService implements OnModuleInit {
       email: user.email,
       sub: user.id,
       role: user.role,
+      clinic_id: user?.clinic_id,
+      firstName: user?.firstName,
+      lastName: user?.lastName,
     };
 
     const jwtSecret = this.configService.get<string>('JWT_SECRET');

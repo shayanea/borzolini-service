@@ -11,6 +11,7 @@ interface JwtUser {
   id: string;
   email: string;
   role: string;
+  clinic_id?: string;
   firstName: string;
   lastName: string;
 }
@@ -359,12 +360,49 @@ export class AuthController {
         id: user.id,
         email: user.email,
         role: user.role,
+        clinic_id: user.clinic_id,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
         profileCompletionPercentage: user.profileCompletionPercentage,
         accountStatus: user.accountStatus,
       },
       lastLoginAt: user.lastLoginAt,
+    };
+  }
+
+  @Get('me/clinic-context')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get current user clinic context',
+    description: 'Returns the clinic context for the authenticated user, including tenant type and clinic information',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Clinic context retrieved successfully',
+    schema: {
+      example: {
+        tenantType: 'clinic_scoped',
+        clinic_id: 'uuid-string',
+        role: 'clinic_admin',
+        permissions: ['manage_staff', 'view_appointments'],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getClinicContext(@Request() req: AuthenticatedRequest) {
+    const user = await this.authService.getProfile(req.user.id);
+
+    // Determine tenant type based on role
+    const tenantType = user.role === 'admin' ? 'super_admin' : 'clinic_scoped';
+
+    return {
+      tenantType,
+      clinic_id: user.clinic_id,
+      role: user.role,
+      // Include any additional permissions or context
+      isClinicAdmin: user.role === 'clinic_admin',
+      isSuperAdmin: user.role === 'admin',
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, ForbiddenException, Get, HttpCode, HttpStatus, NotFoundException, Param, Patch, Post, Put, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
@@ -230,6 +230,29 @@ export class ClinicsController {
     };
 
     return await this.clinicsService.searchClinics(query, options);
+  }
+
+  @Get('my-clinic')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get current user clinic',
+    description: 'Retrieve the clinic assigned to the authenticated user. Only clinic-scoped users can access this endpoint.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User clinic retrieved successfully',
+    type: Clinic,
+  })
+  @ApiResponse({ status: 404, description: 'User not assigned to any clinic' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Clinic-scoped role required' })
+  async getMyClinic(@Request() req: any): Promise<Clinic> {
+    if (!req.user.clinic_id) {
+      throw new NotFoundException('User is not assigned to any clinic');
+    }
+    return await this.clinicsService.findOne(req.user.clinic_id);
   }
 
   @Get(':id')
