@@ -15,6 +15,7 @@ export interface PetFilters {
   is_vaccinated?: boolean | undefined;
   search?: string | undefined;
   owner_id?: string | undefined;
+  clinic_id?: string | undefined;
 }
 
 export interface PetStats {
@@ -84,8 +85,25 @@ export class PetsService {
     const allowedSortColumns = ['created_at', 'updated_at', 'name', 'species', 'gender', 'size', 'date_of_birth', 'weight', 'is_spayed_neutered', 'is_vaccinated'];
     const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
 
-    // Build count query
-    let countQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner').where(where);
+    // Build count query with clinic filtering if needed
+    let countQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner');
+    
+    // Apply clinic_id filter if provided - show only pets with appointments at that clinic
+    if (filters?.clinic_id) {
+      countQuery = countQuery
+        .innerJoin('appointments', 'appt', 'appt.pet_id = pet.id AND appt.clinic_id = :clinicId', { clinicId: filters.clinic_id })
+        .andWhere('pet.is_active = :isActive', { isActive: true });
+    } else {
+      countQuery = countQuery.where(where);
+    }
+
+    // Apply other filters
+    if (filters?.species && !filters?.clinic_id) where.species = filters.species;
+    if (filters?.gender && !filters?.clinic_id) where.gender = filters.gender;
+    if (filters?.size && !filters?.clinic_id) where.size = filters.size;
+    if (filters?.is_spayed_neutered !== undefined && !filters?.clinic_id) where.is_spayed_neutered = filters.is_spayed_neutered;
+    if (filters?.is_vaccinated !== undefined && !filters?.clinic_id) where.is_vaccinated = filters.is_vaccinated;
+    if (filters?.owner_id && !filters?.clinic_id) where.owner_id = filters.owner_id;
 
     // Apply search filter to count query
     if (filters?.search) {
@@ -95,8 +113,17 @@ export class PetsService {
     // Get total count
     const total = await countQuery.getCount();
 
-    // Build data query (separate from count query)
-    let dataQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner').where(where);
+    // Build data query with clinic filtering if needed
+    let dataQuery = this.petRepository.createQueryBuilder('pet').leftJoinAndSelect('pet.owner', 'owner');
+    
+    // Apply clinic_id filter if provided
+    if (filters?.clinic_id) {
+      dataQuery = dataQuery
+        .innerJoin('appointments', 'appt', 'appt.pet_id = pet.id AND appt.clinic_id = :clinicId', { clinicId: filters.clinic_id })
+        .andWhere('pet.is_active = :isActive', { isActive: true });
+    } else {
+      dataQuery = dataQuery.where(where);
+    }
 
     // Apply search filter to data query
     if (filters?.search) {
@@ -187,8 +214,16 @@ export class PetsService {
     this.logger.log(`Hard deleted pet ${id}`);
   }
 
-  async getPetStats(): Promise<PetStats> {
-    const pets = await this.petRepository.find({ where: { is_active: true } });
+  async getPetStats(clinicId?: string): Promise<PetStats> {
+    let query = this.petRepository.createQueryBuilder('pet').where('pet.is_active = :isActive', { isActive: true });
+    
+    // If clinic_id provided, filter pets by appointments at that clinic
+    if (clinicId) {
+      query = query
+        .innerJoin('appointments', 'appt', 'appt.pet_id = pet.id AND appt.clinic_id = :clinicId', { clinicId });
+    }
+    
+    const pets = await query.getMany();
 
     const stats: PetStats = {
       total: pets.length,

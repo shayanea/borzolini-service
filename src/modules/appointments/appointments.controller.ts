@@ -159,6 +159,13 @@ export class AppointmentsController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'ASC' | 'DESC'
   ) {
+    // Multi-tenancy: clinic_admin, staff, and vets can only see their own clinic's appointments
+    // Only ADMIN can see all clinics
+    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
+      // Force clinic_id to user's clinic for clinic_admin, staff, and vets
+      clinic_id = req.user.clinic_id;
+    }
+
     // Only allow admins to filter by owner_id
     if (owner_id && req.user.role !== UserRole.ADMIN) {
       owner_id = req.user.id; // Force to current user's appointments
@@ -273,7 +280,12 @@ export class AppointmentsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  async getAppointmentStats(): Promise<AppointmentStats> {
+  async getAppointmentStats(@Request() req: any): Promise<AppointmentStats> {
+    // Multi-tenancy: clinic_admin, staff, and vets only see their clinic's stats
+    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
+      return this.appointmentsService.getAppointmentStats(req.user.clinic_id);
+    }
+    // ADMIN can see all stats
     return this.appointmentsService.getAppointmentStats();
   }
 

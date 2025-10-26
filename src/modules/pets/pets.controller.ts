@@ -142,8 +142,12 @@ export class PetsController {
       is_spayed_neutered,
       is_vaccinated,
       search,
-      // Only filter by owner_id if explicitly provided or if user is not admin
+      // Multi-tenancy: For clinic_admin, staff, and vets, only show pets with appointments at their clinic
+      // Only admin can see all pets
       owner_id: owner_id || (req.user.role !== UserRole.ADMIN ? req.user.id : undefined),
+      clinic_id: (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) 
+        ? req.user.clinic_id 
+        : undefined,
     };
 
     return this.petsService.findAll(filters, page, limit, sortBy, sortOrder);
@@ -186,7 +190,12 @@ export class PetsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  async getPetStats(): Promise<PetStats> {
+  async getPetStats(@Request() req: any): Promise<PetStats> {
+    // Multi-tenancy: clinic_admin, staff, and vets only see their clinic's pet stats
+    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
+      return this.petsService.getPetStats(req.user.clinic_id);
+    }
+    // ADMIN can see all stats
     return this.petsService.getPetStats();
   }
 

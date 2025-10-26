@@ -144,6 +144,7 @@ export class ClinicsController {
     },
   })
   async findAll(
+    @Request() req: any,
     @Query('name') name?: string,
     @Query('city') city?: string,
     @Query('state') state?: string,
@@ -158,6 +159,13 @@ export class ClinicsController {
     @Query('sort_by') sortBy?: string,
     @Query('sort_order') sortOrder?: 'ASC' | 'DESC'
   ) {
+    // Multi-tenancy: clinic_admin, staff, and vets can only see their own clinic
+    // Only ADMIN can see all clinics
+    let clinicId: string | undefined;
+    if (req.user.role === 'clinic_admin' || req.user.role === 'veterinarian' || req.user.role === 'staff') {
+      clinicId = req.user.clinic_id;
+    }
+
     const filters: ClinicFilters = {
       ...(name && { name }),
       ...(city && { city }),
@@ -168,6 +176,7 @@ export class ClinicsController {
       ...(specializations && { specializations: specializations.split(',') }),
       ...(ratingMin !== undefined && { rating_min: ratingMin }),
       ...(ratingMax !== undefined && { rating_max: ratingMax }),
+      ...(clinicId && { clinic_id: clinicId }),
     };
 
     const options: ClinicSearchOptions = {

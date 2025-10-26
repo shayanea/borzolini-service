@@ -25,6 +25,7 @@ export interface ClinicFilters {
   specializations?: string[];
   rating_min?: number;
   rating_max?: number;
+  clinic_id?: string;
 }
 
 export interface ClinicSearchOptions {
@@ -156,12 +157,13 @@ export class ClinicsService implements OnModuleInit {
     try {
       this.logger.log(`Finding clinics with filters: ${JSON.stringify(filters)}, options: ${JSON.stringify(options)}`);
 
-      // Test basic repository functionality
-      const totalCount = await this.clinicRepository.count();
-      this.logger.log(`Total clinics in database: ${totalCount}`);
-
       // Try a simple query first without joins to debug
       const queryBuilder = this.clinicRepository.createQueryBuilder('clinic');
+
+      // Apply clinic_id filter for multi-tenancy
+      if (filters.clinic_id) {
+        queryBuilder.where('clinic.id = :clinicId', { clinicId: filters.clinic_id });
+      }
 
       // Apply sorting
       queryBuilder.orderBy(`clinic.${sortBy}`, sortOrder);

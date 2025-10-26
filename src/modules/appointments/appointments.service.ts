@@ -395,9 +395,17 @@ export class AppointmentsService {
     this.logger.log(`Cancelled appointment ${id}`);
   }
 
-  async getAppointmentStats(): Promise<AppointmentStats> {
-    // Use query builder for better performance
-    const appointments = await this.appointmentRepository.createQueryBuilder('appointment').select(['appointment.status', 'appointment.appointment_type', 'appointment.is_telemedicine', 'appointment.duration_minutes']).getMany();
+  async getAppointmentStats(clinicId?: string): Promise<AppointmentStats> {
+    // Use query builder for better performance with optional clinic filtering
+    let queryBuilder = this.appointmentRepository.createQueryBuilder('appointment')
+      .select(['appointment.status', 'appointment.appointment_type', 'appointment.is_telemedicine', 'appointment.duration_minutes']);
+    
+    // Filter by clinic if clinicId provided
+    if (clinicId) {
+      queryBuilder = queryBuilder.where('appointment.clinic_id = :clinicId', { clinicId });
+    }
+    
+    const appointments = await queryBuilder.getMany();
 
     const stats: AppointmentStats = {
       total: appointments.length,
