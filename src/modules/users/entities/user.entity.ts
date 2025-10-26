@@ -109,13 +109,13 @@ export class User {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'refresh_token', nullable: true })
+  @Column({ name: 'refresh_token', type: 'text', nullable: true })
   refreshToken?: string;
 
   @Column({ name: 'refresh_token_expires_at', nullable: true })
   refreshTokenExpiresAt?: Date;
 
-  @Column({ name: 'email_verification_token', nullable: true })
+  @Column({ name: 'email_verification_token', type: 'text', nullable: true })
   emailVerificationToken?: string;
 
   @Column({ name: 'email_verification_expires_at', nullable: true })
@@ -127,7 +127,7 @@ export class User {
   @Column({ name: 'phone_verification_expires_at', nullable: true })
   phoneVerificationExpiresAt?: Date;
 
-  @Column({ name: 'password_reset_token', nullable: true })
+  @Column({ name: 'password_reset_token', type: 'text', nullable: true })
   passwordResetToken?: string;
 
   @Column({ name: 'password_reset_expires_at', nullable: true })
