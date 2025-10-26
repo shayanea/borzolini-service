@@ -333,7 +333,7 @@ export class ClinicsController {
   // Staff Management
   @Get(':id/staff')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'List staff members for a clinic',
@@ -632,7 +632,7 @@ export class ClinicsController {
 
   @Get('with-appointments-pets-staff')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get clinics with appointments, pets, and staff',
@@ -905,7 +905,7 @@ export class ClinicsController {
   // Export endpoints
   @Get('export/csv')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Export clinics to CSV' })
   @ApiQuery({
@@ -996,7 +996,7 @@ export class ClinicsController {
 
   @Get('export/excel')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Export clinics to Excel' })
   @ApiQuery({
@@ -1144,7 +1144,7 @@ export class ClinicsController {
 
   @Post(':id/cases')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new pet case for clinic' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1155,7 +1155,7 @@ export class ClinicsController {
 
   @Get(':id/cases')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get pet cases for clinic' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1189,7 +1189,7 @@ export class ClinicsController {
 
   @Get(':id/cases/stats')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get case statistics for clinic' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1200,7 +1200,7 @@ export class ClinicsController {
 
   @Get(':id/cases/:caseId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get pet case by ID' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1212,7 +1212,7 @@ export class ClinicsController {
 
   @Put(':id/cases/:caseId')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update pet case' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1224,7 +1224,7 @@ export class ClinicsController {
 
   @Get(':id/cases/:caseId/timeline')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get case timeline' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
@@ -1236,7 +1236,7 @@ export class ClinicsController {
 
   @Post(':id/cases/:caseId/timeline')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add timeline event to case' })
   @ApiParam({ name: 'id', description: 'Clinic ID' })

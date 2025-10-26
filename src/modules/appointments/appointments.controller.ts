@@ -46,7 +46,7 @@ export class AppointmentsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Get all appointments',
     description: 'Retrieve all appointments with optional filtering and pagination',
@@ -233,7 +233,7 @@ export class AppointmentsController {
     type: String,
     description: 'Filter by specific date (ISO string)',
   })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async findByClinic(@Param('clinicId') clinicId: string, @Query('date') date?: string): Promise<Appointment[]> {
     const filterDate = date ? new Date(date) : undefined;
     return this.appointmentsService.findByClinic(clinicId, filterDate);
@@ -256,7 +256,7 @@ export class AppointmentsController {
     type: String,
     description: 'Filter by specific date (ISO string)',
   })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async findByStaff(@Param('staffId') staffId: string, @Query('date') date?: string): Promise<Appointment[]> {
     const filterDate = date ? new Date(date) : undefined;
     return this.appointmentsService.findByStaff(staffId, filterDate);
@@ -272,7 +272,7 @@ export class AppointmentsController {
     description: 'Appointment statistics retrieved successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async getAppointmentStats(): Promise<AppointmentStats> {
     return this.appointmentsService.getAppointmentStats();
   }
@@ -494,7 +494,7 @@ export class AppointmentsController {
 
   // Export endpoints
   @Get('export/csv')
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Export appointments to CSV',
     description: 'Export all appointments to CSV format with optional filtering',
@@ -630,7 +630,7 @@ export class AppointmentsController {
   }
 
   @Get('export/excel')
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Export appointments to Excel',
     description: 'Export all appointments to Excel format with optional filtering',

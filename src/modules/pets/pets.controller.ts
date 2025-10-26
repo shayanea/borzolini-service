@@ -170,7 +170,7 @@ export class PetsController {
   @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiParam({ name: 'userId', description: 'User ID to fetch pets for' })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async findPetsByUserId(@Param('userId', ParseUUIDPipe) userId: string): Promise<Pet[]> {
     return this.petsService.findByOwner(userId);
   }
@@ -185,7 +185,7 @@ export class PetsController {
     description: 'Pet statistics retrieved successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async getPetStats(): Promise<PetStats> {
     return this.petsService.getPetStats();
   }
@@ -219,7 +219,7 @@ export class PetsController {
     description: 'Pets needing vaccination retrieved successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async getPetsNeedingVaccination(): Promise<Pet[]> {
     return this.petsService.getPetsNeedingVaccination();
   }
@@ -234,7 +234,7 @@ export class PetsController {
     description: 'Pets needing spay/neuter retrieved successfully',
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   async getPetsNeedingSpayNeuter(): Promise<Pet[]> {
     return this.petsService.getPetsNeedingSpayNeuter();
   }
@@ -350,7 +350,7 @@ export class PetsController {
 
   // Export endpoints
   @Get('export/csv')
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Export pets to CSV',
     description: 'Export all pets to CSV format with optional filtering',
@@ -459,7 +459,7 @@ export class PetsController {
   }
 
   @Get('export/excel')
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
   @ApiOperation({
     summary: 'Export pets to Excel',
     description: 'Export all pets to Excel format with optional filtering',
