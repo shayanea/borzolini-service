@@ -105,6 +105,86 @@ export class UsersListResponseDto {
   timestamp!: string;
 }
 
+export class EnrichedUserListItemDto {
+  @ApiProperty()
+  id!: string;
+  @ApiProperty()
+  email!: string;
+  @ApiProperty({ required: false })
+  firstName?: string;
+  @ApiProperty({ required: false })
+  lastName?: string;
+  @ApiProperty()
+  role!: string;
+  @ApiProperty({ required: false })
+  isActive?: boolean;
+  @ApiProperty({ required: false })
+  isEmailVerified?: boolean;
+  @ApiProperty({ required: false })
+  isPhoneVerified?: boolean;
+  @ApiProperty({ required: false })
+  phone?: string;
+  @ApiProperty({ required: false })
+  address?: string;
+  @ApiProperty({ required: false })
+  city?: string;
+  @ApiProperty({ required: false })
+  country?: string;
+  @ApiProperty({ required: false, type: Number })
+  profileCompletionPercentage?: number;
+  @ApiProperty({ required: false })
+  lastLoginAt?: string | Date;
+  @ApiProperty({ required: false })
+  createdAt?: string | Date;
+  @ApiProperty({ required: false })
+  updatedAt?: string | Date;
+  @ApiProperty({ required: false })
+  clinic_id?: string;
+}
+
+export class EnrichedUsersListResponseDto {
+  @ApiProperty({
+    type: [EnrichedUserListItemDto],
+    example: [
+      {
+        id: '2c30ed97-8fec-4f6c-a99e-e9e7d8b94817',
+        email: 'admin@borzolini.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        role: 'admin',
+        isActive: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        phone: '+1-555-0100',
+        address: '123 Admin Street',
+        city: 'New York',
+        country: 'USA',
+        profileCompletionPercentage: 100,
+        lastLoginAt: '2024-01-15T10:30:00.000Z',
+        createdAt: '2024-01-01T00:00:00.000Z',
+        updatedAt: '2024-01-15T10:30:00.000Z',
+        clinic_id: 'dc4a1f3d-0e27-498e-824e-3a8c5a45ceaf',
+      },
+    ],
+  })
+  data!: EnrichedUserListItemDto[];
+
+  @ApiProperty({ example: 150 })
+  total!: number;
+
+  @ApiProperty({ example: 1 })
+  page!: number;
+
+  @ApiProperty({ example: 15 })
+  totalPages!: number;
+
+  @ApiProperty({ example: 'Users retrieved successfully' })
+  message!: string;
+
+  @ApiProperty({ example: '2024-01-15T10:30:00.000Z' })
+  timestamp!: string;
+}
+
 export class UserProfileCompletionResponseDto {
   @ApiProperty({
     description: 'Profile completion data',

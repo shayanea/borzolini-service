@@ -10,7 +10,7 @@ import { FindUsersDto } from './dto/find-users.dto';
 import { RequestPhoneVerificationDto, ResendPhoneVerificationDto, VerifyPhoneDto } from './dto/phone-verification.dto';
 import { SaveConsentDto } from './dto/save-consent.dto';
 import { UpdateUserPreferencesDto } from './dto/user-preferences.dto';
-import { AdminDashboardActivityResponseDto, PhoneVerificationStatusResponseDto, UserResponseDto, UsersListResponseDto } from './dto/user-response.dto';
+import { AdminDashboardActivityResponseDto, PhoneVerificationStatusResponseDto, UserResponseDto, EnrichedUsersListResponseDto } from './dto/user-response.dto';
 import { UserRole } from './entities/user.entity';
 import { UsersResponseService } from './users-response.service';
 import { UsersService } from './users.service';
@@ -96,10 +96,11 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF, UserRole.CLINIC_ADMIN)
   @ApiOperation({
     summary: 'Get users with filtering, pagination, and sorting',
-    description: 'Retrieves a paginated list of users with optional filtering and sorting. Admin users can see all users, while Staff and Veterinarians can only see their own people and patients.',
+    description:
+      'Retrieves a paginated list of users with optional filtering and sorting. Admin users can see all users, while Clinic Admins can see users from their clinic. Staff and Veterinarians can only see their own people and patients.',
   })
   @ApiQuery({
     name: 'page',
@@ -136,7 +137,7 @@ export class UsersController {
   @ApiResponse({
     status: 200,
     description: 'Users retrieved successfully',
-    type: UsersListResponseDto,
+    type: EnrichedUsersListResponseDto,
   })
   @ApiResponse({
     status: 401,
@@ -163,14 +164,43 @@ export class UsersController {
     },
   })
   async findAll(@Request() req: AuthenticatedRequest, @Query() query: FindUsersDto) {
-    // Pass the current user's role and query parameters to filter results appropriately
-    return this.usersService.findAll(req.user.role as UserRole, query);
+    const result = await this.usersService.findAll(req.user.role as UserRole, query, req.user.id);
+
+    const items = result.users.map((u: any) => ({
+      id: u.id,
+      email: u.email,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      role: u.role,
+      isActive: (u as any).isActive,
+      isEmailVerified: (u as any).isEmailVerified,
+      isPhoneVerified: (u as any).isPhoneVerified,
+      phone: (u as any).phone,
+      address: (u as any).address,
+      city: (u as any).city,
+      country: (u as any).country,
+      profileCompletionPercentage: (u as any).profileCompletionPercentage,
+      lastLoginAt: (u as any).lastLoginAt,
+      createdAt: u.createdAt,
+      updatedAt: u.updatedAt,
+      clinic_id: (u as any).clinic_id,
+    }));
+
+    return {
+      data: items,
+      total: result.total,
+      page: result.page,
+      totalPages: result.totalPages,
+      message: 'Users retrieved successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Get(':id')
   @ApiOperation({
     summary: 'Get user by ID',
-    description: 'Retrieves a specific user by their ID. Role-based access control applies: Admin can view any user, Staff/Vets can only view own people and patients, Patients can only view themselves.',
+    description:
+      'Retrieves a specific user by their ID. Role-based access control applies: Admin can view any user, Clinic Admin can view users from their clinic, Staff/Vets can only view own people and patients, Patients can only view themselves.',
   })
   @ApiParam({
     name: 'id',
@@ -226,6 +256,19 @@ export class UsersController {
       return this.usersService.findOne(id);
     }
 
+    // Clinic Admin can view users from their clinic
+    if (currentUserRole === UserRole.CLINIC_ADMIN) {
+      const currentUser = await this.usersService.findOne(req.user.id);
+      const targetUser = await this.usersService.findOne(id);
+
+      // Check if target user belongs to the same clinic
+      if (!targetUser.clinic_id || targetUser.clinic_id !== currentUser.clinic_id) {
+        throw new ForbiddenException('You can only view users from your own clinic');
+      }
+
+      return targetUser;
+    }
+
     // Patients can only view their own profile
     if (currentUserRole === UserRole.PATIENT) {
       if (req.user.id !== id) {
@@ -252,7 +295,7 @@ export class UsersController {
   }
 
   @Put(':id')
-  @ApiOperation({ summary: 'Update user (Role-based access: Admin can update any user, Staff/Vets can only update own people and patients, Patients can only update themselves)' })
+  @ApiOperation({ summary: 'Update user (Role-based access: Admin can update any user, Clinic Admin can update users from their clinic, Staff/Vets can only update own people and patients, Patients can only update themselves)' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -263,6 +306,24 @@ export class UsersController {
 
     // Admin can update any user
     if (currentUserRole === UserRole.ADMIN) {
+      return this.usersService.update(id, updateUserDto, currentUserRole);
+    }
+
+    // Clinic Admin can update users from their clinic
+    if (currentUserRole === UserRole.CLINIC_ADMIN) {
+      const targetUser = await this.usersService.findOne(id);
+      const currentUser = await this.usersService.findOne(req.user.id);
+
+      // Check if target user belongs to the same clinic
+      if (!targetUser.clinic_id || targetUser.clinic_id !== currentUser.clinic_id) {
+        throw new ForbiddenException('You can only update users from your own clinic');
+      }
+
+      // Clinic Admin cannot update other clinic admins or admins
+      if (targetUser.role === UserRole.CLINIC_ADMIN || targetUser.role === UserRole.ADMIN) {
+        throw new ForbiddenException('You cannot update users with admin or clinic admin role');
+      }
+
       return this.usersService.update(id, updateUserDto, currentUserRole);
     }
 
@@ -296,25 +357,43 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Delete user (Admin only)' })
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
+  @ApiOperation({ summary: 'Delete user (Admin and Clinic Admin only)' })
   @ApiResponse({ status: 200, description: 'User deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin or Clinic Admin access required' })
   @ApiParam({ name: 'id', description: 'User ID' })
   async remove(@Param('id') id: string, @Request() req: AuthenticatedRequest) {
-    // Prevent admin from deleting themselves
+    const currentUserRole = req.user.role as UserRole;
+
+    // Prevent user from deleting themselves
     if (req.user.id === id) {
       throw new ForbiddenException('You cannot delete your own account');
+    }
+
+    // Clinic Admin can only delete users from their clinic
+    if (currentUserRole === UserRole.CLINIC_ADMIN) {
+      const targetUser = await this.usersService.findOne(id);
+      const currentUser = await this.usersService.findOne(req.user.id);
+
+      // Check if target user belongs to the same clinic
+      if (!targetUser.clinic_id || targetUser.clinic_id !== currentUser.clinic_id) {
+        throw new ForbiddenException('You can only delete users from your own clinic');
+      }
+
+      // Clinic Admin cannot delete other clinic admins or admins
+      if (targetUser.role === UserRole.CLINIC_ADMIN || targetUser.role === UserRole.ADMIN) {
+        throw new ForbiddenException('You cannot delete users with admin or clinic admin role');
+      }
     }
 
     return this.usersService.remove(id);
   }
 
   @Get('search/email')
-  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({ summary: 'Search user by email (Role-based access: Admin can search any user, Staff/Vets can only search own people and patients)' })
+  @Roles(UserRole.ADMIN, UserRole.VETERINARIAN, UserRole.STAFF, UserRole.CLINIC_ADMIN)
+  @ApiOperation({ summary: 'Search user by email (Role-based access: Admin can search any user, Clinic Admin can search users from their clinic, Staff/Vets can only search own people and patients)' })
   @ApiQuery({ name: 'email', description: 'Email to search for' })
   @ApiResponse({ status: 200, description: 'User found' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -330,6 +409,18 @@ export class UsersController {
 
     // Admin can search any user
     if (currentUserRole === UserRole.ADMIN) {
+      return targetUser;
+    }
+
+    // Clinic Admin can search users from their clinic
+    if (currentUserRole === UserRole.CLINIC_ADMIN) {
+      const currentUser = await this.usersService.findOne(req.user.id);
+
+      // Check if target user belongs to the same clinic
+      if (!targetUser.clinic_id || targetUser.clinic_id !== currentUser.clinic_id) {
+        throw new ForbiddenException('You can only search users from your own clinic');
+      }
+
       return targetUser;
     }
 
@@ -631,10 +722,10 @@ export class UsersController {
   }
 
   @Get('admin/dashboard/activities')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
   @ApiOperation({
-    summary: 'Get admin dashboard activities (Admin only)',
-    description: 'Retrieves the latest system activities for admin dashboard. Includes user activities, activity counts, and summary statistics.',
+    summary: 'Get admin dashboard activities (Admin and Clinic Admin only)',
+    description: 'Retrieves the latest system activities for admin dashboard. Includes user activities, activity counts, and summary statistics. Clinic Admins see only activities from their clinic.',
   })
   @ApiQuery({
     name: 'limit',
@@ -683,10 +774,10 @@ export class UsersController {
 
   // Export endpoints
   @Get('export/csv')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
   @ApiOperation({
-    summary: 'Export users to CSV (Admin only)',
-    description: 'Exports all users to CSV format with optional filtering',
+    summary: 'Export users to CSV (Admin and Clinic Admin only)',
+    description: 'Exports users to CSV format with optional filtering. Clinic Admins can only export users from their clinic.',
   })
   @ApiQuery({
     name: 'page',
@@ -734,7 +825,15 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
-  async exportUsersToCsv(@Res() res: Response, @Query('page') page?: string, @Query('limit') limit?: string, @Query('search') search?: string, @Query('role') role?: string, @Query('isActive') isActive?: string) {
+  async exportUsersToCsv(
+    @Request() req: AuthenticatedRequest,
+    @Res() res: Response,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('isActive') isActive?: string
+  ) {
     const query: FindUsersDto = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10000,
@@ -750,17 +849,18 @@ export class UsersController {
       (query as any).isActive = isActive === 'true';
     }
 
-    const result = await this.usersService.findAll(UserRole.ADMIN, query);
+    const currentUserRole = req.user.role as UserRole;
+    const result = await this.usersService.findAll(currentUserRole, query, req.user.id);
     const transformedData = this.exportService.transformUserData(result.users);
 
     await this.exportService.exportData(transformedData, 'csv', 'users', res);
   }
 
   @Get('export/excel')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
   @ApiOperation({
-    summary: 'Export users to Excel (Admin only)',
-    description: 'Exports all users to Excel format with optional filtering',
+    summary: 'Export users to Excel (Admin and Clinic Admin only)',
+    description: 'Exports users to Excel format with optional filtering. Clinic Admins can only export users from their clinic.',
   })
   @ApiQuery({
     name: 'page',
@@ -808,7 +908,15 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
-  async exportUsersToExcel(@Res() res: Response, @Query('page') page?: string, @Query('limit') limit?: string, @Query('search') search?: string, @Query('role') role?: string, @Query('isActive') isActive?: string) {
+  async exportUsersToExcel(
+    @Request() req: AuthenticatedRequest,
+    @Res() res: Response,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('isActive') isActive?: string
+  ) {
     const query: FindUsersDto = {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 10000,
@@ -824,7 +932,8 @@ export class UsersController {
       (query as any).isActive = isActive === 'true';
     }
 
-    const result = await this.usersService.findAll(UserRole.ADMIN, query);
+    const currentUserRole = req.user.role as UserRole;
+    const result = await this.usersService.findAll(currentUserRole, query, req.user.id);
     const transformedData = this.exportService.transformUserData(result.users);
 
     await this.exportService.exportData(transformedData, 'excel', 'users', res);

@@ -38,9 +38,9 @@ async function bootstrap() {
     process.env.FRONTEND_URL || 'http://localhost:3000',
     process.env.ADMIN_FRONTEND_URL || 'http://localhost:3002',
     // Development origins for network access
-    'http://192.168.70.174:3000',
-    'http://192.168.70.174:3001',
-    'http://192.168.70.174:3002',
+    'http://192.168.70.188:3000',
+    'http://192.168.70.188:3001',
+    'http://192.168.70.188:3002',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
@@ -146,7 +146,7 @@ async function bootstrap() {
     .setContact('Borzolini Clinic Team', 'https://borzolini.com', 'support@borzolini.com')
     .setLicense('MIT', 'https://opensource.org/licenses/MIT')
     .addServer('http://localhost:3001/api/v1', 'Development Server (localhost)')
-    .addServer('http://192.168.70.174:3001/api/v1', 'Development Server (Network)')
+    .addServer('http://192.168.70.188:3001/api/v1', 'Development Server (Network)')
     .addServer('https://api.borzolini.com/api/v1', 'Production Server')
     .addBearerAuth(
       {
@@ -219,8 +219,8 @@ async function bootstrap() {
   } else {
     console.log(`🚀 Borzolini Service is running on:`);
     console.log(`📚 API Documentation (localhost): http://localhost:${port}/api/docs`);
-    console.log(`🌐 API Documentation (network): http://192.168.70.174:${port}/api/docs`);
-    console.log(`🔧 API Base URL: http://192.168.70.174:${port}/api/v1`);
+    console.log(`🌐 API Documentation (network): http://192.168.70.188:${port}/api/docs`);
+    console.log(`🔧 API Base URL: http://192.168.70.188:${port}/api/v1`);
     console.log(`🐱 AI-Powered Pet Health Monitoring Platform`);
     console.log(`🔍 CORS Origins allowed: ${allowedOrigins.join(', ')}`);
   }

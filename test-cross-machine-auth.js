@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // Configuration for cross-machine testing
-const API_BASE = 'http://192.168.70.174:3001/api/v1'\;
+const API_BASE = 'http://192.168.70.188:3001/api/v1'\;
 const TEST_EMAIL = 'test@example.com';
 const TEST_PASSWORD = 'password123';
 
@@ -68,7 +68,7 @@ async function testCrossMachineAuth() {
     }
     
     if (error.code === 'ECONNREFUSED') {
-      console.error('🔌 Connection refused. Is the server running on 192.168.70.174:3001?');
+      console.error('🔌 Connection refused. Is the server running on 192.168.70.188:3001?');
     }
   }
 }

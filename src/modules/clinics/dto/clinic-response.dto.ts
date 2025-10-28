@@ -32,7 +32,7 @@ export class ClinicResponseDto {
         thursday: { open: '08:00', close: '18:00', closed: false },
         friday: { open: '08:00', close: '18:00', closed: false },
         saturday: { open: '09:00', close: '16:00', closed: false },
-        sunday: { open: '10:00', close: '16:00', closed: false }
+        sunday: { open: '10:00', close: '16:00', closed: false },
       },
       emergency_contact: 'Emergency Services',
       emergency_phone: '+1-555-911-0000',
@@ -43,42 +43,42 @@ export class ClinicResponseDto {
         emergency: true,
         dental: true,
         grooming: false,
-        boarding: false
+        boarding: false,
       },
       specializations: {
         small_animals: true,
         exotic_pets: true,
         emergency_medicine: true,
         surgery: true,
-        dermatology: true
+        dermatology: true,
       },
       payment_methods: {
         cash: true,
         credit_card: true,
         debit_card: true,
         insurance: true,
-        payment_plans: true
+        payment_plans: true,
       },
       insurance_providers: {
         'PetCare Insurance': true,
-        'VetAssist': true,
-        'PetHealth': true
+        VetAssist: true,
+        PetHealth: true,
       },
       created_at: '2020-01-15T10:30:00.000Z',
-      updated_at: '2024-01-15T10:30:00.000Z'
-    }
+      updated_at: '2024-01-15T10:30:00.000Z',
+    },
   })
   data!: Clinic;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic retrieved successfully'
+    example: 'Clinic retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -97,7 +97,7 @@ export class ClinicsListResponseDto {
         total_reviews: 156,
         is_verified: true,
         is_active: true,
-        created_at: '2020-01-15T10:30:00.000Z'
+        created_at: '2020-01-15T10:30:00.000Z',
       },
       {
         id: '456e7890-e89b-12d3-a456-426614174001',
@@ -108,39 +108,39 @@ export class ClinicsListResponseDto {
         total_reviews: 89,
         is_verified: true,
         is_active: true,
-        created_at: '2021-03-20T14:15:00.000Z'
-      }
-    ]
+        created_at: '2021-03-20T14:15:00.000Z',
+      },
+    ],
   })
   data!: Clinic[];
 
   @ApiProperty({
     description: 'Total number of clinics',
-    example: 25
+    example: 25,
   })
   total!: number;
 
   @ApiProperty({
     description: 'Current page number',
-    example: 1
+    example: 1,
   })
   page!: number;
 
   @ApiProperty({
     description: 'Total number of pages',
-    example: 3
+    example: 3,
   })
   totalPages!: number;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinics retrieved successfully'
+    example: 'Clinics retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -148,31 +148,31 @@ export class ClinicsListResponseDto {
 export class ClinicCreatedResponseDto {
   @ApiProperty({
     description: 'Created clinic data',
-    type: Clinic
+    type: Clinic,
   })
   data!: Clinic;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic created successfully'
+    example: 'Clinic created successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Created clinic ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Creation timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt!: string;
 }
@@ -180,37 +180,37 @@ export class ClinicCreatedResponseDto {
 export class ClinicUpdatedResponseDto {
   @ApiProperty({
     description: 'Updated clinic data',
-    type: Clinic
+    type: Clinic,
   })
   data!: Clinic;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic updated successfully'
+    example: 'Clinic updated successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 
   @ApiProperty({
     description: 'Updated clinic ID',
-    example: '123e4567-e89b-12d3-a456-426614174000'
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   id!: string;
 
   @ApiProperty({
     description: 'Last update timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   updatedAt!: string;
 
   @ApiProperty({
     description: 'Number of affected rows',
-    example: 1
+    example: 1,
   })
   affectedRows!: number;
 }
@@ -229,21 +229,21 @@ export class ClinicSearchResponseDto {
         total_reviews: 156,
         distance: 2.5,
         services: ['consultation', 'vaccination', 'surgery', 'emergency'],
-        specializations: ['small_animals', 'emergency_medicine']
-      }
-    ]
+        specializations: ['small_animals', 'emergency_medicine'],
+      },
+    ],
   })
   data!: Array<Clinic & { distance?: number }>;
 
   @ApiProperty({
     description: 'Total number of search results',
-    example: 15
+    example: 15,
   })
   total!: number;
 
   @ApiProperty({
     description: 'Search query used',
-    example: 'veterinary clinic near me'
+    example: 'veterinary clinic near me',
   })
   query!: string;
 
@@ -252,20 +252,20 @@ export class ClinicSearchResponseDto {
     example: {
       city: 'New York',
       services: ['emergency'],
-      rating: 4.0
-    }
+      rating: 4.0,
+    },
   })
   filters!: Record<string, any>;
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic search completed successfully'
+    example: 'Clinic search completed successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -283,8 +283,8 @@ export class ClinicServicesResponseDto {
           description: 'Comprehensive health examination and consultation',
           category: 'preventive_care',
           duration: 30,
-          cost: 75.00,
-          isAvailable: true
+          cost: 75.0,
+          isAvailable: true,
         },
         {
           id: 'service_002',
@@ -292,8 +292,8 @@ export class ClinicServicesResponseDto {
           description: 'Core and non-core vaccinations for pets',
           category: 'preventive_care',
           duration: 15,
-          cost: 45.00,
-          isAvailable: true
+          cost: 45.0,
+          isAvailable: true,
         },
         {
           id: 'service_003',
@@ -301,13 +301,13 @@ export class ClinicServicesResponseDto {
           description: 'Various surgical procedures including spay/neuter',
           category: 'surgery',
           duration: 120,
-          cost: 500.00,
-          isAvailable: true
-        }
+          cost: 500.0,
+          isAvailable: true,
+        },
       ],
       categories: ['preventive_care', 'surgery', 'emergency', 'dental'],
-      totalServices: 15
-    }
+      totalServices: 15,
+    },
   })
   data!: {
     clinicId: string;
@@ -327,13 +327,13 @@ export class ClinicServicesResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic services retrieved successfully'
+    example: 'Clinic services retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }
@@ -355,7 +355,7 @@ export class ClinicStaffResponseDto {
           certifications: ['Board Certified in Small Animal Practice'],
           availability: 'Monday-Friday, 8:00 AM - 6:00 PM',
           rating: 4.9,
-          totalReviews: 45
+          totalReviews: 45,
         },
         {
           id: 'staff_002',
@@ -367,12 +367,12 @@ export class ClinicStaffResponseDto {
           certifications: ['Board Certified in Veterinary Surgery'],
           availability: 'Tuesday-Saturday, 9:00 AM - 7:00 PM',
           rating: 4.8,
-          totalReviews: 38
-        }
+          totalReviews: 38,
+        },
       ],
       totalStaff: 8,
-      roles: ['veterinarian', 'technician', 'receptionist', 'groomer']
-    }
+      roles: ['veterinarian', 'technician', 'receptionist', 'groomer'],
+    },
   })
   data!: {
     clinicId: string;
@@ -395,14 +395,107 @@ export class ClinicStaffResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic staff retrieved successfully'
+    example: 'Clinic staff retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
+  timestamp!: string;
+}
+
+export class EnrichedClinicStaffItemDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty({ required: false })
+  userId?: string;
+
+  @ApiProperty({ required: false })
+  email?: string;
+
+  @ApiProperty({ required: false })
+  firstName?: string;
+
+  @ApiProperty({ required: false })
+  lastName?: string;
+
+  @ApiProperty({ required: false })
+  avatar?: string;
+
+  @ApiProperty()
+  role!: string;
+
+  @ApiProperty({ required: false })
+  specialization?: string;
+
+  @ApiProperty({ required: false, type: Number })
+  experienceYears?: number;
+
+  @ApiProperty({ required: false, type: [String] })
+  education?: string[];
+
+  @ApiProperty({ required: false, type: [String] })
+  certifications?: string[];
+
+  @ApiProperty({ required: false })
+  bio?: string;
+
+  @ApiProperty({ required: false })
+  profilePhotoUrl?: string;
+
+  @ApiProperty()
+  isActive!: boolean;
+
+  @ApiProperty({ required: false })
+  hireDate?: string | Date;
+
+  @ApiProperty({ required: false })
+  terminationDate?: string | Date;
+}
+
+export class EnrichedClinicStaffResponseDto {
+  @ApiProperty({
+    description: 'Array of enriched clinic staff entries',
+    type: [EnrichedClinicStaffItemDto],
+    example: [
+      {
+        id: 'e7880ac6-486c-41a5-87b5-4868b65dfa44',
+        userId: '2c30ed97-8fec-4f6c-a99e-e9e7d8b94817',
+        email: 'admin@borzolini.com',
+        firstName: 'Admin',
+        lastName: 'User',
+        avatar: null,
+        role: 'admin',
+        specialization: 'Clinic Management',
+        experienceYears: 5,
+        education: ['Veterinary Business Administration', 'Healthcare Management'],
+        certifications: [],
+        bio: 'Experienced clinic administrator with expertise in veterinary practice management.',
+        profilePhotoUrl: null,
+        isActive: true,
+        hireDate: '2023-01-01',
+        terminationDate: null,
+      },
+    ],
+  })
+  data!: EnrichedClinicStaffItemDto[];
+
+  @ApiProperty({ description: 'Total staff count for this page set', example: 3 })
+  total!: number;
+
+  @ApiProperty({ description: 'Current page number', example: 1 })
+  page!: number;
+
+  @ApiProperty({ description: 'Total pages', example: 1 })
+  totalPages!: number;
+
+  @ApiProperty({ description: 'Success message', example: 'Clinic staff retrieved successfully' })
+  message!: string;
+
+  @ApiProperty({ description: 'Response timestamp', example: '2024-01-15T10:30:00.000Z' })
   timestamp!: string;
 }
 
@@ -423,7 +516,7 @@ export class ClinicReviewsResponseDto {
           author: 'John D.',
           date: '2024-01-10T15:30:00.000Z',
           verified: true,
-          helpful: 12
+          helpful: 12,
         },
         {
           id: 'review_002',
@@ -433,17 +526,17 @@ export class ClinicReviewsResponseDto {
           author: 'Sarah M.',
           date: '2024-01-08T12:15:00.000Z',
           verified: true,
-          helpful: 8
-        }
+          helpful: 8,
+        },
       ],
       ratingDistribution: {
         5: 89,
         4: 45,
         3: 15,
         2: 5,
-        1: 2
-      }
-    }
+        1: 2,
+      },
+    },
   })
   data!: {
     clinicId: string;
@@ -465,13 +558,13 @@ export class ClinicReviewsResponseDto {
 
   @ApiProperty({
     description: 'Success message',
-    example: 'Clinic reviews retrieved successfully'
+    example: 'Clinic reviews retrieved successfully',
   })
   message!: string;
 
   @ApiProperty({
     description: 'Response timestamp',
-    example: '2024-01-15T10:30:00.000Z'
+    example: '2024-01-15T10:30:00.000Z',
   })
   timestamp!: string;
 }

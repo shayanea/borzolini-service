@@ -234,30 +234,15 @@ export class UsersService implements OnModuleInit {
     return savedUser;
   }
 
-  async findAll(userRole?: UserRole | string, query?: FindUsersDto): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
-    // Build base query with role-based security
-    let whereConditions: any[] = [];
+  async findAll(userRole?: UserRole | string, query?: FindUsersDto, currentUserId?: string): Promise<{ users: User[]; total: number; page: number; totalPages: number }> {
     const isAdminAccess = userRole === UserRole.ADMIN || userRole === 'admin';
-
-    if (userRole === UserRole.VETERINARIAN || userRole === 'veterinarian' || userRole === UserRole.STAFF || userRole === 'staff') {
-      // For veterinarians and staff, only show their own people and patients
-      whereConditions = [
-        { role: UserRole.PATIENT }, // Can see all patients
-        { role: userRole }, // Can see people with same role
-      ];
-    } else if (isAdminAccess) {
-      // Admin can see all users - no role restrictions
-      whereConditions = [];
-    } else {
-      // If no role specified, return all users (admin access)
-      whereConditions = [];
-    }
+    const isClinicAdmin = userRole === UserRole.CLINIC_ADMIN || userRole === 'clinic_admin';
 
     // Build query builder with different field selections based on admin access
     let queryBuilder = this.userRepository.createQueryBuilder('user');
 
-    if (isAdminAccess) {
-      // Admin gets additional fields for enhanced management
+    if (isAdminAccess || isClinicAdmin) {
+      // Admin and Clinic Admin get additional fields for enhanced management
       queryBuilder = queryBuilder.select([
         'user.id',
         'user.email',
@@ -275,19 +260,36 @@ export class UsersService implements OnModuleInit {
         'user.lastLoginAt',
         'user.createdAt',
         'user.updatedAt',
+        'user.clinic_id',
       ]);
     } else {
       // Non-admin users get limited fields
       queryBuilder = queryBuilder.select(['user.id', 'user.email', 'user.firstName', 'user.lastName', 'user.role', 'user.isActive', 'user.createdAt', 'user.updatedAt']);
     }
 
-    // Add role-based where conditions
-    if (whereConditions.length > 0) {
-      queryBuilder = queryBuilder.where(whereConditions);
+    // Apply role-based security filters
+    if (isAdminAccess) {
+      // Admin can see all users - no additional filters
+    } else if (isClinicAdmin) {
+      // Clinic Admin can only see users from their clinic
+      if (currentUserId) {
+        const currentUser = await this.findOne(currentUserId);
+        if (currentUser.clinic_id) {
+          queryBuilder = queryBuilder.where('user.clinic_id = :clinicId', { clinicId: currentUser.clinic_id });
+        } else {
+          // If clinic admin has no clinic_id, they cannot see any users
+          queryBuilder = queryBuilder.where('1 = 0'); // Always false condition
+        }
+      } else {
+        queryBuilder = queryBuilder.where('1 = 0'); // Always false condition
+      }
+    } else if (userRole === UserRole.VETERINARIAN || userRole === 'veterinarian' || userRole === UserRole.STAFF || userRole === 'staff') {
+      // For veterinarians and staff, only show their own people and patients
+      queryBuilder = queryBuilder.where('(user.role = :patientRole OR user.role = :userRole)', { patientRole: UserRole.PATIENT, userRole });
     }
 
-    // Apply role filter from query parameters (if admin)
-    if (query?.role && isAdminAccess) {
+    // Apply role filter from query parameters (if admin or clinic admin)
+    if (query?.role && (isAdminAccess || isClinicAdmin)) {
       queryBuilder = queryBuilder.andWhere('user.role = :role', { role: query.role });
     }
 

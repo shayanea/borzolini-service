@@ -23,6 +23,7 @@ import { Clinic } from './entities/clinic.entity';
 import { CreatePetCaseDto } from './dto/create-pet-case.dto';
 import { UpdatePetCaseDto } from './dto/update-pet-case.dto';
 import { CaseFilters, ClinicPetCaseService } from './services/clinic-pet-case.service';
+import { EnrichedClinicStaffResponseDto } from './dto/clinic-response.dto';
 
 @ApiTags('Clinics')
 @Controller('clinics')
@@ -350,7 +351,8 @@ export class ClinicsController {
   })
   @ApiParam({ name: 'id', description: 'Clinic ID' })
   @ApiQuery({ name: 'role', required: false, description: 'Filter by staff role' })
-  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'is_active', required: false, description: 'Filter by active status (deprecated, use isActive)', deprecated: true })
   @ApiQuery({ name: 'specialization', required: false, description: 'Filter by specialization (ILIKE match)' })
   @ApiQuery({ name: 'search', required: false, description: 'Search in staff bio or user name' })
   @ApiQuery({ name: 'experience_min', required: false, description: 'Minimum experience (years)' })
@@ -375,11 +377,13 @@ export class ClinicsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'Forbidden - You can only view staff from clinics where you are a member' })
   @ApiResponse({ status: 404, description: 'Clinic not found' })
+  @ApiResponse({ status: 200, description: 'Staff list retrieved successfully', type: EnrichedClinicStaffResponseDto })
   async listClinicStaff(
     @Param('id') clinicId: string,
     @Request() req: any,
     @Query('role') role?: string,
-    @Query('is_active') isActive?: boolean,
+    @Query('isActive') isActivePrimary?: boolean,
+    @Query('is_active') isActiveLegacy?: boolean,
     @Query('specialization') specialization?: string,
     @Query('search') search?: string,
     @Query('experience_min') experienceMin?: number,
@@ -397,6 +401,9 @@ export class ClinicsController {
       }
     }
 
+    // Support both camelCase (isActive) and snake_case (is_active) for backward compatibility
+    const isActive = isActivePrimary !== undefined ? isActivePrimary : isActiveLegacy;
+
     const filters = {
       ...(role && { role }),
       ...(isActive !== undefined && { is_active: isActive }),
@@ -413,7 +420,34 @@ export class ClinicsController {
       ...(sortOrder && { sortOrder }),
     } as any;
 
-    return await this.clinicsService.listStaff(clinicId, filters, options);
+    const { staff, total, page: currentPage, totalPages } = await this.clinicsService.listStaff(clinicId, filters, options);
+
+    // Return flattened array in data
+    return {
+      data: staff.map((s) => ({
+        id: s.id,
+        userId: s.user?.id,
+        email: s.user?.email,
+        firstName: s.user?.firstName,
+        lastName: s.user?.lastName,
+        avatar: s.user?.avatar,
+        role: s.role,
+        specialization: s.specialization,
+        experienceYears: s.experience_years,
+        education: s.education,
+        certifications: s.certifications,
+        bio: s.bio,
+        profilePhotoUrl: s.profile_photo_url,
+        isActive: s.is_active,
+        hireDate: s.hire_date,
+        terminationDate: s.termination_date,
+      })),
+      total,
+      page: currentPage,
+      totalPages,
+      message: 'Clinic staff retrieved successfully',
+      timestamp: new Date().toISOString(),
+    };
   }
 
   @Post(':id/staff')
