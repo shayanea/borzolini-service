@@ -8,7 +8,7 @@ import { ClinicAccessGuard } from '../auth/guards/clinic-access.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { UserRole } from '../users/entities/user.entity';
-import { AppointmentFilters, AppointmentsService, AppointmentStats, TimeSlot } from './appointments.service';
+import { AppointmentFilters, AppointmentsService, AppointmentStats, TimeSlot, CalendarViewResponse } from './appointments.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { UpdateAppointmentDto } from './dto/update-appointment.dto';
 import { Appointment, AppointmentStatus, AppointmentType } from './entities/appointment.entity';
@@ -502,6 +502,35 @@ export class AppointmentsController {
 
     const result = await this.appointmentsService.findAll(filters, 1, 1000);
     return result.appointments.filter((apt) => apt.scheduled_date > new Date());
+  }
+
+  @Get('calendar')
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Get calendar view',
+    description: 'Returns appointments grouped by day and staff for calendar timeline views',
+  })
+  @ApiResponse({ status: 200, description: 'Calendar data retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiQuery({ name: 'clinic_id', required: false, type: String, description: 'Filter by clinic ID' })
+  @ApiQuery({ name: 'staff_id', required: false, type: String, description: 'Filter by specific staff ID' })
+  @ApiQuery({ name: 'date_from', required: true, type: String, description: 'Start of range (ISO string)' })
+  @ApiQuery({ name: 'date_to', required: true, type: String, description: 'End of range (ISO string)' })
+  async getCalendar(@Request() req: any, @Query('clinic_id') clinic_id?: string, @Query('staff_id') staff_id?: string, @Query('date_from') date_from?: string, @Query('date_to') date_to?: string): Promise<CalendarViewResponse> {
+    // Multi-tenancy: restrict to user's clinic for clinic_admin/staff/vets
+    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
+      clinic_id = req.user.clinic_id;
+    }
+
+    const filters: AppointmentFilters = {
+      clinic_id,
+      staff_id,
+      owner_id: req.user.role === UserRole.ADMIN ? undefined : req.user.id,
+      date_from: date_from ? new Date(date_from) : undefined,
+      date_to: date_to ? new Date(date_to) : undefined,
+    };
+
+    return this.appointmentsService.getCalendarView(filters);
   }
 
   // Export endpoints

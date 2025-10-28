@@ -41,6 +41,21 @@ export interface TimeSlot {
   appointmentId?: string | undefined;
 }
 
+export interface CalendarStaffGroup {
+  staff_id: string | null;
+  staff_name?: string | undefined;
+  appointments: Appointment[];
+}
+
+export interface CalendarDayGroup {
+  date: string; // YYYY-MM-DD
+  staff: CalendarStaffGroup[];
+}
+
+export interface CalendarViewResponse {
+  days: CalendarDayGroup[];
+}
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -257,6 +272,52 @@ export class AppointmentsService {
     };
   }
 
+  async getCalendarView(filters: AppointmentFilters): Promise<CalendarViewResponse> {
+    // Ensure required dates are present
+    if (!filters?.date_from || !filters?.date_to) {
+      throw new BadRequestException('date_from and date_to are required for calendar view');
+    }
+
+    // Fetch all matching appointments within range (high limit for calendar windows)
+    const { appointments } = await this.findAll({ ...filters }, 1, 5000, 'scheduled_date', 'ASC');
+
+    // Group by day (YYYY-MM-DD) then by staff
+    const byDay: Map<string, Map<string | null, Appointment[]>> = new Map();
+
+    for (const apt of appointments) {
+      const d = new Date(apt.scheduled_date);
+      const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      const staffKey = (apt as any).staff_id || null;
+
+      if (!byDay.has(dayKey)) byDay.set(dayKey, new Map());
+      const staffMap = byDay.get(dayKey)!;
+      if (!staffMap.has(staffKey)) staffMap.set(staffKey, []);
+      staffMap.get(staffKey)!.push(apt);
+    }
+
+    // Build response with optional staff names if relation is loaded
+    const days: CalendarDayGroup[] = Array.from(byDay.entries())
+      .sort((a, b) => (a[0] < b[0] ? -1 : 1))
+      .map(([date, staffMap]) => {
+        const staff: CalendarStaffGroup[] = Array.from(staffMap.entries())
+          .map(([staffId, apts]) => ({
+            staff_id: staffId,
+            staff_name: apts[0]?.staff ? `${(apts[0] as any).staff.first_name || ''} ${(apts[0] as any).staff.last_name || ''}`.trim() : undefined,
+            appointments: apts,
+          }))
+          .sort((a, b) => {
+            if (a.staff_id === b.staff_id) return 0;
+            if (a.staff_id === null) return 1; // null staff to the end
+            if (b.staff_id === null) return -1;
+            return String(a.staff_id).localeCompare(String(b.staff_id));
+          });
+
+        return { date, staff } as CalendarDayGroup;
+      });
+
+    return { days };
+  }
+
   async findOne(id: string): Promise<Appointment> {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
@@ -397,14 +458,13 @@ export class AppointmentsService {
 
   async getAppointmentStats(clinicId?: string): Promise<AppointmentStats> {
     // Use query builder for better performance with optional clinic filtering
-    let queryBuilder = this.appointmentRepository.createQueryBuilder('appointment')
-      .select(['appointment.status', 'appointment.appointment_type', 'appointment.is_telemedicine', 'appointment.duration_minutes']);
-    
+    let queryBuilder = this.appointmentRepository.createQueryBuilder('appointment').select(['appointment.status', 'appointment.appointment_type', 'appointment.is_telemedicine', 'appointment.duration_minutes']);
+
     // Filter by clinic if clinicId provided
     if (clinicId) {
       queryBuilder = queryBuilder.where('appointment.clinic_id = :clinicId', { clinicId });
     }
-    
+
     const appointments = await queryBuilder.getMany();
 
     const stats: AppointmentStats = {
