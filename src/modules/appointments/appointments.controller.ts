@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseEnumPipe, ParseIntPipe, ParseUUIDPipe, Patch, Post, Query, Request, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 
@@ -323,6 +323,34 @@ export class AppointmentsController {
     return this.appointmentsService.getAvailableTimeSlots(clinicId, checkDate, duration);
   }
 
+  @Get('calendar')
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
+  @ApiOperation({
+    summary: 'Get calendar view',
+    description: 'Returns appointments grouped by day and staff for calendar timeline views',
+  })
+  @ApiResponse({ status: 200, description: 'Calendar data retrieved successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiQuery({ name: 'clinic_id', required: false, type: String, description: 'Filter by clinic ID' })
+  @ApiQuery({ name: 'staff_id', required: false, type: String, description: 'Filter by specific staff ID' })
+  @ApiQuery({ name: 'date_from', required: true, type: String, description: 'Start of range (ISO string)' })
+  @ApiQuery({ name: 'date_to', required: true, type: String, description: 'End of range (ISO string)' })
+  async getCalendar(@Request() req: any, @Query('clinic_id') clinic_id?: string, @Query('staff_id') staff_id?: string, @Query('date_from') date_from?: string, @Query('date_to') date_to?: string): Promise<CalendarViewResponse> {
+    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
+      clinic_id = req.user.clinic_id;
+    }
+
+    const filters: AppointmentFilters = {
+      clinic_id,
+      staff_id,
+      owner_id: req.user.role === UserRole.ADMIN ? undefined : req.user.id,
+      date_from: date_from ? new Date(date_from) : undefined,
+      date_to: date_to ? new Date(date_to) : undefined,
+    };
+
+    return this.appointmentsService.getCalendarView(filters);
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get appointment by ID',
@@ -336,7 +364,7 @@ export class AppointmentsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
   @ApiParam({ name: 'id', description: 'Appointment ID' })
-  async findOne(@Param('id') id: string, @Request() req: any): Promise<Appointment> {
+  async findOne(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req: any): Promise<Appointment> {
     const appointment = await this.appointmentsService.findOne(id);
 
     // Check if user owns the appointment or is admin/staff
@@ -365,7 +393,7 @@ export class AppointmentsController {
   @ApiResponse({ status: 404, description: 'Appointment not found' })
   @ApiResponse({ status: 409, description: 'Appointment scheduling conflict' })
   @ApiParam({ name: 'id', description: 'Appointment ID' })
-  async update(@Param('id') id: string, @Body() updateAppointmentDto: UpdateAppointmentDto, @Request() req: any): Promise<Appointment> {
+  async update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() updateAppointmentDto: UpdateAppointmentDto, @Request() req: any): Promise<Appointment> {
     return this.appointmentsService.update(id, updateAppointmentDto, req.user.id, req.user.role);
   }
 
@@ -390,7 +418,7 @@ export class AppointmentsController {
     description: 'New appointment status',
   })
   async updateStatus(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Query('status', new ParseEnumPipe(AppointmentStatus))
     status: AppointmentStatus,
     @Request() req: any
@@ -422,7 +450,7 @@ export class AppointmentsController {
     type: String,
     description: 'New appointment date (ISO string)',
   })
-  async rescheduleAppointment(@Param('id') id: string, @Query('new_date') newDate: string, @Request() req: any): Promise<Appointment> {
+  async rescheduleAppointment(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Query('new_date') newDate: string, @Request() req: any): Promise<Appointment> {
     const rescheduleDate = new Date(newDate);
     return this.appointmentsService.rescheduleAppointment(id, rescheduleDate, req.user.id, req.user.role);
   }
@@ -439,7 +467,7 @@ export class AppointmentsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 404, description: 'Appointment not found' })
   @ApiParam({ name: 'id', description: 'Appointment ID' })
-  async remove(@Param('id') id: string, @Request() req: any): Promise<{ message: string }> {
+  async remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Request() req: any): Promise<{ message: string }> {
     await this.appointmentsService.remove(id, req.user.id, req.user.role);
     return { message: 'Appointment cancelled successfully' };
   }
@@ -504,34 +532,6 @@ export class AppointmentsController {
     return result.appointments.filter((apt) => apt.scheduled_date > new Date());
   }
 
-  @Get('calendar')
-  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN, UserRole.VETERINARIAN, UserRole.STAFF)
-  @ApiOperation({
-    summary: 'Get calendar view',
-    description: 'Returns appointments grouped by day and staff for calendar timeline views',
-  })
-  @ApiResponse({ status: 200, description: 'Calendar data retrieved successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiQuery({ name: 'clinic_id', required: false, type: String, description: 'Filter by clinic ID' })
-  @ApiQuery({ name: 'staff_id', required: false, type: String, description: 'Filter by specific staff ID' })
-  @ApiQuery({ name: 'date_from', required: true, type: String, description: 'Start of range (ISO string)' })
-  @ApiQuery({ name: 'date_to', required: true, type: String, description: 'End of range (ISO string)' })
-  async getCalendar(@Request() req: any, @Query('clinic_id') clinic_id?: string, @Query('staff_id') staff_id?: string, @Query('date_from') date_from?: string, @Query('date_to') date_to?: string): Promise<CalendarViewResponse> {
-    // Multi-tenancy: restrict to user's clinic for clinic_admin/staff/vets
-    if (req.user.role === UserRole.CLINIC_ADMIN || req.user.role === UserRole.VETERINARIAN || req.user.role === UserRole.STAFF) {
-      clinic_id = req.user.clinic_id;
-    }
-
-    const filters: AppointmentFilters = {
-      clinic_id,
-      staff_id,
-      owner_id: req.user.role === UserRole.ADMIN ? undefined : req.user.id,
-      date_from: date_from ? new Date(date_from) : undefined,
-      date_to: date_to ? new Date(date_to) : undefined,
-    };
-
-    return this.appointmentsService.getCalendarView(filters);
-  }
 
   // Export endpoints
   @Get('export/csv')
