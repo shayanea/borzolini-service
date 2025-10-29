@@ -722,7 +722,7 @@ export class DashboardService {
   private async getRecentClinicAppointments(clinicId: string): Promise<RecentClinicActivityDto[]> {
     const appointments = await this.appointmentRepository.find({
       where: { clinic_id: clinicId },
-      relations: ['owner', 'pet', 'staff'],
+      relations: ['owner', 'pet', 'staff', 'staff.user'],
       order: { created_at: 'DESC' },
       take: 10,
     });
