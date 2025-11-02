@@ -1,6 +1,7 @@
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { AiHealthModule } from './modules/ai-health/ai-health.module';
+import { AiVisionModule } from './modules/ai-vision/ai-vision.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 // Feature modules
@@ -79,6 +80,7 @@ import { getDatabaseConfig } from './config/database.config';
     PetsModule,
     AppointmentsModule,
     AiHealthModule,
+    AiVisionModule,
     ReviewsModule,
     // ScheduledTasksModule,
     SettingsModule,
