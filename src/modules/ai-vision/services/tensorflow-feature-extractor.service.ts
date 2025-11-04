@@ -34,6 +34,13 @@ export class TensorFlowFeatureExtractorService implements OnModuleInit {
         );
         this.modelLoaded = true;
         this.logger.log('TensorFlow.js model loaded successfully');
+        // Log outputs for awareness (single-task vs multi-task)
+        try {
+          const outputs = Array.isArray(this.model.outputs)
+            ? (this.model.outputs as any[]).length
+            : 1;
+          this.logger.log(`Loaded model with ${outputs} output(s).`);
+        } catch {}
       } else {
         // Load pre-trained MobileNet for feature extraction
         this.logger.log('Fine-tuned model not found. Loading MobileNet for feature extraction...');
@@ -187,6 +194,116 @@ export class TensorFlowFeatureExtractorService implements OnModuleInit {
       this.logger.error('Feature extraction failed:', error);
       return this.extractPlaceholderFeatures();
     }
+  }
+
+  /**
+   * Whether the loaded model is a multi-task model with age regression head
+   */
+  isMultiTaskAgeModel(): boolean {
+    if (!this.model) return false;
+    try {
+      return Array.isArray(this.model.outputs) && (this.model.outputs as any[]).length >= 2;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Predict age (in months) if the loaded model provides an age regression head.
+   * Returns null if not available.
+   */
+  async predictAgeMonths(preprocessedImage: tf.Tensor4D): Promise<number | null> {
+    if (!this.model || !this.isMultiTaskAgeModel()) return null;
+    try {
+      const preds = this.model.predict(preprocessedImage);
+      if (Array.isArray(preds) && preds.length >= 2) {
+        const ageTensor = preds[1] as tf.Tensor; // age_output
+        const ageVals = (await ageTensor.data()) as Float32Array;
+        // Expect shape [1, 1]
+        const months = ageVals[0];
+        // Cleanup
+        preds.forEach((t) => (t as tf.Tensor).dispose());
+        return Number.isFinite(months) ? months : null;
+      }
+      // Cleanup single tensor if any
+      if (!Array.isArray(preds)) {
+        (preds as tf.Tensor).dispose();
+      }
+      return null;
+    } catch (err) {
+      this.logger.warn('predictAgeMonths failed; continuing without model age.', err as any);
+      return null;
+    }
+  }
+
+  /**
+   * Species-aware calibration for model-predicted age (months).
+   * Adjusts raw months to account for species and (optionally) breed size aging patterns.
+   * Heuristic and conservative for telemedicine triage.
+   */
+  calibrateAgeMonths(
+    species: 'cat' | 'dog',
+    rawMonths: number,
+    breed?: string
+  ): number {
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+    const months = Math.max(0, rawMonths);
+
+    if (species === 'cat') {
+      // Cats: lifespans ~ 12-20 years; conservative cap at 20y
+      // Youth (0-12m): model tends to under-estimate; slightly upweight
+      // Adult (36-120m): slight downweight to avoid over-aging
+      // Senior (>120m): compress tail
+      let adjusted = months;
+      if (months < 12) {
+        adjusted = months * 1.1;
+      } else if (months < 36) {
+        adjusted = months * 1.0;
+      } else if (months < 120) {
+        adjusted = months * 0.95;
+      } else {
+        adjusted = 120 + (months - 120) * 0.8;
+      }
+      return clamp(adjusted, 0, 240);
+    }
+
+    // Dogs: incorporate size by breed
+    const size = this.inferBreedSize(breed);
+    const caps = { small: 192, medium: 168, large: 144 }; // 16y, 14y, 12y caps
+    let adjusted = months;
+
+    if (months < 12) {
+      // Puppies: leave as-is (high variance)
+      adjusted = months;
+    } else if (months < 24) {
+      adjusted =
+        size === 'small' ? months * 0.95 : size === 'large' ? months * 1.05 : months * 1.0;
+    } else if (months < 84) {
+      adjusted =
+        size === 'small' ? months * 0.9 : size === 'large' ? months * 1.15 : months * 1.0;
+    } else {
+      adjusted =
+        size === 'small' ? months * 1.1 : size === 'large' ? months * 1.3 : months * 1.2;
+    }
+
+    return clamp(adjusted, 0, caps[size]);
+  }
+
+  /**
+   * Infer approximate breed size for dogs from breed string; medium by default.
+   */
+  private inferBreedSize(
+    breed?: string
+  ): 'small' | 'medium' | 'large' {
+    if (!breed) return 'medium';
+    const b = breed.toLowerCase();
+    // Small indicators
+    const smallHints = ['chihuahua', 'pomeranian', 'yorkshire', 'toy', 'miniature', 'dachshund', 'pug', 'shihtzu', 'shih tzu', 'bichon', 'maltese'];
+    if (smallHints.some((h) => b.includes(h))) return 'small';
+    // Large indicators
+    const largeHints = ['great dane', 'mastiff', 'saint bernard', 'bernese', 'rottweiler', 'newfoundland', 'great pyrenees', 'irish wolfhound', 'alaskan malamute'];
+    if (largeHints.some((h) => b.includes(h))) return 'large';
+    return 'medium';
   }
 
   /**

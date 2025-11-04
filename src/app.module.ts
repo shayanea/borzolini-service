@@ -27,6 +27,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './modules/users/users.module';
 import { getDatabaseConfig } from './config/database.config';
+import { HouseholdSafetyModule } from './modules/household-safety/household-safety.module';
+import { TrainingModule } from './modules/training/training.module';
 
 @Module({
   imports: [
@@ -87,6 +89,8 @@ import { getDatabaseConfig } from './config/database.config';
     SocialMediaModule,
     // TelemedicineModule,
     // PaymentsModule,
+    HouseholdSafetyModule,
+    TrainingModule,
 
     // Common utilities
     CommonModule,

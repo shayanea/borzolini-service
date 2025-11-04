@@ -10,6 +10,7 @@ import * as Jimp from 'jimp';
 
 interface TrainingConfig {
   modelType: 'mobilenet' | 'custom_cnn';
+  /** Number of disease classes (folder-based) */
   numClasses: number;
   batchSize: number;
   epochs: number;
@@ -17,6 +18,10 @@ interface TrainingConfig {
   dataPath: string;
   outputPath: string;
   imageSize: number;
+  /** Enable multi-task learning (disease + age regression) if age CSVs are present */
+  multiTask?: boolean;
+  /** Loss weight for age regression head (default 0.5) */
+  ageLossWeight?: number;
 }
 
 class SkinDiseaseTrainer {
@@ -164,7 +169,7 @@ class SkinDiseaseTrainer {
         layer.trainable = false;
       });
       
-      // Create new classification head
+      // Create new classification head (single-task)
       let x = tf.layers.globalAveragePooling2d().apply(baseOutput) as tf.SymbolicTensor;
       
       // Add dropout for regularization
@@ -208,6 +213,71 @@ class SkinDiseaseTrainer {
       console.warn('Failed to load MobileNetV2, falling back to custom CNN:', error);
       console.warn('For better accuracy, ensure you have internet connection or cached MobileNet model');
       return this.createCustomCNNModel();
+    }
+  }
+
+  /**
+   * Create MobileNetV2 multi-task model with disease classification + age regression heads
+   * Falls back to single-task if something goes wrong.
+   */
+  private async createMobileNetMultiTaskModel(
+    numDiseaseClasses: number,
+    ageLossWeight: number = 0.5
+  ): Promise<tf.LayersModel> {
+    console.log('Loading MobileNetV2 base model for MULTI-TASK transfer learning...');
+    try {
+      const baseModel = await tf.loadLayersModel(
+        'https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v2_1.0_224/model.json'
+      );
+
+      // Feature output before classification head
+      const numLayers = baseModel.layers.length;
+      const featureLayerIndex = numLayers - 2;
+      const baseOutput = baseModel.layers[featureLayerIndex].output as tf.SymbolicTensor;
+
+      baseModel.layers.forEach((layer) => {
+        layer.trainable = false;
+      });
+
+      // Shared pooled features
+      const pooled = tf.layers.globalAveragePooling2d().apply(baseOutput) as tf.SymbolicTensor;
+
+      // Disease classification head
+      let diseaseHead = tf.layers.dense({ units: 512, activation: 'relu' }).apply(pooled) as tf.SymbolicTensor;
+      diseaseHead = tf.layers.batchNormalization().apply(diseaseHead) as tf.SymbolicTensor;
+      diseaseHead = tf.layers.dropout({ rate: 0.5 }).apply(diseaseHead) as tf.SymbolicTensor;
+      diseaseHead = tf.layers.dense({ units: 256, activation: 'relu' }).apply(diseaseHead) as tf.SymbolicTensor;
+      const diseaseOutput = tf.layers.dense({ units: numDiseaseClasses, activation: 'softmax', name: 'disease_output' }).apply(diseaseHead) as tf.SymbolicTensor;
+
+      // Age regression head
+      let ageHead = tf.layers.dense({ units: 256, activation: 'relu' }).apply(pooled) as tf.SymbolicTensor;
+      ageHead = tf.layers.dropout({ rate: 0.3 }).apply(ageHead) as tf.SymbolicTensor;
+      const ageOutput = tf.layers.dense({ units: 1, activation: 'linear', name: 'age_output' }).apply(ageHead) as tf.SymbolicTensor;
+
+      const model = tf.model({ inputs: baseModel.inputs, outputs: [diseaseOutput, ageOutput] });
+
+      model.compile({
+        optimizer: tf.train.adam(this.config.learningRate * 0.1),
+        loss: {
+          disease_output: 'categoricalCrossentropy',
+          age_output: 'meanSquaredError',
+        },
+        lossWeights: {
+          disease_output: 1.0,
+          age_output: ageLossWeight,
+        },
+        metrics: {
+          disease_output: ['accuracy'],
+          age_output: ['mae'],
+        },
+      });
+
+      console.log('Multi-task model created');
+      model.summary();
+      return model;
+    } catch (e) {
+      console.warn('Failed to build multi-task MobileNetV2. Falling back to single-task.', e);
+      return this.createMobileNetModel();
     }
   }
 
@@ -261,6 +331,45 @@ class SkinDiseaseTrainer {
     }
 
     return { images, labels };
+  }
+
+  /**
+   * Try to read age labels CSV (filename,age_months) at the split root directory.
+   * Returns a map of filename -> age in months.
+   */
+  private loadAgeMap(splitDir: string): Map<string, number> | null {
+    const csvPath = path.join(splitDir, 'labels.csv');
+    if (!fs.existsSync(csvPath)) {
+      return null;
+    }
+    try {
+      const content = fs.readFileSync(csvPath, 'utf8');
+      const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      // Expect header: filename,age_months (case-insensitive)
+      const header = lines.shift();
+      if (!header) return null;
+      const cols = header.split(',').map((c) => c.trim().toLowerCase());
+      const fIdx = cols.indexOf('filename');
+      const aIdx = cols.indexOf('age_months');
+      if (fIdx === -1 || aIdx === -1) {
+        console.warn(`labels.csv in ${splitDir} missing required columns: filename, age_months`);
+        return null;
+      }
+      const map = new Map<string, number>();
+      for (const line of lines) {
+        const parts = line.split(',');
+        if (parts.length <= Math.max(fIdx, aIdx)) continue;
+        const fname = parts[fIdx].trim();
+        const age = Number(parts[aIdx]);
+        if (!Number.isNaN(age)) {
+          map.set(fname, age);
+        }
+      }
+      return map;
+    } catch (err) {
+      console.warn(`Failed to parse labels.csv in ${splitDir}:`, err);
+      return null;
+    }
   }
 
   /**
@@ -478,8 +587,24 @@ class SkinDiseaseTrainer {
   async train(): Promise<void> {
     console.log('Starting training...\n');
 
-    // Create model
-    this.model = await this.createModel();
+    // Determine if multi-task is possible (age CSV present for train/val)
+    const trainSplitDir = path.join(this.config.dataPath, 'train');
+    const valSplitDir = path.join(this.config.dataPath, 'val');
+    const testSplitDir = path.join(this.config.dataPath, 'test');
+    const trainAgeMap = this.config.multiTask ? this.loadAgeMap(trainSplitDir) : null;
+    const valAgeMap = this.config.multiTask ? this.loadAgeMap(valSplitDir) : null;
+
+    const canMultiTask = !!(this.config.multiTask && trainAgeMap && valAgeMap);
+
+    // Create model (single-task by default; multi-task if age CSVs present)
+    if (this.config.modelType === 'mobilenet' && canMultiTask) {
+      this.model = await this.createMobileNetMultiTaskModel(
+        this.config.numClasses,
+        this.config.ageLossWeight ?? 0.5
+      );
+    } else {
+      this.model = await this.createModel();
+    }
 
     // Load dataset
     const classes = fs.readdirSync(path.join(this.config.dataPath, 'train'));
@@ -488,13 +613,13 @@ class SkinDiseaseTrainer {
 
     const { images: trainImages, labels: trainLabels } =
       await this.loadImagesFromDirectory(
-        path.join(this.config.dataPath, 'train'),
+        trainSplitDir,
         classToIndex,
         true // Apply augmentation for training
       );
     const { images: valImages, labels: valLabels } =
       await this.loadImagesFromDirectory(
-        path.join(this.config.dataPath, 'val'),
+        valSplitDir,
         classToIndex,
         false // No augmentation for validation
       );
@@ -502,7 +627,7 @@ class SkinDiseaseTrainer {
     // Load test set if available
     let testImages: Float32Array[] = [];
     let testLabels: number[] = [];
-    const testPath = path.join(this.config.dataPath, 'test');
+    const testPath = testSplitDir;
     if (fs.existsSync(testPath)) {
       const testData = await this.loadImagesFromDirectory(
         testPath,
@@ -535,6 +660,47 @@ class SkinDiseaseTrainer {
       valLabels.length > 0
         ? this.labelsToTensor(valLabels, this.config.numClasses)
         : tf.tensor2d([], [0, this.config.numClasses]);
+
+    // Optional age labels tensors for multi-task
+    let trainAgeTensor: tf.Tensor2D | null = null;
+    let valAgeTensor: tf.Tensor2D | null = null;
+    if (canMultiTask) {
+      // Build age label arrays aligned with images by filename (we rely on map keys being just filenames)
+      // Since we don't track filenames here, we assume labels.csv uses exact filenames inside each class folder.
+      // We will try to infer ages by re-walking directories to build age arrays in same order used above.
+      const buildAgeArray = (splitDir: string, applyAug: boolean, ageMap: Map<string, number>): number[] => {
+        const ages: number[] = [];
+        const classes = fs
+          .readdirSync(splitDir)
+          .filter((item) => fs.statSync(path.join(splitDir, item)).isDirectory());
+        for (const className of classes) {
+          const classPath = path.join(splitDir, className);
+          const imageFiles = fs.readdirSync(classPath).filter((f) => f.match(/\.(jpg|jpeg|png)$/i));
+          for (const imageFile of imageFiles) {
+            const age = ageMap.get(imageFile);
+            ages.push(typeof age === 'number' ? age : NaN);
+          }
+        }
+        return ages;
+      };
+
+      const trainAges = buildAgeArray(trainSplitDir, true, trainAgeMap!);
+      const valAges = buildAgeArray(valSplitDir, false, valAgeMap!);
+
+      const trainValidAges = trainAges.filter((a) => Number.isFinite(a));
+      const valValidAges = valAges.filter((a) => Number.isFinite(a));
+
+      const trainCoverage = trainValidAges.length / trainAges.length;
+      const valCoverage = valValidAges.length / valAges.length;
+
+      if (trainCoverage >= 0.8 && valCoverage >= 0.8) {
+        trainAgeTensor = tf.tensor2d(trainAges.map((a) => (Number.isFinite(a) ? (a as number) : 0)), [trainAges.length, 1]);
+        valAgeTensor = tf.tensor2d(valAges.map((a) => (Number.isFinite(a) ? (a as number) : 0)), [valAges.length, 1]);
+        console.log(`\nAge labels found. Coverage - train: ${(trainCoverage * 100).toFixed(1)}%, val: ${(valCoverage * 100).toFixed(1)}%`);
+      } else {
+        console.warn(`\nInsufficient age label coverage (train ${Math.round(trainCoverage * 100)}%, val ${Math.round(valCoverage * 100)}%). Training disease head only.`);
+      }
+    }
 
     // Calculate class weights for imbalanced datasets
     const classWeights = this.calculateClassWeights(trainLabels);
@@ -604,18 +770,33 @@ class SkinDiseaseTrainer {
       },
     };
 
-    // Train model with class weights
-    await this.model.fit(trainData, trainLabelsTensor, {
-      batchSize: this.config.batchSize,
-      epochs: this.config.epochs,
-      validationData:
-        valImages.length > 0 ? [valData, valLabelsTensor] : undefined,
-      shuffle: true,
-      callbacks,
-      classWeight: classWeights, // Handle class imbalance
-    });
+    // Train (single-output or multi-output depending on tensors available)
+    if (canMultiTask && trainAgeTensor && valAgeTensor && (this.model.outputs as any[]).length === 2) {
+      await this.model.fit(
+        trainData,
+        { disease_output: trainLabelsTensor, age_output: trainAgeTensor },
+        {
+          batchSize: this.config.batchSize,
+          epochs: this.config.epochs,
+          validationData: [valData, { disease_output: valLabelsTensor, age_output: valAgeTensor }],
+          shuffle: true,
+          callbacks,
+          classWeight: { disease_output: classWeights },
+        } as any
+      );
+    } else {
+      await this.model.fit(trainData, trainLabelsTensor, {
+        batchSize: this.config.batchSize,
+        epochs: this.config.epochs,
+        validationData:
+          valImages.length > 0 ? [valData, valLabelsTensor] : undefined,
+        shuffle: true,
+        callbacks,
+        classWeight: classWeights, // Handle class imbalance
+      });
+    }
 
-    // Evaluate on test set if available
+    // Evaluate on test set if available (classification metrics)
     if (testImages.length > 0) {
       console.log(`\nEvaluating on ${testImages.length} test images...`);
       const testData = this.imagesToTensor(testImages);
@@ -630,9 +811,11 @@ class SkinDiseaseTrainer {
     // Cleanup tensors
     trainData.dispose();
     trainLabelsTensor.dispose();
+    if (trainAgeTensor) trainAgeTensor.dispose();
     if (valImages.length > 0) {
       valData.dispose();
       valLabelsTensor.dispose();
+      if (valAgeTensor) valAgeTensor.dispose();
     }
 
     console.log('\n✅ Training complete!');

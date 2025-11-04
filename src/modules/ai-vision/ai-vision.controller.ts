@@ -144,24 +144,59 @@ export class AiVisionController {
         spatialAnalysis.visualFeatures
       );
 
-      // Cleanup
-      preprocessedImage.dispose();
-
       // Optional: Estimate age and weight
       let ageEstimate, weightEstimate;
       if (dto.estimateAgeWeight === true) {
         try {
-          const ageWeightResult = await this.ageWeightEstimator.estimateAgeAndWeight(
-            file.buffer,
-            dto.species,
-            dto.breed
-          );
-          ageEstimate = ageWeightResult.age;
-          weightEstimate = ageWeightResult.weight;
+          // Prefer multi-task model age prediction if available
+          if (this.featureExtractor.isMultiTaskAgeModel()) {
+            const ageMonths = await this.featureExtractor.predictAgeMonths(preprocessedImage);
+            if (typeof ageMonths === 'number' && Number.isFinite(ageMonths)) {
+              const calibrated = this.featureExtractor.calibrateAgeMonths(dto.species, ageMonths, dto.breed);
+              const months = Math.max(0, Math.round(calibrated));
+              const years = Math.round((months / 12) * 10) / 10;
+              // Map to lifeStage by species
+              let lifeStage: 'kitten' | 'young' | 'adult' | 'senior';
+              if (dto.species === 'cat') {
+                if (months < 12) lifeStage = 'kitten';
+                else if (months < 36) lifeStage = 'young';
+                else if (months < 120) lifeStage = 'adult';
+                else lifeStage = 'senior';
+              } else {
+                if (months < 12) lifeStage = 'kitten'; // puppy
+                else if (months < 24) lifeStage = 'young';
+                else if (months < 84) lifeStage = 'adult';
+                else lifeStage = 'senior';
+              }
+              const range = years < 1
+                ? `${Math.max(0, months - 3)}-${months + 3} months`
+                : `${Math.max(0, Math.floor(years - 1))}-${Math.ceil(years + 1)} years`;
+              ageEstimate = {
+                estimatedYears: years,
+                estimatedMonths: months,
+                ageRange: range,
+                lifeStage,
+                confidence: 0.7, // heuristic; can be improved with calibration
+              };
+            }
+          }
+          // Fallback to heuristic estimator (and for weight)
+          if (!ageEstimate || !weightEstimate) {
+            const ageWeightResult = await this.ageWeightEstimator.estimateAgeAndWeight(
+              file.buffer,
+              dto.species,
+              dto.breed
+            );
+            if (!ageEstimate) ageEstimate = ageWeightResult.age;
+            if (!weightEstimate) weightEstimate = ageWeightResult.weight;
+          }
         } catch (error) {
           this.logger.warn('Age/weight estimation failed:', error);
         }
       }
+
+      // Cleanup
+      preprocessedImage.dispose();
 
       const processingTime = Date.now() - startTime;
 
