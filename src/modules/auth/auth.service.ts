@@ -145,7 +145,7 @@ export class AuthService implements OnModuleInit {
         (user.lastLoginAt.getTime() === user.createdAt.getTime());
 
       // Calculate pet ownership status
-      const activePets = user.pets?.filter(pet => pet.is_active) || [];
+      const activePets = user.pets?.filter((pet: any) => pet.is_active) || [];
       const hasPets = activePets.length > 0;
       const petCount = activePets.length;
 

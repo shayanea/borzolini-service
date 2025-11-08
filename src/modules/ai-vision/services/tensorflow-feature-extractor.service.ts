@@ -121,7 +121,7 @@ export class TensorFlowFeatureExtractorService implements OnModuleInit {
       })
     );
     model.add(tf.layers.batchNormalization());
-    model.add(tf.layers.globalAveragePooling2d());
+    model.add(tf.layers.globalAveragePooling2d({}));
 
     // Output: 256-dimensional feature vector
     model.add(tf.layers.dense({ units: 256, activation: 'relu' }));
@@ -220,7 +220,7 @@ export class TensorFlowFeatureExtractorService implements OnModuleInit {
         const ageTensor = preds[1] as tf.Tensor; // age_output
         const ageVals = (await ageTensor.data()) as Float32Array;
         // Expect shape [1, 1]
-        const months = ageVals[0];
+        const months = parseFloat(String(ageVals[0]));
         // Cleanup
         preds.forEach((t) => (t as tf.Tensor).dispose());
         return Number.isFinite(months) ? months : null;
@@ -395,10 +395,14 @@ export class TensorFlowFeatureExtractorService implements OnModuleInit {
    */
   getInputShape(): number[] {
     if (this.model) {
-      return this.model.inputs[0].shape?.slice(1) || [224, 224, 3];
+      const shape = this.model?.inputs?.[0]?.shape;
+      if (!shape) return [224, 224, 3];
+      return shape.slice(1) as number[];
     }
     if (this.featureModel) {
-      return this.featureModel.inputs[0].shape?.slice(1) || [224, 224, 3];
+      const shape = this.featureModel?.inputs?.[0]?.shape;
+      if (!shape) return [224, 224, 3];
+      return shape.slice(1) as number[];
     }
     return [224, 224, 3];
   }

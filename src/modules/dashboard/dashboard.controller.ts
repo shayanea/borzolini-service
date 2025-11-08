@@ -102,11 +102,11 @@ export class DashboardController {
   }
 
   @Get('charts')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get dashboard charts data',
-    description: 'Retrieve dashboard charts data with optional filtering for analytics and visualizations',
+    description: 'Retrieve dashboard charts data with optional filtering for analytics and visualizations (Admin and Clinic Admin access)',
   })
   @ApiResponse({
     status: 200,

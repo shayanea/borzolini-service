@@ -116,10 +116,20 @@ export class AgeWeightEstimatorService {
     let totalPixels = 0;
     const colorVariance = new Set<number>();
 
-    image.scan(0, 0, width, height, (_x, _y, idx) => {
-      const r = image.bitmap.data[idx];
-      const g = image.bitmap.data[idx + 1];
-      const b = image.bitmap.data[idx + 2];
+    image.scan(0, 0, width, height, (_x: number, _y: number, idx: number) => {
+      const red = image.bitmap.data[idx + 0] ?? 0;
+      const green = image.bitmap.data[idx + 1] ?? 0;
+      const blue = image.bitmap.data[idx + 2] ?? 0;
+      const gray = (red * 0.299 + green * 0.587 + blue * 0.114) | 0;
+      image.bitmap.data[idx + 0] = gray;
+      image.bitmap.data[idx + 1] = gray;
+      image.bitmap.data[idx + 2] = gray;
+    });
+
+    image.scan(0, 0, width, height, (_x: number, _y: number, idx: number) => {
+      const r = image.bitmap.data[idx + 0] ?? 0;
+      const g = image.bitmap.data[idx + 1] ?? 0;
+      const b = image.bitmap.data[idx + 2] ?? 0;
       
       // Brightness (luminance)
       const brightness = (r * 0.299 + g * 0.587 + b * 0.114) / 255;

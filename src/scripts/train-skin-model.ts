@@ -103,7 +103,7 @@ class SkinDiseaseTrainer {
       })
     );
     model.add(tf.layers.batchNormalization());
-    model.add(tf.layers.globalAveragePooling2d());
+    model.add(tf.layers.globalAveragePooling2d({}));
 
     // Dense layers
     model.add(
@@ -162,15 +162,15 @@ class SkinDiseaseTrainer {
       // MobileNet typically has the feature extractor ending before the final dense layer
       const numLayers = baseModel.layers.length;
       const featureLayerIndex = numLayers - 2; // Usually second-to-last layer
-      const baseOutput = baseModel.layers[featureLayerIndex].output;
+      const baseOutput = baseModel.layers[featureLayerIndex]?.output;
       
       // Freeze base model layers (fine-tuning strategy)
-      baseModel.layers.forEach((layer) => {
+      baseModel.layers.forEach((layer: any) => {
         layer.trainable = false;
       });
       
       // Create new classification head (single-task)
-      let x = tf.layers.globalAveragePooling2d().apply(baseOutput) as tf.SymbolicTensor;
+      let x = tf.layers.globalAveragePooling2d({}).apply(baseOutput!) as tf.SymbolicTensor;
       
       // Add dropout for regularization
       x = tf.layers.dropout({ rate: 0.5 }).apply(x) as tf.SymbolicTensor;
@@ -233,14 +233,16 @@ class SkinDiseaseTrainer {
       // Feature output before classification head
       const numLayers = baseModel.layers.length;
       const featureLayerIndex = numLayers - 2;
-      const baseOutput = baseModel.layers[featureLayerIndex].output as tf.SymbolicTensor;
+      const baseOutput = baseModel.layers[featureLayerIndex]?.output as tf.SymbolicTensor;
 
-      baseModel.layers.forEach((layer) => {
-        layer.trainable = false;
+      baseModel.layers.forEach((layer: any) => {
+        if (layer.trainable) {
+          layer.trainable = false;
+        }
       });
 
       // Shared pooled features
-      const pooled = tf.layers.globalAveragePooling2d().apply(baseOutput) as tf.SymbolicTensor;
+      const pooled = tf.layers.globalAveragePooling2d({}).apply(baseOutput!) as tf.SymbolicTensor;
 
       // Disease classification head
       let diseaseHead = tf.layers.dense({ units: 512, activation: 'relu' }).apply(pooled) as tf.SymbolicTensor;
@@ -267,8 +269,8 @@ class SkinDiseaseTrainer {
           age_output: ageLossWeight,
         },
         metrics: {
-          disease_output: ['accuracy'],
-          age_output: ['mae'],
+          disease_output: 'accuracy',
+          age_output: 'mae'
         },
       });
 
@@ -359,7 +361,7 @@ class SkinDiseaseTrainer {
       for (const line of lines) {
         const parts = line.split(',');
         if (parts.length <= Math.max(fIdx, aIdx)) continue;
-        const fname = parts[fIdx].trim();
+        const fname = parts[fIdx]?.trim() || '';
         const age = Number(parts[aIdx]);
         if (!Number.isNaN(age)) {
           map.set(fname, age);
@@ -418,17 +420,17 @@ class SkinDiseaseTrainer {
       if (Math.random() > 0.6) {
         const saturation = 0.8 + Math.random() * 0.4;
         image.color([
-          { apply: 'saturate', params: [saturation] }
+          { apply: 'saturate' as any, params: [saturation] } // Use type assertion for Jimp enum issue
         ]);
       }
 
       // Add slight noise (20% chance) - helps with robustness
       if (Math.random() > 0.8) {
-        image.scan(0, 0, image.bitmap.width, image.bitmap.height, (x, y, idx) => {
+        image.scan(0, 0, image.bitmap.width, image.bitmap.height, (_: number, _y: number, idx: number) => {
           const noise = (Math.random() - 0.5) * 10;
-          image.bitmap.data[idx] = Math.max(0, Math.min(255, image.bitmap.data[idx] + noise)); // R
-          image.bitmap.data[idx + 1] = Math.max(0, Math.min(255, image.bitmap.data[idx + 1] + noise)); // G
-          image.bitmap.data[idx + 2] = Math.max(0, Math.min(255, image.bitmap.data[idx + 2] + noise)); // B
+          image.bitmap.data[idx] = Math.max(0, Math.min(255, (image.bitmap.data[idx] ?? 0) + noise)); // R
+          image.bitmap.data[idx + 1] = Math.max(0, Math.min(255, (image.bitmap.data[idx + 1] ?? 0) + noise)); // G
+          image.bitmap.data[idx + 2] = Math.max(0, Math.min(255, (image.bitmap.data[idx + 2] ?? 0) + noise)); // B
         });
       }
     }
@@ -439,7 +441,7 @@ class SkinDiseaseTrainer {
     );
     let idx = 0;
 
-    image.scan(0, 0, this.config.imageSize, this.config.imageSize, (x, y) => {
+    image.scan(0, 0, this.config.imageSize, this.config.imageSize, (x: number, y: number) => {
       const pixel = Jimp.intToRGBA(image.getPixelColor(x, y));
       // ImageNet normalization
       pixels[idx++] = (pixel.r / 255.0 - 0.485) / 0.229;
@@ -464,12 +466,15 @@ class SkinDiseaseTrainer {
     images.forEach((img, i) => {
       buffer.set(img, i * this.config.imageSize * this.config.imageSize * 3);
     });
-    return tf.tensor4d(buffer, [
-      images.length,
-      this.config.imageSize,
-      this.config.imageSize,
-      3,
-    ]);
+    return tf.tidy(() => {
+      const tensor = tf.tensor4d(buffer, [
+        images.length,
+        this.config.imageSize,
+        this.config.imageSize,
+        3,
+      ]) as tf.Tensor4D;
+      return tensor;
+    }) as tf.Tensor4D;
   }
 
   /**
@@ -499,7 +504,7 @@ class SkinDiseaseTrainer {
     Object.keys(classCounts).forEach(key => {
       const classIndex = parseInt(key);
       // Inverse frequency weighting - gives more weight to underrepresented classes
-      weights[classIndex] = total / (numClasses * classCounts[classIndex]);
+      weights[classIndex] = total / (numClasses * (classCounts[classIndex] ?? 0));
     });
 
     return weights;
@@ -533,7 +538,7 @@ class SkinDiseaseTrainer {
 
       predArray.forEach((pred, idx) => {
         const predClass = pred.indexOf(Math.max(...pred));
-        const trueClass = trueLabels[idx].indexOf(1);
+        const trueClass = (trueLabels[idx] ?? []).indexOf(1);
         
         support += trueClass === i ? 1 : 0;
 
@@ -546,7 +551,10 @@ class SkinDiseaseTrainer {
       const recall = truePositives / (truePositives + falseNegatives) || 0;
       const f1 = 2 * (precision * recall) / (precision + recall) || 0;
 
-      metrics[classNames[i]] = { precision, recall, f1, support };
+      const classNamesArr = Array.from(classNames);
+      if (i < classNamesArr.length) {
+        metrics[classNamesArr[i]] = { precision, recall, f1, support };
+      }
     }
 
     // Calculate overall metrics
@@ -554,7 +562,7 @@ class SkinDiseaseTrainer {
 
     predArray.forEach((pred, idx) => {
       const predClass = pred.indexOf(Math.max(...pred));
-      const trueClass = trueLabels[idx].indexOf(1);
+      const trueClass = (trueLabels[idx] ?? []).indexOf(1);
       if (predClass === trueClass) totalTruePositives++;
     });
 
@@ -668,7 +676,7 @@ class SkinDiseaseTrainer {
       // Build age label arrays aligned with images by filename (we rely on map keys being just filenames)
       // Since we don't track filenames here, we assume labels.csv uses exact filenames inside each class folder.
       // We will try to infer ages by re-walking directories to build age arrays in same order used above.
-      const buildAgeArray = (splitDir: string, applyAug: boolean, ageMap: Map<string, number>): number[] => {
+      const buildAgeArray = (splitDir: string, ageMap: Map<string, number>): number[] => {
         const ages: number[] = [];
         const classes = fs
           .readdirSync(splitDir)
@@ -684,8 +692,8 @@ class SkinDiseaseTrainer {
         return ages;
       };
 
-      const trainAges = buildAgeArray(trainSplitDir, true, trainAgeMap!);
-      const valAges = buildAgeArray(valSplitDir, false, valAgeMap!);
+      const trainAges = buildAgeArray(trainSplitDir, trainAgeMap!);
+      const valAges = buildAgeArray(valSplitDir, valAgeMap!);
 
       const trainValidAges = trainAges.filter((a) => Number.isFinite(a));
       const valValidAges = valAges.filter((a) => Number.isFinite(a));
@@ -785,13 +793,15 @@ class SkinDiseaseTrainer {
         } as any
       );
     } else {
-      await this.model.fit(trainData, trainLabelsTensor, {
+      const validationData = valLabelsTensor ? [trainData as tf.Tensor4D, trainLabelsTensor as tf.Tensor2D, valData as tf.Tensor4D] : undefined;
+      await this.model.fit(trainData as tf.Tensor4D, trainLabelsTensor as tf.Tensor2D, {
         batchSize: this.config.batchSize,
         epochs: this.config.epochs,
-        validationData:
-          valImages.length > 0 ? [valData, valLabelsTensor] : undefined,
+        validationData,
         shuffle: true,
-        callbacks,
+        callbacks: {
+          onEpochEnd: (epoch: number, logs: any) => this.onEpochEnd(epoch, logs)
+        },
         classWeight: classWeights, // Handle class imbalance
       });
     }
@@ -838,6 +848,14 @@ class SkinDiseaseTrainer {
 
     await this.model.save(`file://${path.resolve(modelPath)}`);
     console.log(`Model saved to: ${modelPath}`);
+  }
+
+  private async onEpochEnd(epoch: number, logs: any): Promise<void> {
+    console.log(`Epoch ${epoch}: loss=${logs?.loss?.toFixed(4)}, acc=${logs?.accuracy?.toFixed(4)}`);
+    // Save checkpoint every 10 epochs
+    if (epoch % 10 === 0) {
+      await this.saveModel();
+    }
   }
 }
 

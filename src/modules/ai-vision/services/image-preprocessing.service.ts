@@ -55,21 +55,15 @@ export class ImagePreprocessingService {
       const pixels = new Float32Array(targetSize * targetSize * 3);
       let pixelIndex = 0;
 
-      image.scan(
-        0,
-        0,
-        targetSize,
-        targetSize,
-        (_x, _y, idx) => {
-          const r = image.bitmap.data[idx] / 255.0;
-          const g = image.bitmap.data[idx + 1] / 255.0;
-          const b = image.bitmap.data[idx + 2] / 255.0;
+      image.scan(0, 0, targetSize, targetSize, (_x: number, _y: number, idx: number) => {
+        const r = (image.bitmap.data[idx] ?? 0) / 255.0;
+        const g = (image.bitmap.data[idx + 1] ?? 0) / 255.0;
+        const b = (image.bitmap.data[idx + 2] ?? 0) / 255.0;
 
-          pixels[pixelIndex++] = r;
-          pixels[pixelIndex++] = g;
-          pixels[pixelIndex++] = b;
-        }
-      );
+        pixels[pixelIndex++] = r;
+        pixels[pixelIndex++] = g;
+        pixels[pixelIndex++] = b;
+      });
 
       // Create tensor from pixel data
       const tensor = tf.tensor3d(pixels, [targetSize, targetSize, 3]);

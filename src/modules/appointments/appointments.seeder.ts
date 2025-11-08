@@ -267,7 +267,7 @@ export class AppointmentsSeeder {
 
       // Future appointments (1-2 months ahead) - All at Borzolini Clinic
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Buddy',
         owner_email: 'john.doe@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -280,7 +280,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Luna',
         owner_email: 'john.doe@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -293,7 +293,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Bella',
         owner_email: 'sarah.wilson@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -306,7 +306,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Oliver',
         owner_email: 'sarah.wilson@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -319,7 +319,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Shadow',
         owner_email: 'alex.chen@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -332,7 +332,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Mittens',
         owner_email: 'alex.chen@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -345,7 +345,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Coco',
         owner_email: 'lisa.garcia@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -358,7 +358,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Simba',
         owner_email: 'lisa.garcia@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -371,7 +371,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Duke',
         owner_email: 'david.miller@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -384,7 +384,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Princess',
         owner_email: 'david.miller@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -397,7 +397,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Buddy',
         owner_email: 'john.doe@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -410,7 +410,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Max',
         owner_email: 'jane.smith@example.com',
         staff_email: 'dr.brown@borzolini.com',
@@ -423,7 +423,7 @@ export class AppointmentsSeeder {
         is_telemedicine: false,
       },
       {
-        clinic_name: 'Banfield Pet Hospital - Downtown',
+        clinic_name: 'Borzolini Pet Clinic',
         pet_name: 'Rocky',
         owner_email: 'mike.brown@example.com',
         staff_email: 'dr.brown@borzolini.com',
