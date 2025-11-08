@@ -264,10 +264,6 @@ class SkinDiseaseTrainer {
           disease_output: 'categoricalCrossentropy',
           age_output: 'meanSquaredError',
         },
-        lossWeights: {
-          disease_output: 1.0,
-          age_output: ageLossWeight,
-        },
         metrics: {
           disease_output: 'accuracy',
           age_output: 'mae'
@@ -472,9 +468,9 @@ class SkinDiseaseTrainer {
         this.config.imageSize,
         this.config.imageSize,
         3,
-      ]) as tf.Tensor4D;
+      ]);
       return tensor;
-    }) as tf.Tensor4D;
+    });
   }
 
   /**
@@ -530,31 +526,29 @@ class SkinDiseaseTrainer {
     // Calculate per-class metrics
     const metrics: { [className: string]: { precision: number; recall: number; f1: number; support: number } } = {};
 
-    for (let i = 0; i < classNames.length; i++) {
+    const numClasses = Math.min(classNames.length, predArray.length);
+    for (let i = 0; i < numClasses; i++) {
       let truePositives = 0;
       let falsePositives = 0;
       let falseNegatives = 0;
       let support = 0;
 
-      predArray.forEach((pred, idx) => {
+      predArray.slice(0, numClasses).forEach((pred, idx) => {
         const predClass = pred.indexOf(Math.max(...pred));
         const trueClass = (trueLabels[idx] ?? []).indexOf(1);
         
-        support += trueClass === i ? 1 : 0;
+        if (trueClass === i) support++;
 
         if (predClass === i && trueClass === i) truePositives++;
         else if (predClass === i && trueClass !== i) falsePositives++;
         else if (predClass !== i && trueClass === i) falseNegatives++;
       });
 
-      const precision = truePositives / (truePositives + falsePositives) || 0;
-      const recall = truePositives / (truePositives + falseNegatives) || 0;
+      const precision = truePositives / (truePositives + falsePositives + Number.EPSILON) || 0;
+      const recall = truePositives / (truePositives + falseNegatives + Number.EPSILON) || 0;
       const f1 = 2 * (precision * recall) / (precision + recall) || 0;
 
-      const classNamesArr = Array.from(classNames);
-      if (i < classNamesArr.length) {
-        metrics[classNamesArr[i]] = { precision, recall, f1, support };
-      }
+      metrics[classNames[i]] = { precision, recall, f1, support };
     }
 
     // Calculate overall metrics
