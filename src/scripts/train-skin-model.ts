@@ -547,7 +547,10 @@ class SkinDiseaseTrainer {
       const recall = truePositives / (truePositives + falseNegatives + Number.EPSILON) || 0;
       const f1 = 2 * (precision * recall) / (precision + recall) || 0;
 
-      metrics[classNames[i]] = { precision, recall, f1, support };
+      const className = classNames[i];
+      if (className !== undefined) {
+        metrics[className] = { precision, recall, f1, support };
+      }
     }
 
     // Calculate overall metrics
