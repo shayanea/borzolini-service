@@ -221,8 +221,7 @@ class SkinDiseaseTrainer {
    * Falls back to single-task if something goes wrong.
    */
   private async createMobileNetMultiTaskModel(
-    numDiseaseClasses: number,
-    ageLossWeight: number = 0.5
+    numDiseaseClasses: number
   ): Promise<tf.LayersModel> {
     console.log('Loading MobileNetV2 base model for MULTI-TASK transfer learning...');
     try {
@@ -479,7 +478,7 @@ class SkinDiseaseTrainer {
   private labelsToTensor(labels: number[], numClasses: number): tf.Tensor2D {
     return tf.tidy(() => {
       const labelsTensor = tf.tensor1d(labels, 'int32');
-      return tf.oneHot(labelsTensor, numClasses);
+      return tf.oneHot(labelsTensor, numClasses) as tf.Tensor2D;
     });
   }
 
@@ -527,7 +526,7 @@ class SkinDiseaseTrainer {
     const metrics: { [className: string]: { precision: number; recall: number; f1: number; support: number } } = {};
 
     const numClasses = Math.min(classNames.length, predArray.length);
-    for (let i = 0; i < numClasses; i++) {
+    for (let i = 0; i < numClasses && i < classNames.length; i++) {
       let truePositives = 0;
       let falsePositives = 0;
       let falseNegatives = 0;
@@ -601,8 +600,7 @@ class SkinDiseaseTrainer {
     // Create model (single-task by default; multi-task if age CSVs present)
     if (this.config.modelType === 'mobilenet' && canMultiTask) {
       this.model = await this.createMobileNetMultiTaskModel(
-        this.config.numClasses,
-        this.config.ageLossWeight ?? 0.5
+        this.config.numClasses
       );
     } else {
       this.model = await this.createModel();
@@ -787,11 +785,11 @@ class SkinDiseaseTrainer {
         } as any
       );
     } else {
-      const validationData = valLabelsTensor ? [trainData as tf.Tensor4D, trainLabelsTensor as tf.Tensor2D, valData as tf.Tensor4D] : undefined;
-      await this.model.fit(trainData as tf.Tensor4D, trainLabelsTensor as tf.Tensor2D, {
+      const validationData = valLabelsTensor ? [valData, valLabelsTensor] : undefined;
+      await this.model.fit(trainData as any, trainLabelsTensor as any, {
         batchSize: this.config.batchSize,
         epochs: this.config.epochs,
-        validationData,
+        validationData: validationData as any,
         shuffle: true,
         callbacks: {
           onEpochEnd: (epoch: number, logs: any) => this.onEpochEnd(epoch, logs)
