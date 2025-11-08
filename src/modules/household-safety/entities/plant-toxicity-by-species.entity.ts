@@ -18,7 +18,11 @@ export class PlantToxicityBySpecies {
   species!: PetSpecies;
 
   @ApiProperty({ enum: PlantToxicityLevel })
-  @Column({ type: 'enum', enum: PlantToxicityLevel })
+  @Column({ 
+    type: 'enum', 
+    enum: PlantToxicityLevel,
+    enumName: 'plant_toxicity_level'  // Explicit enum name for PostgreSQL
+  })
   toxicity!: PlantToxicityLevel;
 
   @ApiProperty({ type: [String] })
