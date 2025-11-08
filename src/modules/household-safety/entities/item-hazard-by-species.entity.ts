@@ -18,7 +18,11 @@ export class ItemHazardBySpecies {
   species!: PetSpecies;
 
   @ApiProperty({ enum: HazardSeverity })
-  @Column({ type: 'enum', enum: HazardSeverity })
+  @Column({ 
+    type: 'enum', 
+    enum: HazardSeverity,
+    enumName: 'hazard_severity'  // Explicit enum name for PostgreSQL
+  })
   severity!: HazardSeverity;
 
   @ApiProperty({ type: [String] })
