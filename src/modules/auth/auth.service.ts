@@ -100,7 +100,9 @@ export class AuthService implements OnModuleInit {
     }
 
     if (await bcrypt.compare(password, user.passwordHash)) {
-      const result = { ...user };
+      // Load pets relation to check pet ownership
+      const userWithPets = await this.usersService.findOneWithPets(user.id);
+      const result = { ...userWithPets };
       delete (result as any).passwordHash;
       return result;
     }
@@ -138,6 +140,15 @@ export class AuthService implements OnModuleInit {
         this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
       }
 
+      // Calculate first-time login status
+      const isFirstTime = !user.lastLoginAt || 
+        (user.lastLoginAt.getTime() === user.createdAt.getTime());
+
+      // Calculate pet ownership status
+      const activePets = user.pets?.filter(pet => pet.is_active) || [];
+      const hasPets = activePets.length > 0;
+      const petCount = activePets.length;
+
       const response: any = {
         user: {
           id: user.id,
@@ -150,6 +161,9 @@ export class AuthService implements OnModuleInit {
           isPhoneVerified: user.isPhoneVerified,
           profileCompletionPercentage: user.profileCompletionPercentage,
           accountStatus: user.accountStatus,
+          isFirstTime,
+          hasPets,
+          petCount,
         },
         message: 'Login successful',
       };
@@ -210,6 +224,9 @@ export class AuthService implements OnModuleInit {
         isPhoneVerified: user.isPhoneVerified,
         profileCompletionPercentage: user.profileCompletionPercentage,
         accountStatus: user.accountStatus,
+        isFirstTime: true, // New registration is always first time
+        hasPets: false, // New user has no pets yet
+        petCount: 0,
       },
       message: 'Registration successful. Please check your email to verify your account.',
     };

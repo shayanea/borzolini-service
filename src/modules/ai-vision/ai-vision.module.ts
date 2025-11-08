@@ -6,6 +6,10 @@ import { TensorFlowFeatureExtractorService } from './services/tensorflow-feature
 import { SkinDiseaseClassifierService } from './services/skin-disease-classifier.service';
 import { AgeWeightEstimatorService } from './services/age-weight-estimator.service';
 import { AiHealthModule } from '../ai-health/ai-health.module';
+import { EarDiseaseClassifierService } from './services/ear-disease-classifier.service';
+import { PawDiseaseClassifierService } from './services/paw-disease-classifier.service';
+import { EyeDiseaseClassifierService } from './services/eye-disease-classifier.service';
+import { BodyConditionClassifierService } from './services/body-condition-classifier.service';
 
 @Module({
   imports: [ConfigModule, AiHealthModule],
@@ -14,12 +18,20 @@ import { AiHealthModule } from '../ai-health/ai-health.module';
     ImagePreprocessingService,
     TensorFlowFeatureExtractorService,
     SkinDiseaseClassifierService,
+    EarDiseaseClassifierService,
+    PawDiseaseClassifierService,
+    EyeDiseaseClassifierService,
+    BodyConditionClassifierService,
     AgeWeightEstimatorService,
   ],
   exports: [
     ImagePreprocessingService,
     TensorFlowFeatureExtractorService,
     SkinDiseaseClassifierService,
+    EarDiseaseClassifierService,
+    PawDiseaseClassifierService,
+    EyeDiseaseClassifierService,
+    BodyConditionClassifierService,
     AgeWeightEstimatorService,
   ],
 })

@@ -1,28 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { getDiseasePrototypesForBreed } from '../constants/disease-prototypes';
-
-export interface ClassifiedCondition {
-  name: string;
-  category: string;
-  probability: number;
-  severity: 'mild' | 'moderate' | 'severe';
-  urgency: 'routine' | 'soon' | 'urgent' | 'emergency';
-}
-
-export interface SpatialAnalysis {
-  regions: Array<{ location: string; severity: number }>;
-  visualFeatures: {
-    redness: number;
-    inflammation: number;
-    hairLoss: number;
-    lesions: number;
-    scaling: number;
-  };
-}
+import { BaseBodyPartClassifierService, ClassifiedCondition, SpatialAnalysis } from './base-body-part-classifier.service';
 
 @Injectable()
-export class SkinDiseaseClassifierService {
-  private readonly _logger = new Logger(SkinDiseaseClassifierService.name);
+export class SkinDiseaseClassifierService extends BaseBodyPartClassifierService {
 
   /**
    * Classify skin disease using zero-shot classification
@@ -87,45 +68,7 @@ export class SkinDiseaseClassifierService {
    * Analyze spatial features from patch tokens
    * Identifies affected areas in the image
    */
-  analyzeSpatial(
-    patchFeatures: Float32Array,
-    globalFeatures: Float32Array
-  ): SpatialAnalysis {
-    const patchDim = globalFeatures.length; // Feature dimension
-    const gridSize = 16; // 16x16 patches for 224x224 input
-    const numPatches = 256;
-
-    // Calculate activation strength for each patch
-    const patchActivations: number[] = [];
-    for (let i = 0; i < numPatches; i++) {
-      const patchStart = i * patchDim;
-      const patchEnd = patchStart + patchDim;
-      const patch = patchFeatures.slice(patchStart, patchEnd);
-
-      // L2 norm as activation strength
-      let norm = 0;
-      for (let j = 0; j < patch.length; j++) {
-        norm += patch[j] * patch[j];
-      }
-      patchActivations.push(Math.sqrt(norm));
-    }
-
-    // Find top affected patches
-    const topPatches = patchActivations
-      .map((activation, index) => ({ activation, index }))
-      .sort((a, b) => b.activation - a.activation)
-      .slice(0, 5);
-
-    const regions = topPatches.map((patch) => ({
-      location: this.patchIndexToLocation(patch.index, gridSize),
-      severity: this.normalizeActivation(patch.activation),
-    }));
-
-    // Extract visual features from activations
-    const visualFeatures = this.extractVisualFeatures(patchActivations);
-
-    return { regions, visualFeatures };
-  }
+  // analyzeSpatial inherited
 
   /**
    * Generate recommendations based on detected conditions
@@ -258,110 +201,6 @@ export class SkinDiseaseClassifierService {
   /**
    * Calculate cosine similarity between two vectors
    */
-  private cosineSimilarity(a: Float32Array, b: Float32Array): number {
-    if (a.length !== b.length) {
-      return 0;
-    }
-
-    let dotProduct = 0;
-    let normA = 0;
-    let normB = 0;
-
-    for (let i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
-    }
-
-    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
-    if (denominator === 0) {
-      return 0;
-    }
-
-    return dotProduct / denominator;
-  }
-
-  /**
-   * Convert similarity scores to probabilities using softmax
-   */
-  private softmax(values: number[]): number[] {
-    const max = Math.max(...values);
-    const exps = values.map((v) => Math.exp(v - max));
-    const sum = exps.reduce((a, b) => a + b, 0);
-    return exps.map((e) => e / sum);
-  }
-
-  /**
-   * Determine severity based on probability
-   */
-  private determineSeverity(
-    probability: number
-  ): 'mild' | 'moderate' | 'severe' {
-    if (probability > 0.7) {
-      return 'severe';
-    } else if (probability > 0.4) {
-      return 'moderate';
-    }
-    return 'mild';
-  }
-
-  /**
-   * Convert patch index to location description
-   */
-  private patchIndexToLocation(
-    index: number,
-    gridSize: number
-  ): string {
-    const row = Math.floor(index / gridSize);
-    const col = index % gridSize;
-
-    const rowLabel =
-      row < gridSize / 3
-        ? 'upper'
-        : row < (2 * gridSize) / 3
-          ? 'middle'
-          : 'lower';
-    const colLabel =
-      col < gridSize / 3
-        ? 'left'
-        : col < (2 * gridSize) / 3
-          ? 'center'
-          : 'right';
-
-    return `${rowLabel} ${colLabel}`;
-  }
-
-  /**
-   * Normalize activation value to 0-1 range
-   */
-  private normalizeActivation(activation: number): number {
-    // Heuristic normalization - adjust based on actual activation ranges
-    return Math.min(1, activation / 10);
-  }
-
-  /**
-   * Extract visual features from patch activations
-   */
-  private extractVisualFeatures(activations: number[]): {
-    redness: number;
-    inflammation: number;
-    hairLoss: number;
-    lesions: number;
-    scaling: number;
-  } {
-    const max = Math.max(...activations);
-    const mean = activations.reduce((a, b) => a + b, 0) / activations.length;
-    const variance =
-      activations.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
-      activations.length;
-
-    return {
-      redness: Math.min(1, (mean / max) * 0.7),
-      inflammation: Math.min(1, (mean / max) * 0.8),
-      hairLoss: Math.min(1, (variance / max) * 0.6),
-      lesions: Math.min(1, ((max / mean - 1) * 0.5) || 0),
-      scaling: Math.min(1, (variance / mean) * 0.7),
-    };
-  }
+  // utility methods inherited from base
 }
 

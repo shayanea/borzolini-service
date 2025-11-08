@@ -480,6 +480,19 @@ export class UsersService implements OnModuleInit {
     return user;
   }
 
+  async findOneWithPets(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: ['preferences', 'activities', 'pets'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
