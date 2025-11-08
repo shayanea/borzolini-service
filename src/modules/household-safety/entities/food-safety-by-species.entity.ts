@@ -26,7 +26,11 @@ export class FoodSafetyBySpecies {
   species!: PetSpecies;
 
   @ApiProperty({ enum: FoodSafetyLevel })
-  @Column({ type: 'enum', enum: FoodSafetyLevel })
+  @Column({ 
+    type: 'enum', 
+    enum: FoodSafetyLevel,
+    enumName: 'food_safety_level'  // Explicit enum name for PostgreSQL
+  })
   safety!: FoodSafetyLevel;
 
   @ApiProperty({ required: false })
