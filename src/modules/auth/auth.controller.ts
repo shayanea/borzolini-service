@@ -4,7 +4,9 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { Request as ExpressRequest, Response } from 'express';
 import { AuthService } from './auth.service';
 import { ChangePasswordDto, ForgotPasswordDto, LoginDto, RegisterDto, ResetPasswordDto } from './dto/auth.dto';
+import { GoogleAuthDto } from './dto/google-auth.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthService } from './services/google-auth.service';
 
 // Define the user type from JWT payload
 interface JwtUser {
@@ -25,7 +27,10 @@ interface AuthenticatedRequest extends ExpressRequest {
 @Controller('auth')
 @UseGuards(ThrottlerGuard)
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleAuthService: GoogleAuthService
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -404,5 +409,57 @@ export class AuthController {
       isClinicAdmin: user.role === 'clinic_admin',
       isSuperAdmin: user.role === 'admin',
     };
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Google authentication',
+    description: 'Authenticate user with Google ID token from react-oauth/google',
+  })
+  @ApiBody({
+    description: 'Google ID token',
+    examples: {
+      google: {
+        summary: 'Google Token',
+        value: {
+          token: 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjF...',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Google authentication successful',
+    schema: {
+      example: {
+        user: {
+          id: 'uuid-string',
+          email: 'user@gmail.com',
+          firstName: 'John',
+          lastName: 'Doe',
+          role: 'patient',
+          isEmailVerified: true,
+          isPhoneVerified: false,
+          profileCompletionPercentage: 30,
+          accountStatus: 'active',
+          isFirstTime: true,
+        },
+        accessToken: 'eyJ...',
+        refreshToken: 'eyJ...',
+        message: 'Google login successful',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid Google token',
+  })
+  async googleAuth(
+    @Body() googleAuthDto: GoogleAuthDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const googleProfile = await this.googleAuthService.verifyToken(googleAuthDto.token);
+    return this.authService.googleLogin(googleProfile, res);
   }
 }

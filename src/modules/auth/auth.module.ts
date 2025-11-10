@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { ClinicAccessGuard } from './guards/clinic-access.guard';
 import { ClinicStaff } from '../clinics/entities/clinic-staff.entity';
+import { GoogleAuthService } from './services/google-auth.service';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -35,7 +36,7 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, ClinicAccessGuard],
-  exports: [AuthService, JwtStrategy, JwtRefreshStrategy, ClinicAccessGuard],
+  providers: [AuthService, JwtStrategy, JwtRefreshStrategy, ClinicAccessGuard, GoogleAuthService],
+  exports: [AuthService, JwtStrategy, JwtRefreshStrategy, ClinicAccessGuard, GoogleAuthService],
 })
 export class AuthModule {}

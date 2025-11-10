@@ -501,6 +501,65 @@ export class UsersService implements OnModuleInit {
     return this.userRepository.findOne({ where: { phone } });
   }
 
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { googleId } });
+  }
+
+  async findOrCreateGoogleUser(googleProfile: {
+    googleId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    avatar?: string;
+  }): Promise<User> {
+    // Check if user exists by Google ID
+    let user = await this.findByGoogleId(googleProfile.googleId);
+    if (user) {
+      return user;
+    }
+
+    // Check if user exists by email
+    user = await this.findByEmail(googleProfile.email);
+    if (user) {
+      // Link Google account to existing user
+      user.googleId = googleProfile.googleId;
+      user.googleEmail = googleProfile.email;
+      if (googleProfile.avatar) {
+        user.avatar = googleProfile.avatar;
+      }
+      return this.userRepository.save(user);
+    }
+
+    // Create new user
+    const newUserData: any = {
+      email: googleProfile.email,
+      firstName: googleProfile.firstName,
+      lastName: googleProfile.lastName,
+      googleId: googleProfile.googleId,
+      googleEmail: googleProfile.email,
+      passwordHash: '', // No password for social login
+      isEmailVerified: true, // Google verifies email
+      isActive: true,
+      role: UserRole.PATIENT,
+    };
+
+    if (googleProfile.avatar) {
+      newUserData.avatar = googleProfile.avatar;
+    }
+
+    const newUser = this.userRepository.create(newUserData);
+    const savedUserResult = await this.userRepository.save(newUser);
+    const savedUser = (Array.isArray(savedUserResult) ? savedUserResult[0] : savedUserResult) as User;
+
+    // Create user preferences
+    const preferences = this.userPreferencesRepository.create({
+      userId: savedUser.id,
+    });
+    await this.userPreferencesRepository.save(preferences);
+
+    return savedUser;
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto, currentUserRole?: UserRole): Promise<User> {
     const user = await this.findOne(id);
 

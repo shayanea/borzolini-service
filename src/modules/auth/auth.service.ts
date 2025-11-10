@@ -466,4 +466,85 @@ export class AuthService implements OnModuleInit {
   async getProfile(userId: string): Promise<any> {
     return this.usersService.findOne(userId);
   }
+
+  async googleLogin(
+    googleProfile: {
+      googleId: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      picture?: string;
+    },
+    res?: Response
+  ): Promise<any> {
+    try {
+      const googleProfileData: {
+        googleId: string;
+        email: string;
+        firstName: string;
+        lastName: string;
+        avatar?: string;
+      } = {
+        googleId: googleProfile.googleId,
+        email: googleProfile.email,
+        firstName: googleProfile.firstName,
+        lastName: googleProfile.lastName,
+      };
+
+      if (googleProfile.picture) {
+        googleProfileData.avatar = googleProfile.picture;
+      }
+
+      const user = await this.usersService.findOrCreateGoogleUser(googleProfileData);
+
+      // Update last login
+      await this.usersService.updateLastLogin(user.id);
+
+      const tokens = await this.generateTokens(user);
+
+      // Store refresh token
+      await this.usersService.updateRefreshToken(
+        user.id,
+        tokens.refreshToken,
+        new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)
+      );
+
+      // Set cookies if response object is provided
+      if (res) {
+        this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      }
+
+      // Calculate first-time login status
+      const isFirstTime = !user.lastLoginAt || user.lastLoginAt.getTime() === user.createdAt.getTime();
+
+      // Calculate pet ownership status
+      const activePets = user.pets?.filter((pet: any) => pet.is_active) || [];
+      const hasPets = activePets.length > 0;
+      const petCount = activePets.length;
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          avatar: user.avatar,
+          isEmailVerified: user.isEmailVerified,
+          isPhoneVerified: user.isPhoneVerified,
+          profileCompletionPercentage: user.profileCompletionPercentage,
+          accountStatus: user.accountStatus,
+          isFirstTime,
+          hasPets,
+          petCount,
+        },
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        message: 'Google login successful',
+      };
+    } catch (error) {
+      this.logger.error('Google login failed:', error);
+      throw error;
+    }
+  }
 }

@@ -154,6 +154,12 @@ export class User {
   @Column({ name: 'clinic_id', type: 'uuid', nullable: true })
   clinic_id?: string;
 
+  @Column({ name: 'google_id', nullable: true, unique: true })
+  googleId?: string;
+
+  @Column({ name: 'google_email', nullable: true })
+  googleEmail?: string;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
