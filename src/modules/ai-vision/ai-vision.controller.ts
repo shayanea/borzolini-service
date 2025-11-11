@@ -27,6 +27,9 @@ import { AnalyzeBodyDto } from './dto/analyze-body.dto';
 import { BodyAnalysisResponseDto } from './dto/body-analysis-response.dto';
 import { AnalyzeEarDto } from './dto/analyze-ear.dto';
 import { EarAnalysisResponseDto } from './dto/ear-analysis-response.dto';
+import { PawDiseaseClassifierService } from './services/paw-disease-classifier.service';
+import { EyeDiseaseClassifierService } from './services/eye-disease-classifier.service';
+import { BodyConditionClassifierService } from './services/body-condition-classifier.service';
 
 @ApiTags('AI Vision')
 @Controller('ai-vision')
@@ -39,9 +42,9 @@ export class AiVisionController {
     private readonly featureExtractor: TensorFlowFeatureExtractorService,
     private readonly classifier: SkinDiseaseClassifierService,
     private readonly earClassifier: EarDiseaseClassifierService,
-    private readonly pawClassifier: import('./services/paw-disease-classifier.service').PawDiseaseClassifierService,
-    private readonly eyeClassifier: import('./services/eye-disease-classifier.service').EyeDiseaseClassifierService,
-    private readonly bodyConditionClassifier: import('./services/body-condition-classifier.service').BodyConditionClassifierService,
+    private readonly pawClassifier: PawDiseaseClassifierService,
+    private readonly eyeClassifier: EyeDiseaseClassifierService,
+    private readonly bodyConditionClassifier: BodyConditionClassifierService,
     private readonly ageWeightEstimator: AgeWeightEstimatorService
   ) {}
 
