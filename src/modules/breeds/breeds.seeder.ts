@@ -14,7 +14,9 @@ interface BreedData {
   weight_min: number;
   weight_max: number;
   origin_country: string;
+  origin_history?: string;
   description: string;
+  resources?: string[];
   grooming_needs: GroomingNeeds;
   exercise_needs: ExerciseNeeds;
 }
@@ -43,7 +45,15 @@ export class BreedsSeeder {
         weight_min: 55,
         weight_max: 80,
         origin_country: 'Canada',
+        origin_history: 'The Labrador Retriever originated in Newfoundland, Canada in the early 19th century. They were bred from St. John\'s water dogs, a breed used by fishermen to retrieve fish that fell off fishing lines. The breed was later refined in England where they became popular as gun dogs for hunting waterfowl. Their friendly nature, intelligence, and water-loving abilities made them ideal for both work and companionship.',
         description: 'A medium-large gun dog that was bred to retrieve shot waterfowl',
+        resources: [
+          'https://www.akc.org/dog-breeds/labrador-retriever/',
+          'https://www.labradorretrieverclub.com/',
+          'https://www.ofa.org/breeds/labrador-retrievers',
+          'https://www.pennhip.org/',
+          'American Kennel Club Labrador Retriever Breed Standard'
+        ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
       },
@@ -58,7 +68,15 @@ export class BreedsSeeder {
         weight_min: 55,
         weight_max: 75,
         origin_country: 'Scotland',
+        origin_history: 'The Golden Retriever was developed in Scotland in the mid-19th century by Dudley Marjoribanks, 1st Baron Tweedmouth. He crossed a yellow-colored Retriever with the Tweed Water Spaniel, aiming to create a superior hunting companion. The breed was officially recognized in 1913 and quickly became popular for their gentle temperament and versatility. They excel as hunting dogs, service animals, and family companions.',
         description: 'A large-sized gun dog that was bred to retrieve shot waterfowl',
+        resources: [
+          'https://www.akc.org/dog-breeds/golden-retriever/',
+          'https://www.grca.org/',
+          'https://www.ofa.org/breeds/golden-retrievers',
+          'https://www.goldenretrieverfoundation.org/',
+          'American Kennel Club Golden Retriever Breed Standard'
+        ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
       },
@@ -73,7 +91,15 @@ export class BreedsSeeder {
         weight_min: 50,
         weight_max: 90,
         origin_country: 'Germany',
+        origin_history: 'The German Shepherd Dog was developed in Germany in 1899 by Captain Max von Stephanitz and other breeders. They were originally bred from various German sheep herding dogs, with the goal of creating an intelligent working dog. The breed excelled in herding, police work, and military service. They became famous for their loyalty, intelligence, and versatility, serving as guide dogs, search and rescue dogs, and police K-9 units worldwide.',
         description: 'A medium to large-sized working dog that originated in Germany',
+        resources: [
+          'https://www.akc.org/dog-breeds/german-shepherd-dog/',
+          'https://www.gsdca.org/',
+          'https://www.ofa.org/breeds/german-shepherd-dogs',
+          'https://www.germanshepherddog.com/',
+          'American Kennel Club German Shepherd Dog Breed Standard'
+        ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
       },
@@ -88,7 +114,15 @@ export class BreedsSeeder {
         weight_min: 20,
         weight_max: 28,
         origin_country: 'France',
+        origin_history: 'The French Bulldog originated in England in the 19th century, bred from Bulldog and terrier crosses. They were brought to France by lace workers who immigrated from Nottingham, where the breed became popular among Parisian artisans and shopkeepers. Their compact size and friendly nature made them ideal companion dogs. The breed was officially recognized in France and gained worldwide popularity as a lap dog and show dog.',
         description: 'A small domestic dog breed that originated in France',
+        resources: [
+          'https://www.akc.org/dog-breeds/french-bulldog/',
+          'https://www.frenchbulldogclubofamerica.org/',
+          'https://www.ofa.org/breeds/french-bulldogs',
+          'https://www.frenchbulldogrescue.org/',
+          'American Kennel Club French Bulldog Breed Standard'
+        ],
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
       },
@@ -103,7 +137,15 @@ export class BreedsSeeder {
         weight_min: 45,
         weight_max: 70,
         origin_country: 'Germany',
+        origin_history: 'The Poodle originated in Germany as a water retriever and hunting dog. The breed was developed from various European water dogs and was used for retrieving waterfowl. Their distinctive curly coat was originally practical for swimming, helping to insulate them in cold water. Poodles come in three sizes: Standard, Miniature, and Toy, each developed for different hunting purposes. They became popular as show dogs and companions due to their intelligence and trainability.',
         description: 'A water dog breed that comes in three size varieties',
+        resources: [
+          'https://www.akc.org/dog-breeds/poodle/',
+          'https://www.poodleclubofamerica.org/',
+          'https://www.ofa.org/breeds/poodles',
+          'https://www.poodle-rescue.org/',
+          'American Kennel Club Poodle Breed Standard'
+        ],
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.MODERATE,
       },

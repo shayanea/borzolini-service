@@ -60,10 +60,21 @@ export class CreateBreedDto {
   @IsString()
   origin_country?: string;
 
+  @ApiProperty({ description: 'Detailed origin history and background of the breed', required: false, example: 'The Golden Retriever was developed in Scotland in the mid-19th century by Lord Tweedmouth...' })
+  @IsOptional()
+  @IsString()
+  origin_history?: string;
+
   @ApiProperty({ description: 'Description of the breed', required: false, example: 'A medium-large gun dog that was bred to retrieve shot waterfowl' })
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({ description: 'Educational resources and references about the breed', type: [String], required: false, example: ['https://www.akc.org/dog-breeds/golden-retriever/', 'https://www.ofa.org/breeds/golden-retrievers'] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  resources?: string[];
 
   @ApiProperty({ description: 'Grooming needs level', enum: GroomingNeeds, required: false, example: GroomingNeeds.MODERATE })
   @IsOptional()

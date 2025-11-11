@@ -80,9 +80,17 @@ export class Breed {
   @Column({ type: 'varchar', length: 100, nullable: true })
   origin_country?: string;
 
+  @ApiProperty({ description: 'Detailed origin history and background of the breed', required: false })
+  @Column({ type: 'text', nullable: true })
+  origin_history?: string;
+
   @ApiProperty({ description: 'Description of the breed', required: false })
   @Column({ type: 'text', nullable: true })
   description?: string;
+
+  @ApiProperty({ description: 'Educational resources and references about the breed', required: false })
+  @Column({ type: 'jsonb', default: [] })
+  resources!: string[];
 
   @ApiProperty({ description: 'Grooming needs level', enum: GroomingNeeds, required: false })
   @Column({ type: 'enum', enum: GroomingNeeds, nullable: true })

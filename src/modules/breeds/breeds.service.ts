@@ -236,8 +236,14 @@ export class BreedsService {
     if (breed.origin_country !== undefined) {
       dto.origin_country = breed.origin_country;
     }
+    if (breed.origin_history !== undefined) {
+      dto.origin_history = breed.origin_history;
+    }
     if (breed.description !== undefined) {
       dto.description = breed.description;
+    }
+    if (breed.resources !== undefined) {
+      dto.resources = breed.resources;
     }
     if (breed.grooming_needs !== undefined) {
       dto.grooming_needs = breed.grooming_needs;

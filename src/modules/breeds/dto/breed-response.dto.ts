@@ -35,8 +35,14 @@ export class BreedResponseDto {
   @ApiProperty({ description: 'Country of origin', required: false })
   origin_country?: string;
 
+  @ApiProperty({ description: 'Detailed origin history and background of the breed', required: false })
+  origin_history?: string;
+
   @ApiProperty({ description: 'Description of the breed', required: false })
   description?: string;
+
+  @ApiProperty({ description: 'Educational resources and references about the breed', type: [String] })
+  resources!: string[];
 
   @ApiProperty({ description: 'Grooming needs level', enum: GroomingNeeds, required: false })
   grooming_needs?: GroomingNeeds;
