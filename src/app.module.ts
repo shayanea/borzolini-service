@@ -29,6 +29,7 @@ import { UsersModule } from './modules/users/users.module';
 import { getDatabaseConfig } from './config/database.config';
 import { HouseholdSafetyModule } from './modules/household-safety/household-safety.module';
 import { TrainingModule } from './modules/training/training.module';
+import { WalkGroupsModule } from './modules/walk-groups/walk-groups.module';
 
 @Module({
   imports: [
@@ -91,6 +92,7 @@ import { TrainingModule } from './modules/training/training.module';
     // PaymentsModule,
     HouseholdSafetyModule,
     TrainingModule,
+    WalkGroupsModule,
 
     // Common utilities
     CommonModule,

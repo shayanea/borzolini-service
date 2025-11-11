@@ -7,6 +7,8 @@ import { AiHealthInsight } from '../ai-health/entities/ai-health-insight.entity'
 import { Appointment } from '../appointments/entities/appointment.entity';
 import { ClinicReview } from '../clinics/entities/clinic-review.entity';
 import { UserActivity } from '../users/entities/user-activity.entity';
+import { User, UserRole } from '../users/entities/user.entity';
+import { TrainingService } from '../training/training.service';
 
 export interface CleanupResult {
   entity: string;
@@ -37,7 +39,10 @@ export class ScheduledTasksService {
     private clinicReviewRepository: Repository<ClinicReview>,
     @InjectRepository(AiHealthInsight)
     private aiHealthInsightRepository: Repository<AiHealthInsight>,
-    private configService: ConfigService
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private configService: ConfigService,
+    private trainingService: TrainingService,
   ) {}
 
   /**
@@ -79,6 +84,46 @@ export class ScheduledTasksService {
       this.logger.log(`📊 Total records deleted: ${summary.totalDeleted}`);
     } catch (error) {
       this.logger.error('❌ Weekly cleanup job failed:', error);
+    }
+  }
+
+  /**
+   * Daily training assignment job that runs at 6:00 AM
+   * Assigns personalized training activities to active users
+   */
+  @Cron('0 6 * * *') // Every day at 6:00 AM
+  async runDailyTrainingAssignment(): Promise<void> {
+    this.logger.log('🐕 Starting daily training assignment job...');
+
+    try {
+      // Get all active users (patients and pet owners)
+      const activeUsers = await this.userRepository.find({
+        where: {
+          isActive: true,
+          isEmailVerified: true,
+          role: UserRole.PATIENT, // Focus on patients who have pets
+        },
+        select: ['id', 'email', 'firstName', 'lastName'],
+      });
+
+      this.logger.log(`📊 Found ${activeUsers.length} active users for training assignment`);
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const user of activeUsers) {
+        try {
+          await this.trainingService.assignDailyTraining(user.id);
+          successCount++;
+        } catch (error) {
+          this.logger.error(`❌ Failed to assign training for user ${user.id}:`, error);
+          errorCount++;
+        }
+      }
+
+      this.logger.log(`✅ Daily training assignment completed: ${successCount} successful, ${errorCount} failed`);
+    } catch (error) {
+      this.logger.error('❌ Daily training assignment job failed:', error);
     }
   }
 
