@@ -207,6 +207,10 @@ export class User {
   @OneToMany(() => AppointmentReview, (review) => review.user)
   appointment_reviews!: AppointmentReview[];
 
+  // Pet hosting relationships (forward declaration to avoid circular dependencies)
+  hosted_pets?: any[]; // PetHost[]
+  hosting_bookings?: any[]; // PetHostingBooking[]
+
   canLogin(): boolean {
     return this.isActive && this.isEmailVerified;
   }

@@ -64,7 +64,12 @@ CREATE TABLE IF NOT EXISTS pet_food_aliases (
 );
 
 -- Plants
-CREATE TYPE IF NOT EXISTS plant_toxicity_level AS ENUM ('non_toxic','minor','moderate','severe','fatal');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'plant_toxicity_level') THEN
+    CREATE TYPE plant_toxicity_level AS ENUM ('non_toxic','minor','moderate','severe','fatal');
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS household_plants (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -96,7 +101,12 @@ CREATE TABLE IF NOT EXISTS household_plant_toxicity_by_species (
 CREATE UNIQUE INDEX IF NOT EXISTS ux_plant_species ON household_plant_toxicity_by_species(plant_id, species);
 
 -- Other household items
-CREATE TYPE IF NOT EXISTS hazard_severity AS ENUM ('info','caution','danger','emergency');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'hazard_severity') THEN
+    CREATE TYPE hazard_severity AS ENUM ('info','caution','danger','emergency');
+  END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS household_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

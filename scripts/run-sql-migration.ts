@@ -37,15 +37,69 @@ async function runSqlMigration(migrationFileName: string) {
 
     logger.log(`📄 Executing migration SQL...`);
 
-    // Split the SQL by semicolons and execute each statement
-    const statements = migrationSql
-      .split(';')
-      .map((stmt) => stmt.trim())
-      .filter((stmt) => stmt.length > 0 && !stmt.startsWith('--'));
+    // Remove comments and split by semicolons, but preserve function definitions
+    // First, remove single-line comments
+    let cleanedSql = migrationSql
+      .split('\n')
+      .map(line => {
+        const commentIndex = line.indexOf('--');
+        if (commentIndex >= 0) {
+          return line.substring(0, commentIndex);
+        }
+        return line;
+      })
+      .join('\n');
 
+    // Split by semicolons, but be careful with function definitions
+    // We'll split by semicolons that are not inside $$ blocks
+    const statements: string[] = [];
+    let currentStatement = '';
+    let inDollarQuote = false;
+    let dollarTag = '';
+
+    for (let i = 0; i < cleanedSql.length; i++) {
+      const char = cleanedSql[i];
+
+      // Check for dollar quoting start/end
+      if (char === '$' && !inDollarQuote) {
+        // Look ahead to find the dollar tag
+        let tagEnd = cleanedSql.indexOf('$', i + 1);
+        if (tagEnd > i) {
+          dollarTag = cleanedSql.substring(i, tagEnd + 1);
+          inDollarQuote = true;
+          currentStatement += dollarTag;
+          i = tagEnd;
+          continue;
+        }
+      } else if (inDollarQuote && cleanedSql.substring(i).startsWith(dollarTag)) {
+        currentStatement += dollarTag;
+        i += dollarTag.length - 1;
+        inDollarQuote = false;
+        dollarTag = '';
+        continue;
+      }
+
+      currentStatement += char;
+
+      // If we're not in a dollar quote and we hit a semicolon, it's a statement end
+      if (!inDollarQuote && char === ';') {
+        const trimmed = currentStatement.trim();
+        if (trimmed.length > 0) {
+          statements.push(trimmed);
+        }
+        currentStatement = '';
+      }
+    }
+
+    // Add any remaining statement
+    if (currentStatement.trim().length > 0) {
+      statements.push(currentStatement.trim());
+    }
+
+    // Execute each statement
     for (const statement of statements) {
       if (statement.trim()) {
-        logger.log(`🔄 Executing: ${statement.substring(0, 50)}...`);
+        logger.log(`🔄 Executing: ${statement.substring(0, 50).replace(/\s+/g, ' ')}...`);
         await connection.query(statement);
       }
     }

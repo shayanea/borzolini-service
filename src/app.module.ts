@@ -30,6 +30,8 @@ import { getDatabaseConfig } from './config/database.config';
 import { HouseholdSafetyModule } from './modules/household-safety/household-safety.module';
 import { TrainingModule } from './modules/training/training.module';
 import { WalkGroupsModule } from './modules/walk-groups/walk-groups.module';
+import { PetHostingModule } from './modules/pet-hosting/pet-hosting.module';
+import { ResourcesModule } from './modules/resources/resources.module';
 
 @Module({
   imports: [
@@ -93,6 +95,8 @@ import { WalkGroupsModule } from './modules/walk-groups/walk-groups.module';
     HouseholdSafetyModule,
     TrainingModule,
     WalkGroupsModule,
+    PetHostingModule,
+    ResourcesModule,
 
     // Common utilities
     CommonModule,

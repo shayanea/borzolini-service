@@ -99,26 +99,34 @@ export class TrainingService {
     }
 
     // Check for existing assignment to prevent duplicates
+    const whereClause: { user_id: string; pet_id?: string | null; activity_id: string; assignment_date: Date } = {
+      user_id: userId,
+      activity_id: dto.activity_id,
+      assignment_date: dto.assignment_date ? new Date(dto.assignment_date) : new Date(),
+    };
+    if (dto.pet_id !== undefined && dto.pet_id !== null) {
+      whereClause.pet_id = dto.pet_id;
+    } else if (dto.pet_id === null) {
+      whereClause.pet_id = null;
+    }
     const existing = await this.assignmentRepo.findOne({
-      where: {
-        user_id: userId,
-        pet_id: dto.pet_id || undefined,
-        activity_id: dto.activity_id,
-        assignment_date: dto.assignment_date ? new Date(dto.assignment_date) : new Date(),
-      },
+      where: whereClause as any,
     });
 
     if (existing) {
       throw new BadRequestException('Assignment already exists for this activity and date');
     }
 
-    const assignment = this.assignmentRepo.create({
+    const assignmentData: { user_id: string; pet_id: string | null; activity_id: string; assignment_date: Date; notes?: string | null } = {
       user_id: userId,
       pet_id: dto.pet_id || null,
       activity_id: dto.activity_id,
       assignment_date: dto.assignment_date ? new Date(dto.assignment_date) : new Date(),
-      notes: dto.notes,
-    });
+    };
+    if (dto.notes !== undefined) {
+      assignmentData.notes = dto.notes || null;
+    }
+    const assignment = this.assignmentRepo.create(assignmentData);
 
     const saved = await this.assignmentRepo.save(assignment);
     return this.getAssignmentWithRelations(saved.id);

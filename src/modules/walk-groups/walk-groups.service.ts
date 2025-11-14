@@ -3,13 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CommonService } from '../../common/common.service';
-import { Pet, PetSize, PetSpecies } from '../pets/entities/pet.entity';
-import { User } from '../users/entities/user.entity';
+import { Pet } from '../pets/entities/pet.entity';
 import { CreateWalkGroupDto } from './dto/create-walk-group.dto';
 import { JoinWalkGroupByCodeDto, JoinWalkGroupDto } from './dto/join-walk-group.dto';
 import { ParticipantResponseDto, WalkGroupResponseDto } from './dto/walk-group-response.dto';
 import { UpdateWalkGroupDto } from './dto/update-walk-group.dto';
-import { WalkGroup, WalkGroupStatus, WalkGroupVisibility } from './entities/walk-group.entity';
+import { CompatibilityRules, WalkGroup, WalkGroupStatus, WalkGroupVisibility } from './entities/walk-group.entity';
 import { ParticipantStatus, WalkGroupParticipant } from './entities/walk-group-participant.entity';
 
 @Injectable()
@@ -21,8 +20,6 @@ export class WalkGroupsService {
     private readonly participantRepository: Repository<WalkGroupParticipant>,
     @InjectRepository(Pet)
     private readonly petRepository: Repository<Pet>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
     private readonly commonService: CommonService,
     private readonly configService: ConfigService,
   ) {}
@@ -52,7 +49,14 @@ export class WalkGroupsService {
     }
 
     // Check pet compatibility (organizer's pet must be compatible)
-    const compatibilityErrors = this.checkPetCompatibility(pet, createWalkGroupDto.compatibility_rules);
+    const compatibilityRules: CompatibilityRules = {
+      allowed_species: createWalkGroupDto.compatibility_rules.allowed_species,
+      allowed_sizes: createWalkGroupDto.compatibility_rules.allowed_sizes || [],
+      restricted_temperaments: createWalkGroupDto.compatibility_rules.restricted_temperaments || [],
+      require_vaccinated: createWalkGroupDto.compatibility_rules.require_vaccinated ?? true,
+      require_spayed_neutered: createWalkGroupDto.compatibility_rules.require_spayed_neutered ?? false,
+    };
+    const compatibilityErrors = this.checkPetCompatibility(pet, compatibilityRules);
     if (compatibilityErrors.length > 0) {
       throw new BadRequestException(`Your pet does not meet the compatibility requirements: ${compatibilityErrors.join(', ')}`);
     }
@@ -221,8 +225,15 @@ export class WalkGroupsService {
         relations: ['pet'],
       });
 
+      const compatibilityRules: CompatibilityRules = {
+        allowed_species: updateWalkGroupDto.compatibility_rules.allowed_species,
+        allowed_sizes: updateWalkGroupDto.compatibility_rules.allowed_sizes || [],
+        restricted_temperaments: updateWalkGroupDto.compatibility_rules.restricted_temperaments || [],
+        require_vaccinated: updateWalkGroupDto.compatibility_rules.require_vaccinated ?? true,
+        require_spayed_neutered: updateWalkGroupDto.compatibility_rules.require_spayed_neutered ?? false,
+      };
       for (const participant of participants) {
-        const errors = this.checkPetCompatibility(participant.pet, updateWalkGroupDto.compatibility_rules);
+        const errors = this.checkPetCompatibility(participant.pet, compatibilityRules);
         if (errors.length > 0) {
           throw new BadRequestException(
             `Cannot update compatibility rules: Pet ${participant.pet.name} no longer meets requirements (${errors.join(', ')})`,
@@ -417,16 +428,21 @@ export class WalkGroupsService {
       order: { joined_at: 'ASC' },
     });
 
-    return participants.map((p) => ({
-      id: p.id,
-      user_id: p.user_id,
-      pet_id: p.pet_id,
-      pet_name: p.pet.name,
-      owner_name: `${p.user.first_name} ${p.user.last_name}`,
-      status: p.status,
-      joined_at: p.joined_at,
-      notes: p.notes,
-    }));
+    return participants.map((p) => {
+      const participant: ParticipantResponseDto = {
+        id: p.id,
+        user_id: p.user_id,
+        pet_id: p.pet_id,
+        pet_name: p.pet.name,
+        owner_name: `${p.user.firstName} ${p.user.lastName}`,
+        status: p.status,
+        joined_at: p.joined_at,
+      };
+      if (p.notes !== undefined && p.notes !== null) {
+        participant.notes = p.notes;
+      }
+      return participant;
+    });
   }
 
   /**
@@ -574,33 +590,31 @@ export class WalkGroupsService {
   /**
    * Map walk group entity to response DTO
    */
-  private mapToResponseDto(walkGroup: WalkGroup, userId: string): WalkGroupResponseDto {
+  private mapToResponseDto(walkGroup: WalkGroup, _userId: string): WalkGroupResponseDto {
     const currentParticipants = walkGroup.participants?.filter((p) => p.status === ParticipantStatus.JOINED) || [];
 
-    const participants: ParticipantResponseDto[] = currentParticipants.map((p) => ({
-      id: p.id,
-      user_id: p.user_id,
-      pet_id: p.pet_id,
-      pet_name: p.pet?.name || 'Unknown',
-      owner_name: p.user ? `${p.user.first_name} ${p.user.last_name}` : 'Unknown',
-      status: p.status,
-      joined_at: p.joined_at,
-      notes: p.notes,
-    }));
+    const participants: ParticipantResponseDto[] = currentParticipants.map((p) => {
+      const participant: ParticipantResponseDto = {
+        id: p.id,
+        user_id: p.user_id,
+        pet_id: p.pet_id,
+        pet_name: p.pet?.name || 'Unknown',
+        owner_name: p.user ? `${p.user.firstName} ${p.user.lastName}` : 'Unknown',
+        status: p.status,
+        joined_at: p.joined_at,
+      };
+      if (p.notes !== undefined && p.notes !== null) {
+        participant.notes = p.notes;
+      }
+      return participant;
+    });
 
-    return {
+    const dto: WalkGroupResponseDto = {
       id: walkGroup.id,
       name: walkGroup.name,
-      description: walkGroup.description,
       scheduled_date: walkGroup.scheduled_date,
       duration_minutes: walkGroup.duration_minutes,
-      location_name: walkGroup.location_name,
       address: walkGroup.address,
-      latitude: walkGroup.latitude ? Number(walkGroup.latitude) : undefined,
-      longitude: walkGroup.longitude ? Number(walkGroup.longitude) : undefined,
-      city: walkGroup.city,
-      state: walkGroup.state,
-      postal_code: walkGroup.postal_code,
       country: walkGroup.country,
       max_participants: walkGroup.max_participants,
       current_participants: currentParticipants.length,
@@ -611,13 +625,37 @@ export class WalkGroupsService {
       status: walkGroup.status,
       is_active: walkGroup.is_active,
       organizer_id: walkGroup.organizer_id,
-      organizer_name: walkGroup.organizer ? `${walkGroup.organizer.first_name} ${walkGroup.organizer.last_name}` : 'Unknown',
-      participants,
+      organizer_name: walkGroup.organizer ? `${walkGroup.organizer.firstName} ${walkGroup.organizer.lastName}` : 'Unknown',
       created_at: walkGroup.created_at,
       updated_at: walkGroup.updated_at,
       is_upcoming: walkGroup.isUpcoming,
       is_full: walkGroup.isFull,
     };
+    if (walkGroup.description !== undefined && walkGroup.description !== null) {
+      dto.description = walkGroup.description;
+    }
+    if (walkGroup.location_name !== undefined && walkGroup.location_name !== null) {
+      dto.location_name = walkGroup.location_name;
+    }
+    if (walkGroup.latitude !== undefined && walkGroup.latitude !== null) {
+      dto.latitude = Number(walkGroup.latitude);
+    }
+    if (walkGroup.longitude !== undefined && walkGroup.longitude !== null) {
+      dto.longitude = Number(walkGroup.longitude);
+    }
+    if (walkGroup.city !== undefined && walkGroup.city !== null) {
+      dto.city = walkGroup.city;
+    }
+    if (walkGroup.state !== undefined && walkGroup.state !== null) {
+      dto.state = walkGroup.state;
+    }
+    if (walkGroup.postal_code !== undefined && walkGroup.postal_code !== null) {
+      dto.postal_code = walkGroup.postal_code;
+    }
+    if (participants.length > 0) {
+      dto.participants = participants;
+    }
+    return dto;
   }
 }
 

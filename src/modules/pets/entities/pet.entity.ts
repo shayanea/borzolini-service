@@ -154,6 +154,9 @@ export class Pet {
   @OneToMany(() => AppointmentReview, (review) => review.pet)
   appointment_reviews!: AppointmentReview[];
 
+  // Pet hosting relationships (forward declaration to avoid circular dependencies)
+  hosting_bookings?: any[]; // PetHostingBooking[]
+
   // Computed properties (not stored in database)
   get age(): number | null {
     if (!this.date_of_birth) return null;

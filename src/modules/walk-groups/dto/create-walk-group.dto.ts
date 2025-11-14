@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsArray, IsBoolean, IsDateString, IsEnum, IsInt, IsNumber, IsObject, IsOptional, IsString, IsUUID, Max, MaxLength, Min, ValidateNested } from 'class-validator';
-import { PetSize, PetSpecies } from '../../pets/entities/pet.entity';
 import { WalkGroupVisibility } from '../entities/walk-group.entity';
 
 export class CompatibilityRulesDto {
