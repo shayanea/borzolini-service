@@ -40,6 +40,75 @@ export class TrainingService {
     return activities.map((a) => ({ ...a, by_species: (a.by_species || []).filter((s) => s.species === species) }));
   }
 
+  /**
+   * Get all training activities with pagination, filtering, and sorting (Admin only)
+   */
+  async findAllActivities(options: {
+    page: number;
+    limit: number;
+    search?: string;
+    species?: PetSpecies;
+    difficulty?: string;
+    sortBy: string;
+    sortOrder: 'ASC' | 'DESC';
+  }): Promise<{ activities: TrainingActivity[]; total: number; page: number; totalPages: number }> {
+    const queryBuilder = this.activityRepo.createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.by_species', 'species');
+
+    const conditions: string[] = [];
+    const params: Record<string, any> = {};
+
+    if (options.search) {
+      conditions.push('(activity.title ILIKE :search OR activity.summary ILIKE :search)');
+      params.search = `%${options.search}%`;
+    }
+
+    if (options.difficulty) {
+      conditions.push('activity.difficulty = :difficulty');
+      params.difficulty = options.difficulty;
+    }
+
+    if (conditions.length > 0) {
+      queryBuilder.where(conditions.join(' AND '), params);
+    }
+
+    if (options.species) {
+      // Use EXISTS subquery to filter by species without excluding activities without species relationships
+      if (conditions.length > 0) {
+        queryBuilder.andWhere(
+          'EXISTS (SELECT 1 FROM training_activity_species tas WHERE tas.activity_id = activity.id AND tas.species = :species)',
+          { species: options.species }
+        );
+      } else {
+        queryBuilder.where(
+          'EXISTS (SELECT 1 FROM training_activity_species tas WHERE tas.activity_id = activity.id AND tas.species = :species)',
+          { species: options.species }
+        );
+      }
+    }
+
+    const total = await queryBuilder.getCount();
+
+    // Validate sortBy to prevent SQL injection
+    const validSortFields = ['created_at', 'updated_at', 'title', 'difficulty', 'avg_duration_minutes'];
+    const sortBy = validSortFields.includes(options.sortBy) ? options.sortBy : 'created_at';
+    const sortOrder = options.sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    queryBuilder
+      .orderBy(`activity.${sortBy}`, sortOrder)
+      .skip((options.page - 1) * options.limit)
+      .take(options.limit);
+
+    const activities = await queryBuilder.getMany();
+
+    return {
+      activities,
+      total,
+      page: options.page,
+      totalPages: Math.ceil(total / options.limit),
+    };
+  }
+
   // Daily Training Assignment Methods
 
   /**

@@ -9,6 +9,7 @@ import { Plant } from './entities/plant.entity';
 import { PlantToxicityBySpecies } from './entities/plant-toxicity-by-species.entity';
 import { HouseholdItem } from './entities/household-item.entity';
 import { ItemHazardBySpecies } from './entities/item-hazard-by-species.entity';
+import { HouseholdSafetySeeder } from './household-safety.seeder';
 
 @Module({
   imports: [
@@ -23,8 +24,8 @@ import { ItemHazardBySpecies } from './entities/item-hazard-by-species.entity';
     ]),
   ],
   controllers: [HouseholdSafetyController],
-  providers: [HouseholdSafetyService],
-  exports: [HouseholdSafetyService],
+  providers: [HouseholdSafetyService, HouseholdSafetySeeder],
+  exports: [HouseholdSafetyService, HouseholdSafetySeeder],
 })
 export class HouseholdSafetyModule {}
 

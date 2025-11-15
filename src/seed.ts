@@ -7,6 +7,8 @@ import { NestFactory } from '@nestjs/core';
 import { PetsSeeder } from './modules/pets/pets.seeder';
 import { ReviewsSeeder } from './modules/reviews/reviews.seeder';
 import { UsersSeeder } from './modules/users/users.seeder';
+import { HouseholdSafetySeeder } from './modules/household-safety/household-safety.seeder';
+import { TrainingSeeder } from './modules/training/training.seeder';
 
 async function seed() {
   console.log('🌱 Starting database seeding...');
@@ -20,6 +22,8 @@ async function seed() {
     const appointmentsSeeder = app.get(AppointmentsSeeder);
     const reviewsSeeder = app.get(ReviewsSeeder);
     const faqSeeder = app.get(FaqSeeder);
+    const householdSafetySeeder = app.get(HouseholdSafetySeeder);
+    const trainingSeeder = app.get(TrainingSeeder);
 
     // Clear existing data first for fresh seeding (in correct order due to foreign key constraints)
     console.log('🧹 Clearing existing data...');
@@ -31,6 +35,8 @@ async function seed() {
     await usersSeeder.clear(); // Clear users last (referenced by others)
     await faqSeeder.clear();
     await breedsSeeder.clear();
+    await householdSafetySeeder.clear();
+    await trainingSeeder.clear();
 
     // Seed in order of dependencies
     console.log('👥 Seeding users...');
@@ -56,6 +62,12 @@ async function seed() {
 
     console.log('❓ Seeding FAQs...');
     await faqSeeder.seed();
+
+    console.log('🛡️ Seeding household safety data...');
+    await householdSafetySeeder.seed();
+
+    console.log('🏋️ Seeding training activities...');
+    await trainingSeeder.seed();
 
     console.log('✅ Database seeding completed successfully!');
     console.log('🔑 Default password for all users: Password123!');
