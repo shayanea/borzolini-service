@@ -29,13 +29,14 @@ export class PlantToxicityBySpecies {
   @Column({ type: 'text', array: true, nullable: true })
   clinical_signs?: string[] | null;
 
-  @ApiProperty()
-  @Column({ type: 'boolean', default: false })
-  emergency!: boolean;
+  @Column({ type: 'text', nullable: true, name: 'emergency' })
+  emergency?: string;
 
-  @ApiProperty({ description: 'Array of citations with title/url/org/reviewedAt' })
-  @Column({ type: 'jsonb' })
-  citations!: Array<{ title: string; url: string; org: string; reviewedAt?: string }>;
+  @Column({ type: 'text', nullable: true, name: 'treatment_info' })
+  treatmentInfo?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  citations?: string[];
 }
 
 

@@ -31,19 +31,16 @@ export class FoodSafetyBySpecies {
     enum: FoodSafetyLevel,
     enumName: 'food_safety_level'  // Explicit enum name for PostgreSQL
   })
-  safety!: FoodSafetyLevel;
+  safety?: FoodSafetyLevel | null;
 
-  @ApiProperty({ required: false })
   @Column({ type: 'text', nullable: true })
-  safe_amount?: string | null;
+  preparation?: string;
 
-  @ApiProperty({ required: false })
+  @Column({ type: 'text', nullable: true, name: 'safe_amount' })
+  safeAmount?: string;
+
   @Column({ type: 'text', nullable: true })
-  frequency?: string | null;
-
-  @ApiProperty({ enum: Preparation })
-  @Column({ type: 'enum', enum: Preparation, default: Preparation.UNKNOWN })
-  preparation!: Preparation;
+  frequency?: string;
 
   @ApiProperty({ type: [String] })
   @Column({ type: 'text', array: true, nullable: true })
@@ -53,9 +50,11 @@ export class FoodSafetyBySpecies {
   @Column({ type: 'boolean', default: false })
   emergency!: boolean;
 
-  @ApiProperty({ description: 'Array of citations with title/url/org/reviewedAt' })
-  @Column({ type: 'jsonb' })
-  citations!: Array<{ title: string; url: string; org: string; reviewedAt?: string }>;
+  @Column({ type: 'text', nullable: true, name: 'treatment_info' })
+  treatmentInfo?: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  citations?: string[];
 }
 
 

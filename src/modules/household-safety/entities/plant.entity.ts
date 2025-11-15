@@ -40,13 +40,11 @@ export class Plant {
   @Column({ type: 'timestamptz', nullable: true })
   last_reviewed_at?: Date | null;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_primary!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_primary' })
+  sourcePrimary?: string;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_name!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_name' })
+  sourceName?: string;
 
   @ApiProperty({ required: false })
   @Column({ type: 'text', nullable: true })
@@ -56,18 +54,23 @@ export class Plant {
   @Column({ type: 'jsonb', nullable: true })
   terms_snapshot?: Record<string, unknown> | null;
 
-  @ApiProperty()
-  @Column({ type: 'bytea', unique: true })
-  hash!: Buffer;
+  @Column({ type: 'bytea', unique: true, nullable: true })
+  hash?: Buffer;
+
+  @Column({ type: 'jsonb', nullable: true })
+  citations?: string[];
+
+  @Column({ type: 'jsonb', nullable: true, name: 'toxic_compounds' })
+  toxicCompounds?: string[];
+
+  @OneToMany(() => PlantToxicityBySpecies, (toxicity) => toxicity.plant)
+  toxicity_by_species?: PlantToxicityBySpecies[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at!: Date;
-
-  @OneToMany(() => PlantToxicityBySpecies, (t) => t.plant)
-  toxicity_by_species?: PlantToxicityBySpecies[];
 }
 
 

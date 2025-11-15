@@ -35,25 +35,27 @@ export class HouseholdItem {
   @Column({ type: 'timestamptz', nullable: true })
   last_reviewed_at?: Date | null;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_primary!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_primary' })
+  sourcePrimary?: string;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_name!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_name' })
+  sourceName?: string;
 
   @ApiProperty({ required: false })
   @Column({ type: 'text', nullable: true })
   license?: string | null;
 
-  @ApiProperty({ required: false })
-  @Column({ type: 'jsonb', nullable: true })
-  terms_snapshot?: Record<string, unknown> | null;
+  @Column({ type: 'text', nullable: true, name: 'terms_snapshot' })
+  termsSnapshot?: string;
 
-  @ApiProperty()
-  @Column({ type: 'bytea', unique: true })
-  hash!: Buffer;
+  @Column({ type: 'bytea', unique: true, nullable: true })
+  hash?: Buffer;
+
+  @Column({ type: 'jsonb', nullable: true })
+  citations?: string[];
+
+  @Column({ type: 'jsonb', nullable: true, name: 'toxic_compounds' })
+  toxicCompounds?: string[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
@@ -61,7 +63,7 @@ export class HouseholdItem {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at!: Date;
 
-  @OneToMany(() => ItemHazardBySpecies, (h) => h.item)
+  @OneToMany(() => ItemHazardBySpecies, (hazard) => hazard.item)
   hazards_by_species?: ItemHazardBySpecies[];
 }
 

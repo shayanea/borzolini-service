@@ -40,13 +40,11 @@ export class FoodItem {
   @Column({ type: 'timestamptz', nullable: true })
   last_reviewed_at?: Date | null;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_primary!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_primary' })
+  sourcePrimary?: string;
 
-  @ApiProperty()
-  @Column({ type: 'text' })
-  source_name!: string;
+  @Column({ type: 'text', nullable: true, name: 'source_name' })
+  sourceName?: string;
 
   @ApiProperty({ required: false })
   @Column({ type: 'text', nullable: true })
@@ -56,9 +54,14 @@ export class FoodItem {
   @Column({ type: 'jsonb', nullable: true })
   terms_snapshot?: Record<string, unknown> | null;
 
-  @ApiProperty()
-  @Column({ type: 'bytea', unique: true })
-  hash!: Buffer;
+  @Column({ type: 'bytea', unique: true, nullable: true })
+  hash?: Buffer;
+
+  @Column({ type: 'jsonb', nullable: true })
+  citations?: string[];
+
+  @Column({ type: 'jsonb', nullable: true, name: 'toxic_compounds' })
+  toxicCompounds?: string[];
 
   @CreateDateColumn({ type: 'timestamptz' })
   created_at!: Date;
@@ -66,10 +69,10 @@ export class FoodItem {
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at!: Date;
 
-  @OneToMany(() => FoodSafetyBySpecies, (s) => s.food)
+  @OneToMany(() => FoodSafetyBySpecies, (safety) => safety.food)
   safety_by_species?: FoodSafetyBySpecies[];
 
-  @OneToMany(() => FoodAlias, (a) => a.food)
+  @OneToMany(() => FoodAlias, (alias) => alias.food)
   aliases?: FoodAlias[];
 }
 
