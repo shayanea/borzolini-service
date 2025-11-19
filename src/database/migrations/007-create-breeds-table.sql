@@ -19,6 +19,7 @@ CREATE TABLE breeds (
   weight_max DECIMAL(5,2),
   origin_country VARCHAR(100),
   description TEXT,
+  image_url VARCHAR(500),
   grooming_needs VARCHAR(50) CHECK (grooming_needs IN ('low', 'moderate', 'high')),
   exercise_needs VARCHAR(50) CHECK (exercise_needs IN ('low', 'moderate', 'high')),
   is_active BOOLEAN DEFAULT TRUE,

@@ -1,5 +1,5 @@
-import { Controller, Get, Post, Patch, Query, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiQuery, ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TrainingService } from './training.service';
 import { PetSpecies } from '../breeds/entities/breed.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -7,7 +7,12 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { GetUser } from '../auth/decorators/get-user.decorator';
 import { UserRole } from '../users/entities/user.entity';
-import { CreateTrainingAssignmentDto, CompleteTrainingDto, DailyTrainingStatsDto } from './dto/daily-training-assignment.dto';
+import { CompleteTrainingDto, CreateTrainingAssignmentDto, DailyTrainingStatsDto } from './dto/daily-training-assignment.dto';
+import {
+  CreateTrainingActivityDto,
+  TrainingActivityResponseDto,
+  UpdateTrainingActivityDto,
+} from './dto/training-activity-admin.dto';
 
 @ApiTags('training')
 @Controller('training')
@@ -88,6 +93,40 @@ export class TrainingController {
     }
 
     return this.trainingService.findAllActivities(options);
+  }
+
+  @Post('admin/activities')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a new training activity (Admin only)' })
+  @ApiResponse({ status: 201, description: 'Training activity created successfully', type: TrainingActivityResponseDto })
+  async createActivity(@Body() dto: CreateTrainingActivityDto): Promise<TrainingActivityResponseDto> {
+    return this.trainingService.createActivity(dto);
+  }
+
+  @Patch('admin/activities/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an existing training activity (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Training activity updated successfully', type: TrainingActivityResponseDto })
+  async updateActivity(
+    @Param('id') id: string,
+    @Body() dto: UpdateTrainingActivityDto,
+  ): Promise<TrainingActivityResponseDto> {
+    return this.trainingService.updateActivity(id, dto);
+  }
+
+  @Delete('admin/activities/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a training activity (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Training activity deleted successfully' })
+  async deleteActivity(@Param('id') id: string): Promise<{ message: string }> {
+    await this.trainingService.deleteActivity(id);
+    return { message: 'Training activity deleted successfully' };
   }
 
   // Daily Training Assignment Endpoints

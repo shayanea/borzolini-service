@@ -5,6 +5,11 @@ import { TrainingActivity } from './entities/training-activity.entity';
 import { DailyTrainingAssignment } from './entities/daily-training-assignment.entity';
 import { PetSpecies } from '../breeds/entities/breed.entity';
 import { CreateTrainingAssignmentDto, CompleteTrainingDto, DailyTrainingStatsDto } from './dto/daily-training-assignment.dto';
+import {
+  CreateTrainingActivityDto,
+  TrainingActivityResponseDto,
+  UpdateTrainingActivityDto,
+} from './dto/training-activity-admin.dto';
 
 @Injectable()
 export class TrainingService {
@@ -107,6 +112,53 @@ export class TrainingService {
       page: options.page,
       totalPages: Math.ceil(total / options.limit),
     };
+  }
+
+  /**
+   * Admin: create a new training activity
+   */
+  async createActivity(dto: CreateTrainingActivityDto): Promise<TrainingActivityResponseDto> {
+    this.logger.log(`Creating training activity: ${dto.title}`);
+
+    const activity = this.activityRepo.create({
+      ...dto,
+      tags: dto.tags ?? [],
+      risks: dto.risks ?? [],
+      enrichment: dto.enrichment ?? [],
+    });
+
+    const saved = await this.activityRepo.save(activity);
+    return TrainingActivityResponseDto.fromEntity(saved);
+  }
+
+  /**
+   * Admin: update an existing training activity
+   */
+  async updateActivity(id: string, dto: UpdateTrainingActivityDto): Promise<TrainingActivityResponseDto> {
+    this.logger.log(`Updating training activity: ${id}`);
+
+    const activity = await this.activityRepo.findOne({ where: { id } });
+    if (!activity) {
+      throw new NotFoundException('Training activity not found');
+    }
+
+    Object.assign(activity, dto);
+    const updated = await this.activityRepo.save(activity);
+    return TrainingActivityResponseDto.fromEntity(updated);
+  }
+
+  /**
+   * Admin: delete a training activity
+   */
+  async deleteActivity(id: string): Promise<void> {
+    this.logger.log(`Deleting training activity: ${id}`);
+
+    const activity = await this.activityRepo.findOne({ where: { id } });
+    if (!activity) {
+      throw new NotFoundException('Training activity not found');
+    }
+
+    await this.activityRepo.remove(activity);
   }
 
   // Daily Training Assignment Methods

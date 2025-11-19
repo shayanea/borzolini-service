@@ -88,6 +88,10 @@ export class Breed {
   @Column({ type: 'text', nullable: true })
   description?: string;
 
+  @ApiProperty({ description: 'URL to an image of the breed', required: false })
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  image_url?: string;
+
   @ApiProperty({ description: 'Educational resources and references about the breed', required: false })
   @Column({ type: 'jsonb', default: [] })
   resources!: string[];

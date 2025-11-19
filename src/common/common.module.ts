@@ -24,6 +24,7 @@ import { ServiceHealthService } from './service-health.service';
 import { SettingsConfigModule } from '../modules/settings/settings-config.module';
 import { SmsService } from './sms.service';
 import { SupabaseModule } from './supabase.module';
+import { GeocodingService } from './services/geocoding.service';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { SupabaseModule } from './supabase.module';
     ServiceHealthService,
     RateLimitMonitorService,
     ActivityLoggerUtils,
+    GeocodingService,
     // Conditionally include Elasticsearch services based on environment
     ...(process.env.ELASTICSEARCH_ENABLED === 'true' ? [ElasticsearchIndexService, ElasticsearchSearchService, ElasticsearchSyncService] : []),
     {
@@ -73,6 +75,7 @@ import { SupabaseModule } from './supabase.module';
     ServiceHealthService,
     RateLimitMonitorService,
     ActivityLoggerUtils,
+    GeocodingService,
     // Conditionally export Elasticsearch components based on environment
     ...(process.env.ELASTICSEARCH_ENABLED === 'true' ? [ElasticsearchModule, ElasticsearchIndexService, ElasticsearchSearchService, ElasticsearchSyncService] : []),
   ],

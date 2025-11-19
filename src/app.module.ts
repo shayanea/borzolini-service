@@ -32,6 +32,7 @@ import { TrainingModule } from './modules/training/training.module';
 import { WalkGroupsModule } from './modules/walk-groups/walk-groups.module';
 import { PetHostingModule } from './modules/pet-hosting/pet-hosting.module';
 import { ResourcesModule } from './modules/resources/resources.module';
+import { ClinicFinderModule } from './modules/clinic-finder/clinic-finder.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { ResourcesModule } from './modules/resources/resources.module';
     WalkGroupsModule,
     PetHostingModule,
     ResourcesModule,
+    ClinicFinderModule,
 
     // Common utilities
     CommonModule,

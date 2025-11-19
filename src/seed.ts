@@ -9,6 +9,7 @@ import { ReviewsSeeder } from './modules/reviews/reviews.seeder';
 import { UsersSeeder } from './modules/users/users.seeder';
 import { HouseholdSafetySeeder } from './modules/household-safety/household-safety.seeder';
 import { TrainingSeeder } from './modules/training/training.seeder';
+import { ResourcesSeeder } from './modules/resources/resources.seeder';
 
 async function seed() {
   console.log('🌱 Starting database seeding...');
@@ -24,6 +25,7 @@ async function seed() {
     const faqSeeder = app.get(FaqSeeder);
     const householdSafetySeeder = app.get(HouseholdSafetySeeder);
     const trainingSeeder = app.get(TrainingSeeder);
+    const resourcesSeeder = app.get(ResourcesSeeder);
 
     // Clear existing data first for fresh seeding (in correct order due to foreign key constraints)
     console.log('🧹 Clearing existing data...');
@@ -37,6 +39,7 @@ async function seed() {
     await breedsSeeder.clear();
     await householdSafetySeeder.clear();
     await trainingSeeder.clear();
+    await resourcesSeeder.clear();
 
     // Seed in order of dependencies
     console.log('👥 Seeding users...');
@@ -65,6 +68,9 @@ async function seed() {
 
     console.log('🛡️ Seeding household safety data...');
     await householdSafetySeeder.seed();
+
+    console.log('📚 Seeding resources...');
+    await resourcesSeeder.seed();
 
     console.log('🏋️ Seeding training activities...');
     await trainingSeeder.seed();
