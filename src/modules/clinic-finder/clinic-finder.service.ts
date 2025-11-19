@@ -1,25 +1,66 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { AppointmentType } from '../appointments/entities/appointment.entity';
-import { Clinic } from '../clinics/entities/clinic.entity';
-import { ServiceCategory } from '../clinics/entities/clinic-service.entity';
-import { GeocodingService } from '../../common/services/geocoding.service';
-import { FindClinicDto } from './dto/find-clinic.dto';
+
 import { ClinicWithDistanceDto } from './dto/clinic-with-distance.dto';
+import { FindClinicDto } from './dto/find-clinic.dto';
+import { GeocodingService, PlaceSearchResult } from '../../common/services/geocoding.service';
 
 @Injectable()
 export class ClinicFinderService {
   private readonly logger = new Logger(ClinicFinderService.name);
 
-  constructor(
-    @InjectRepository(Clinic)
-    private readonly clinicRepository: Repository<Clinic>,
-    private readonly geocodingService: GeocodingService,
-  ) {}
+  // Map service types to Geoapify Places API categories
+  private readonly serviceTypeToCategories: Record<string, string[]> = {
+    // Grooming: try pet service (grooming), then pet shops (many offer grooming services)
+    grooming: ['pet.service', 'pet.shop'],
+    shop: ['pet.shop'],
+    retail: ['pet.shop'],
+    // Veterinary services - all map to pet.veterinary category
+    check: ['pet.veterinary'],
+    consultation: ['pet.veterinary'],
+    vaccination: ['pet.veterinary'],
+    emergency: ['pet.veterinary'],
+    surgery: ['pet.veterinary'],
+    wellness: ['pet.veterinary'],
+    preventive: ['pet.veterinary'],
+    diagnostic: ['pet.veterinary'],
+    dental: ['pet.veterinary'],
+    therapy: ['pet.veterinary'],
+    veterinary: ['pet.veterinary'],
+    circumcision: ['pet.veterinary'], // Surgical procedure - veterinary service
+    boarding: ['pet'], // Use general pet category for boarding
+    shelter: ['pet'], // Use general pet category for shelters
+  };
+
+  constructor(private readonly geocodingService: GeocodingService) {}
 
   /**
-   * Find nearby clinics based on user location and service type
+   * Get search query text for fallback text-based search
+   */
+  private getSearchQueryForServiceType(serviceType: string): string {
+    const queryMap: Record<string, string> = {
+      grooming: 'pet grooming',
+      shop: 'pet shop',
+      retail: 'pet store',
+      check: 'veterinary clinic',
+      consultation: 'veterinary clinic',
+      vaccination: 'veterinary clinic',
+      emergency: 'veterinary emergency',
+      surgery: 'veterinary clinic',
+      wellness: 'veterinary clinic',
+      preventive: 'veterinary clinic',
+      diagnostic: 'veterinary clinic',
+      dental: 'veterinary dental',
+      therapy: 'veterinary clinic',
+      veterinary: 'veterinary clinic',
+      circumcision: 'veterinary clinic',
+      boarding: 'pet boarding',
+      shelter: 'animal shelter',
+    };
+    return queryMap[serviceType.toLowerCase()] || serviceType;
+  }
+
+  /**
+   * Find nearby places based on user location and service type using Geoapify Places API
    */
   async findNearbyClinics(findDto: FindClinicDto): Promise<{
     clinics: ClinicWithDistanceDto[];
@@ -27,226 +68,112 @@ export class ClinicFinderService {
     radiusKm: number;
     serviceType: string;
   }> {
-    const { latitude, longitude, serviceType, radiusKm = 10, minRating, verifiedOnly } = findDto;
+    const { latitude, longitude, serviceType, radiusKm = 10 } = findDto;
 
-    this.logger.log(
-      `Finding clinics near (${latitude}, ${longitude}) for service type: ${serviceType} within ${radiusKm}km`,
-    );
+    this.logger.log(`Searching Geoapify Places API for ${serviceType} near (${latitude}, ${longitude}) within ${radiusKm}km`);
 
-    // Get all active clinics
-    const queryBuilder = this.clinicRepository
-      .createQueryBuilder('clinic')
-      .where('clinic.is_active = :isActive', { isActive: true })
-      .leftJoinAndSelect('clinic.clinic_services', 'clinic_services')
-      .andWhere('clinic_services.is_active = :serviceActive', { serviceActive: true });
+    // Get Geoapify categories for this service type
+    const categories = this.serviceTypeToCategories[serviceType.toLowerCase()];
 
-    // Apply filters
-    if (minRating !== undefined) {
-      queryBuilder.andWhere('clinic.rating >= :minRating', { minRating });
-    }
-
-    if (verifiedOnly) {
-      queryBuilder.andWhere('clinic.is_verified = :verified', { verified: true });
-    }
-
-    const clinics = await queryBuilder.getMany();
-
-    // Filter clinics by service type and calculate distances
-    const clinicsWithDistance: ClinicWithDistanceDto[] = [];
-
-    for (const clinic of clinics) {
-      // Check if clinic offers the requested service type
-      if (!this.clinicOffersServiceType(clinic, serviceType)) {
-        continue;
-      }
-
-      // Geocode clinic address if needed
-      let clinicLat: number | undefined;
-      let clinicLng: number | undefined;
-
-      try {
-        const geocodeResult = await this.geocodingService.geocodeAddress(
-          clinic.address,
-          clinic.city,
-          clinic.state || undefined,
-          clinic.postal_code || undefined,
-        );
-        clinicLat = geocodeResult.latitude;
-        clinicLng = geocodeResult.longitude;
-      } catch (error) {
-        this.logger.warn(`Failed to geocode clinic ${clinic.id}: ${clinic.address}`, error);
-        // Skip clinics that can't be geocoded
-        continue;
-      }
-
-      // Calculate distance
-      const distanceKm = this.geocodingService.calculateDistance(
-        latitude,
-        longitude,
-        clinicLat!,
-        clinicLng!,
-      );
-
-      // Filter by radius
-      if (distanceKm > radiusKm) {
-        continue;
-      }
-
-      // Build response DTO
-      const clinicWithDistance: ClinicWithDistanceDto = {
-        id: clinic.id,
-        name: clinic.name,
-        ...(clinic.description && { description: clinic.description }),
-        address: clinic.address,
-        city: clinic.city,
-        ...(clinic.state && { state: clinic.state }),
-        ...(clinic.postal_code && { postal_code: clinic.postal_code }),
-        country: clinic.country,
-        ...(clinic.phone && { phone: clinic.phone }),
-        ...(clinic.email && { email: clinic.email }),
-        ...(clinic.website && { website: clinic.website }),
-        ...(clinic.logo_url && { logo_url: clinic.logo_url }),
-        rating: clinic.rating,
-        total_reviews: clinic.total_reviews,
-        is_verified: clinic.is_verified,
-        services: clinic.services || [],
-        specializations: clinic.specializations || [],
-        distanceKm,
-        ...(clinicLat !== undefined && { latitude: clinicLat }),
-        ...(clinicLng !== undefined && { longitude: clinicLng }),
+    if (!categories || categories.length === 0) {
+      this.logger.warn(`No Geoapify categories mapped for service type: ${serviceType}`);
+      return {
+        clinics: [],
+        total: 0,
+        radiusKm,
+        serviceType,
       };
-
-      clinicsWithDistance.push(clinicWithDistance);
     }
 
-    // Sort by distance (closest first), then by rating
-    clinicsWithDistance.sort((a, b) => {
-      if (Math.abs(a.distanceKm - b.distanceKm) < 0.1) {
-        // If distance is very similar, sort by rating
-        return b.rating - a.rating;
+    try {
+      // Query Geoapify Places API with categories
+      let places: PlaceSearchResult[] = [];
+      try {
+        places = await this.geocodingService.searchPlacesByTags(
+          latitude,
+          longitude,
+          categories,
+          radiusKm,
+          50 // limit
+        );
+      } catch (geoapifyError) {
+        this.logger.warn(`Geoapify Places API query failed, trying fallback: ${geoapifyError}`);
+        places = [];
       }
-      return a.distanceKm - b.distanceKm;
-    });
 
-    this.logger.log(`Found ${clinicsWithDistance.length} clinics matching criteria`);
+      // Fallback: If no results from category-based search, try text-based search
+      if (places.length === 0) {
+        this.logger.log(`No results from category-based search, trying text-based fallback for: ${serviceType}`);
+        try {
+          const searchQuery = this.getSearchQueryForServiceType(serviceType);
+          places = await this.geocodingService.searchPlacesNearby(
+            latitude,
+            longitude,
+            searchQuery,
+            radiusKm,
+            50 // limit
+          );
+        } catch (fallbackError) {
+          this.logger.warn(`Fallback search also failed: ${fallbackError}`);
+          places = [];
+        }
+      }
 
-    return {
-      clinics: clinicsWithDistance,
-      total: clinicsWithDistance.length,
-      radiusKm,
-      serviceType,
-    };
+      const clinics: ClinicWithDistanceDto[] = places.map((place) => {
+        // Build address string
+        const addressParts: string[] = [];
+        if (place.address?.house_number) addressParts.push(place.address.house_number);
+        if (place.address?.road) addressParts.push(place.address.road);
+        const address = addressParts.length > 0 ? addressParts.join(' ') : place.displayName;
+
+        return {
+          id: place.placeId || `osm_${place.latitude}_${place.longitude}`,
+          name: place.name,
+          description: place.displayName,
+          address,
+          city: place.address?.city || '',
+          ...(place.address?.state && { state: place.address.state }),
+          ...(place.address?.postcode && { postal_code: place.address.postcode }),
+          country: place.address?.country || '',
+          distanceKm: this.geocodingService.calculateDistance(latitude, longitude, place.latitude, place.longitude),
+          latitude: place.latitude,
+          longitude: place.longitude,
+          rating: 0, // OpenStreetMap doesn't provide ratings
+          total_reviews: 0,
+          is_verified: false,
+          services: [serviceType],
+          specializations: place.category ? [place.category] : [],
+        };
+      });
+
+      // Sort by distance (already sorted by Geoapify, but ensure it)
+      clinics.sort((a, b) => a.distanceKm - b.distanceKm);
+
+      this.logger.log(`Found ${clinics.length} places from Geoapify Places API`);
+
+      return {
+        clinics,
+        total: clinics.length,
+        radiusKm,
+        serviceType,
+      };
+    } catch (error) {
+      this.logger.error(`Error searching with Geoapify Places API:`, error);
+      // Return empty result on error
+      return {
+        clinics: [],
+        total: 0,
+        radiusKm,
+        serviceType,
+      };
+    }
   }
 
   /**
-   * Find the best (closest) clinic for the given service type
+   * Find the best (closest) place for the given service type
    */
   async findBestClinic(findDto: FindClinicDto): Promise<ClinicWithDistanceDto | null> {
     const result = await this.findNearbyClinics(findDto);
     return result.clinics.length > 0 ? result.clinics[0]! : null;
   }
-
-  /**
-   * Check if a clinic offers the requested service type
-   */
-  private clinicOffersServiceType(clinic: Clinic, serviceType: string): boolean {
-    const normalizedServiceType = serviceType.toLowerCase().trim();
-
-    // Check AppointmentType enum
-    const appointmentTypes = Object.values(AppointmentType).map((v) => v.toLowerCase());
-    if (appointmentTypes.includes(normalizedServiceType)) {
-      // Check if clinic has services array containing this type
-      if (clinic.services && Array.isArray(clinic.services)) {
-        const servicesLower = clinic.services.map((s) => s.toLowerCase());
-        if (servicesLower.includes(normalizedServiceType)) {
-          return true;
-        }
-      }
-
-      // Check clinic_services relationship
-      if (clinic.clinic_services && clinic.clinic_services.length > 0) {
-        // Check if any service name or category matches
-        const matches = clinic.clinic_services.some((service) => {
-          const serviceName = service.name.toLowerCase();
-          const category = service.category.toLowerCase();
-          return (
-            serviceName.includes(normalizedServiceType) ||
-            category.includes(normalizedServiceType) ||
-            normalizedServiceType === category
-          );
-        });
-        if (matches) return true;
-      }
-    }
-
-    // Check ServiceCategory enum
-    const serviceCategories = Object.values(ServiceCategory).map((v) => v.toLowerCase());
-    if (serviceCategories.includes(normalizedServiceType)) {
-      // Check clinic_services for matching category
-      if (clinic.clinic_services && clinic.clinic_services.length > 0) {
-        const matches = clinic.clinic_services.some(
-          (service) => service.category.toLowerCase() === normalizedServiceType,
-        );
-        if (matches) return true;
-      }
-    }
-
-    // Handle "shop" or "retail" type - check for retail/pet supplies
-    if (normalizedServiceType === 'shop' || normalizedServiceType === 'retail') {
-      if (clinic.services && Array.isArray(clinic.services)) {
-        const servicesLower = clinic.services.map((s) => s.toLowerCase());
-        const retailKeywords = ['retail', 'shop', 'supplies', 'store', 'pet supplies', 'pet store'];
-        const hasRetail = retailKeywords.some((keyword) =>
-          servicesLower.some((service) => service.includes(keyword)),
-        );
-        if (hasRetail) return true;
-      }
-
-      // Check specializations
-      if (clinic.specializations && Array.isArray(clinic.specializations)) {
-        const specializationsLower = clinic.specializations.map((s) => s.toLowerCase());
-        const retailKeywords = ['retail', 'shop', 'supplies', 'store'];
-        const hasRetail = retailKeywords.some((keyword) =>
-          specializationsLower.some((spec) => spec.includes(keyword)),
-        );
-        if (hasRetail) return true;
-      }
-    }
-
-    // Check clinic services array (string matching)
-    if (clinic.services && Array.isArray(clinic.services)) {
-      const servicesLower = clinic.services.map((s) => s.toLowerCase());
-      if (servicesLower.includes(normalizedServiceType)) {
-        return true;
-      }
-      // Also check if any service contains the service type
-      if (servicesLower.some((service) => service.includes(normalizedServiceType))) {
-        return true;
-      }
-    }
-
-    // Check specializations
-    if (clinic.specializations && Array.isArray(clinic.specializations)) {
-      const specializationsLower = clinic.specializations.map((s) => s.toLowerCase());
-      if (specializationsLower.includes(normalizedServiceType)) {
-        return true;
-      }
-      // Also check if any specialization contains the service type
-      if (specializationsLower.some((spec) => spec.includes(normalizedServiceType))) {
-        return true;
-      }
-    }
-
-    // Check clinic_services names
-    if (clinic.clinic_services && clinic.clinic_services.length > 0) {
-      const matches = clinic.clinic_services.some((service) => {
-        const serviceName = service.name.toLowerCase();
-        return serviceName.includes(normalizedServiceType);
-      });
-      if (matches) return true;
-    }
-
-    return false;
-  }
 }
-
