@@ -44,6 +44,17 @@ export class TrainingController {
 
   // Admin Endpoints
 
+  @Get('admin/activities/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get a single training activity by ID (Admin only)' })
+  @ApiResponse({ status: 200, description: 'Training activity retrieved successfully', type: TrainingActivityResponseDto })
+  @ApiResponse({ status: 404, description: 'Training activity not found' })
+  async getActivityById(@Param('id') id: string): Promise<TrainingActivityResponseDto> {
+    return this.trainingService.findOneActivity(id);
+  }
+
   @Get('admin/activities')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.CLINIC_ADMIN)

@@ -115,6 +115,24 @@ export class TrainingService {
   }
 
   /**
+   * Admin: get a single training activity by ID
+   */
+  async findOneActivity(id: string): Promise<TrainingActivityResponseDto> {
+    this.logger.log(`Fetching training activity: ${id}`);
+
+    const activity = await this.activityRepo.findOne({
+      where: { id },
+      relations: ['by_species'],
+    });
+
+    if (!activity) {
+      throw new NotFoundException('Training activity not found');
+    }
+
+    return TrainingActivityResponseDto.fromEntity(activity);
+  }
+
+  /**
    * Admin: create a new training activity
    */
   async createActivity(dto: CreateTrainingActivityDto): Promise<TrainingActivityResponseDto> {
