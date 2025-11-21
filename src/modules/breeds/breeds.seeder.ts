@@ -20,6 +20,20 @@ interface BreedData {
   resources?: string[];
   grooming_needs: GroomingNeeds;
   exercise_needs: ExerciseNeeds;
+  care_specifics: {
+    diet?: string;
+    housing?: string;
+    grooming_details?: string;
+    social_needs?: string;
+    training_needs?: string;
+    common_stressors?: string[];
+  };
+  average_vitals: {
+    temperature_f?: { min: number; max: number };
+    heart_rate_bpm?: { min: number; max: number };
+    respiratory_rate_rpm?: { min: number; max: number };
+    blood_pressure_mmhg?: { systolic: number; diastolic: number }; // Approximate
+  };
 }
 
 @Injectable()
@@ -58,6 +72,18 @@ export class BreedsSeeder {
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
+        care_specifics: {
+          diet: 'High-quality dog food appropriate for age and activity level. Monitor calorie intake as they are prone to obesity.',
+          housing: 'Adaptable to most living situations but needs space to exercise. Secure yard recommended.',
+          grooming_details: 'Weekly brushing to manage shedding; daily during shedding season. Regular nail trims and ear cleaning.',
+          social_needs: 'Highly social; needs significant human interaction and play.',
+          common_stressors: ['Isolation', 'Lack of exercise', 'Boredom']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 60, max: 100 },
+          respiratory_rate_rpm: { min: 10, max: 30 }
+        }
       },
       {
         name: 'Golden Retriever',
@@ -82,6 +108,18 @@ export class BreedsSeeder {
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
+        care_specifics: {
+          diet: 'Balanced diet with controlled calories. Prone to gaining weight.',
+          housing: 'Needs active family environment. Not suited for outdoor-only living.',
+          grooming_details: 'Daily to weekly brushing. Attention to feathering on legs and tail.',
+          social_needs: 'Extremely social; thrives on companionship.',
+          common_stressors: ['Separation anxiety', 'Loud noises']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 60, max: 100 },
+          respiratory_rate_rpm: { min: 10, max: 30 }
+        }
       },
       {
         name: 'German Shepherd',
@@ -106,6 +144,18 @@ export class BreedsSeeder {
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
+        care_specifics: {
+          diet: 'High-protein, high-quality diet. Watch for food sensitivities.',
+          housing: 'Large, secure yard essential. Mental stimulation needed indoors.',
+          grooming_details: 'Frequent brushing, especially during shedding seasons (blows coat twice a year).',
+          social_needs: 'Loyal to family; can be aloof with strangers. Needs socialization.',
+          common_stressors: ['Lack of purpose/job', 'Confinement', 'Strangers']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 60, max: 100 },
+          respiratory_rate_rpm: { min: 10, max: 30 }
+        }
       },
       {
         name: 'French Bulldog',
@@ -130,6 +180,18 @@ export class BreedsSeeder {
         ],
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Monitor weight carefully to prevent breathing issues. Hypoallergenic diet may be needed.',
+          housing: 'Indoor only. Cannot tolerate extreme heat due to brachycephaly.',
+          grooming_details: 'Regular cleaning of facial wrinkles to prevent infection.',
+          social_needs: 'Craves human attention; lap dog.',
+          common_stressors: ['Heat', 'Overexertion', 'Isolation']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 70, max: 120 },
+          respiratory_rate_rpm: { min: 15, max: 35 }
+        }
       },
       {
         name: 'Poodle',
@@ -154,6 +216,18 @@ export class BreedsSeeder {
         ],
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Balanced diet. Can be picky eaters.',
+          housing: 'Versatile. Needs mental stimulation indoors.',
+          grooming_details: 'Requires professional grooming every 4-6 weeks. Daily brushing to prevent mats.',
+          social_needs: 'People-oriented; enjoys being part of family activities.',
+          common_stressors: ['Boredom', 'Harsh training methods']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 60, max: 100 },
+          respiratory_rate_rpm: { min: 10, max: 30 }
+        }
       },
       {
         name: 'Beagle',
@@ -170,6 +244,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Portion control is critical; they will overeat.',
+          housing: 'Secure fencing required (scent hounds). Good apartment dogs if exercised.',
+          grooming_details: 'Low maintenance; weekly brushing.',
+          social_needs: 'Pack animal; loves company of other dogs and humans.',
+          common_stressors: ['Loneliness', 'Lack of scent stimulation']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 70, max: 120 },
+          respiratory_rate_rpm: { min: 15, max: 30 }
+        }
       },
       {
         name: 'Yorkshire Terrier',
@@ -186,6 +272,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1565058609200-4629f7d4d3e0?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'High-calorie for small size, but prone to tartar. Dry food recommended.',
+          housing: 'Great apartment dogs. Sensitive to cold.',
+          grooming_details: 'Daily brushing required if coat is long. Regular dental care essential.',
+          social_needs: 'Attached to owner; can be feisty.',
+          common_stressors: ['Cold weather', 'Rough handling']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.0, max: 102.5 },
+          heart_rate_bpm: { min: 100, max: 140 },
+          respiratory_rate_rpm: { min: 20, max: 40 }
+        }
       },
 
       // CATS
@@ -204,6 +302,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1616129650852-3075a02e588c?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Wet food helps hydration; flat face may require special bowls.',
+          housing: 'Indoor only. Calm environment preferred.',
+          grooming_details: 'Daily brushing essential to prevent painful mats. Daily eye wiping.',
+          social_needs: 'Affectionate but independent; likes sitting on laps.',
+          common_stressors: ['Chaos', 'Loud noises', 'Dirty litter box']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 140, max: 220 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
       {
         name: 'Maine Coon',
@@ -220,6 +330,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1543852786-1cf6624b9987?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Large portions for large size. High protein.',
+          housing: 'Needs space to climb and explore. Sturdy cat trees required.',
+          grooming_details: 'Weekly brushing; more in shedding season.',
+          social_needs: 'Very social; "dog-like" cat. Follows owners.',
+          common_stressors: ['Small spaces', 'Loneliness']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 120, max: 200 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
       {
         name: 'British Shorthair',
@@ -236,6 +358,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1592194996308-7b43878e84a6?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Prone to obesity; measure food carefully.',
+          housing: 'Adaptable apartment cat. Enjoys looking out windows.',
+          grooming_details: 'Weekly brushing for dense coat.',
+          social_needs: 'Undemanding affection; prefers sitting near you than on you.',
+          common_stressors: ['Overhandling', 'Forced interaction']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 120, max: 220 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
       {
         name: 'Ragdoll',
@@ -252,6 +386,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'High quality protein; prone to weight gain if inactive.',
+          housing: 'Indoor only essential (too trusting for outdoors).',
+          grooming_details: 'Regular brushing to prevent tangles in semi-long coat.',
+          social_needs: 'Needs company; often follows owner around.',
+          common_stressors: ['Being left alone', 'Rough play']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 120, max: 200 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
       {
         name: 'Siamese',
@@ -268,6 +414,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1513245543132-31f507417b26?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'High protein, low carb to maintain lean muscle.',
+          housing: 'Needs vertical space and enrichment. Very active.',
+          grooming_details: 'Minimal; self-grooming usually sufficient.',
+          social_needs: 'Extremely vocal and demanding of attention.',
+          common_stressors: ['Boredom', 'Isolation']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 140, max: 220 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
       {
         name: 'Sphynx',
@@ -284,6 +442,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1516280440614-6697288d5d38?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'High metabolism requires high-calorie diet. Oil accumulation on skin.',
+          housing: 'Strictly indoor; needs warmth (sweaters in winter).',
+          grooming_details: 'Weekly baths essential to remove oils; ear cleaning.',
+          social_needs: 'Velcro cat; wants to be on you for warmth and love.',
+          common_stressors: ['Cold', 'Sunburn (if near windows)', 'Loneliness']
+        },
+        average_vitals: {
+          temperature_f: { min: 100.5, max: 102.5 },
+          heart_rate_bpm: { min: 140, max: 220 },
+          respiratory_rate_rpm: { min: 20, max: 30 }
+        }
       },
 
       // BIRDS
@@ -302,6 +472,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1552728089-57bdde30ebd8?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'High-quality seed mix, pellets, fresh fruits/veg.',
+          housing: 'Horizontal cage space for flying. Away from drafts.',
+          grooming_details: 'Nail trims; access to bath water.',
+          social_needs: 'Can be solitary or in pairs; enjoys hearing people.',
+          common_stressors: ['Handling (hands-off pet)', 'Darkness', 'Drafts']
+        },
+        average_vitals: {
+          temperature_f: { min: 106, max: 109 },
+          heart_rate_bpm: { min: 274, max: 1000 }, // Very fast
+          respiratory_rate_rpm: { min: 60, max: 100 }
+        }
       },
       {
         name: 'Cockatiel',
@@ -318,6 +500,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1619490057073-6b7165f61012?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Pellets (60%), seeds, fresh veggies. Avoid avocado.',
+          housing: 'Large cage, time out of cage daily.',
+          grooming_details: 'Mist baths, nail/wing trims (optional).',
+          social_needs: 'Flock animal; needs daily interaction.',
+          common_stressors: ['Night frights', 'Isolation']
+        },
+        average_vitals: {
+          temperature_f: { min: 106, max: 109 },
+          heart_rate_bpm: { min: 200, max: 400 },
+          respiratory_rate_rpm: { min: 30, max: 50 }
+        }
       },
       {
         name: 'African Grey',
@@ -334,6 +528,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1452570053594-1b985d6ea890?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.HIGH,
+        care_specifics: {
+          diet: 'Pellets, veggies, fruits. High calcium needs.',
+          housing: 'Large heavy-duty cage. Foraging toys essential.',
+          grooming_details: 'Beak and nail maintenance. Spray baths.',
+          social_needs: 'High; bonds deeply with one person usually.',
+          common_stressors: ['Change in routine', 'Boredom', 'Neglect']
+        },
+        average_vitals: {
+          temperature_f: { min: 104, max: 106 },
+          heart_rate_bpm: { min: 140, max: 200 },
+          respiratory_rate_rpm: { min: 15, max: 40 }
+        }
       },
 
       // RABBITS
@@ -352,6 +558,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1585110396000-c928e911659f?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Unlimited timothy hay, fresh greens, limited pellets.',
+          housing: 'Indoor hutch or free-roam. Bunny-proofing needed.',
+          grooming_details: 'Regular ear checks (lops prone to infection). Nail trims.',
+          social_needs: 'Social; better in pairs.',
+          common_stressors: ['Heat (>80F)', 'Loud noises', 'Predators']
+        },
+        average_vitals: {
+          temperature_f: { min: 101, max: 103 },
+          heart_rate_bpm: { min: 180, max: 250 },
+          respiratory_rate_rpm: { min: 30, max: 60 }
+        }
       },
       {
         name: 'Flemish Giant',
@@ -368,6 +586,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1589952283406-b53a7d1347e8?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Huge amounts of hay. Greens. Portion pellets.',
+          housing: 'Dog crate or free roam; standard cages too small.',
+          grooming_details: 'Brushing; soft bedding to prevent sore hocks.',
+          social_needs: 'Very social; gentle giants.',
+          common_stressors: ['Small spaces', 'Heat', 'Rough handling']
+        },
+        average_vitals: {
+          temperature_f: { min: 101, max: 103 },
+          heart_rate_bpm: { min: 130, max: 200 }, // Slower than small rabbits
+          respiratory_rate_rpm: { min: 30, max: 60 }
+        }
       },
 
       // HAMSTERS
@@ -386,6 +616,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Hamster mix, small amounts of fresh veg.',
+          housing: 'Large cage with deep bedding for burrowing. Solid wheel.',
+          grooming_details: 'Sand baths; never water baths.',
+          social_needs: 'Strictly solitary. Must live alone.',
+          common_stressors: ['Waking them up', 'Small cages', 'Drafts']
+        },
+        average_vitals: {
+          temperature_f: { min: 97, max: 99 }, // Approximate surface temp
+          heart_rate_bpm: { min: 250, max: 500 },
+          respiratory_rate_rpm: { min: 35, max: 135 }
+        }
       },
 
       // FISH
@@ -404,6 +646,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1522069169874-c58ec4b76be5?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Sinking pellets, peas, veggies. Voracious eaters.',
+          housing: 'High filtration needed (high waste). 20+ gallons per fish.',
+          grooming_details: 'Tank maintenance/water changes.',
+          social_needs: 'Social; prefers groups of goldfish.',
+          common_stressors: ['Poor water quality', 'Small bowls', 'Rapid temp changes']
+        },
+        average_vitals: {
+          temperature_f: { min: 65, max: 72 }, // Water temp
+          heart_rate_bpm: { min: 0, max: 0 }, // N/A for user tracking usually
+          respiratory_rate_rpm: { min: 0, max: 0 } // Gill movement
+        }
       },
       {
         name: 'Betta',
@@ -420,6 +674,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1524704654690-b56c05c78a00?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Carnivorous; pellets and bloodworms.',
+          housing: '5+ gallons, low flow filter, heater essential (tropical).',
+          grooming_details: 'Tank maintenance.',
+          social_needs: 'Solitary (males). Can be community fish with right tankmates.',
+          common_stressors: ['Cold water', 'Strong currents', 'Mirrors']
+        },
+        average_vitals: {
+          temperature_f: { min: 76, max: 82 }, // Water temp
+          heart_rate_bpm: { min: 0, max: 0 },
+          respiratory_rate_rpm: { min: 0, max: 0 }
+        }
       },
 
       // REPTILES
@@ -438,6 +704,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1533743983669-94fa5c4338ec?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.MODERATE,
+        care_specifics: {
+          diet: 'Insects (crickets/dubia) + leafy greens. Calcium supplements.',
+          housing: '40+ gallon tank. UVB lighting and heat gradient essential.',
+          grooming_details: 'Warm baths for shedding. Nail trims.',
+          social_needs: 'Solitary but enjoys human handling.',
+          common_stressors: ['Cold', 'Co-habitation', 'No UVB']
+        },
+        average_vitals: {
+          temperature_f: { min: 95, max: 110 }, // Basking spot temp
+          heart_rate_bpm: { min: 0, max: 0 },
+          respiratory_rate_rpm: { min: 0, max: 0 }
+        }
       },
       {
         name: 'Leopard Gecko',
@@ -454,6 +732,18 @@ export class BreedsSeeder {
         image_url: 'https://images.unsplash.com/photo-1591567972361-6bc5d54d0b6b?auto=format&fit=crop&q=80',
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
+        care_specifics: {
+          diet: 'Insectivore (mealworms, crickets). Calcium dusting.',
+          housing: '20 gallon long. Under-tank heat mat (belly heat). Hides.',
+          grooming_details: 'Help with shedding on toes (humid hide).',
+          social_needs: 'Solitary.',
+          common_stressors: ['Bright lights (nocturnal)', 'Cold']
+        },
+        average_vitals: {
+          temperature_f: { min: 88, max: 92 }, // Hot spot temp
+          heart_rate_bpm: { min: 0, max: 0 },
+          respiratory_rate_rpm: { min: 0, max: 0 }
+        }
       },
     ];
 
@@ -469,8 +759,11 @@ export class BreedsSeeder {
       });
 
       if (existingBreed) {
-        this.logger.log(`⏭️  Skipping ${breedData.name} (${breedData.species}) - already exists`);
-        skippedCount++;
+        // Update existing records with new data if they exist
+        Object.assign(existingBreed, breedData);
+        await this.breedRepository.save(existingBreed);
+        this.logger.log(`🔄 Updated ${breedData.name} (${breedData.species})`);
+        createdCount++; // Count updates as "processed"
         continue;
       }
 
@@ -480,7 +773,7 @@ export class BreedsSeeder {
       createdCount++;
     }
 
-    this.logger.log(`🌱 Breeds seeding completed! Created: ${createdCount}, Skipped: ${skippedCount}`);
+    this.logger.log(`🌱 Breeds seeding completed! Processed: ${createdCount}, Skipped: ${skippedCount}`);
   }
 
   async clear(): Promise<void> {

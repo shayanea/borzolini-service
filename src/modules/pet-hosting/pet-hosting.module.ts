@@ -11,6 +11,7 @@ import { PetHostReview } from './entities/pet-host-review.entity';
 import { PetHost } from './entities/pet-host.entity';
 import { PetHostingBooking } from './entities/pet-hosting-booking.entity';
 
+
 @Module({
   imports: [TypeOrmModule.forFeature([PetHost, PetHostingBooking, PetHostAvailability, PetHostReview, PetHostPhoto, User, Pet]), CommonModule],
   controllers: [PetHostingController],

@@ -11,6 +11,7 @@ import { HouseholdSafetySeeder } from './modules/household-safety/household-safe
 import { TrainingSeeder } from './modules/training/training.seeder';
 import { ResourcesSeeder } from './modules/resources/resources.seeder';
 
+
 async function seed() {
   console.log('🌱 Starting database seeding...');
 
@@ -27,6 +28,7 @@ async function seed() {
     const trainingSeeder = app.get(TrainingSeeder);
     const resourcesSeeder = app.get(ResourcesSeeder);
 
+
     // Clear existing data first for fresh seeding (in correct order due to foreign key constraints)
     console.log('🧹 Clearing existing data...');
     // Clear in dependency order: child tables first, parent tables last
@@ -40,6 +42,7 @@ async function seed() {
     await householdSafetySeeder.clear();
     await trainingSeeder.clear();
     await resourcesSeeder.clear();
+
 
     // Seed in order of dependencies
     console.log('👥 Seeding users...');
@@ -74,6 +77,8 @@ async function seed() {
 
     console.log('🏋️ Seeding training activities...');
     await trainingSeeder.seed();
+
+
 
     console.log('✅ Database seeding completed successfully!');
     console.log('🔑 Default password for all users: Password123!');

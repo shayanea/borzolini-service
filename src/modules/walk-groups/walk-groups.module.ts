@@ -8,6 +8,7 @@ import { WalkGroupParticipant } from './entities/walk-group-participant.entity';
 import { WalkGroupsController } from './walk-groups.controller';
 import { WalkGroupsService } from './walk-groups.service';
 
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([WalkGroup, WalkGroupParticipant, Pet, User]),

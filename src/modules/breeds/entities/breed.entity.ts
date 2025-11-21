@@ -104,6 +104,14 @@ export class Breed {
   @Column({ type: 'enum', enum: ExerciseNeeds, nullable: true })
   exercise_needs?: ExerciseNeeds;
 
+  @ApiProperty({ description: 'Detailed care instructions including diet, housing, and specific needs', required: false })
+  @Column({ type: 'jsonb', default: {} })
+  care_specifics!: Record<string, any>;
+
+  @ApiProperty({ description: 'Normal range of vital signs (temperature, heart rate, respiratory rate)', required: false })
+  @Column({ type: 'jsonb', default: {} })
+  average_vitals!: Record<string, any>;
+
   @ApiProperty({ description: 'Whether the breed is active in the system' })
   @Column({ type: 'boolean', default: true })
   is_active!: boolean;
