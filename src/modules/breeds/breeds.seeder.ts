@@ -60,7 +60,8 @@ export class BreedsSeeder {
         weight_min: 55,
         weight_max: 80,
         origin_country: 'Canada',
-        origin_history: 'The Labrador Retriever originated in Newfoundland, Canada in the early 19th century. They were bred from St. John\'s water dogs, a breed used by fishermen to retrieve fish that fell off fishing lines. The breed was later refined in England where they became popular as gun dogs for hunting waterfowl. Their friendly nature, intelligence, and water-loving abilities made them ideal for both work and companionship.',
+        origin_history:
+          "The Labrador Retriever originated in Newfoundland, Canada in the early 19th century. They were bred from St. John's water dogs, a breed used by fishermen to retrieve fish that fell off fishing lines. The breed was later refined in England where they became popular as gun dogs for hunting waterfowl. Their friendly nature, intelligence, and water-loving abilities made them ideal for both work and companionship.",
         description: 'A medium-large gun dog that was bred to retrieve shot waterfowl',
         image_url: 'https://images.unsplash.com/photo-1591769225440-811ad7d6eca6?auto=format&fit=crop&q=80',
         resources: [
@@ -68,7 +69,7 @@ export class BreedsSeeder {
           'https://www.labradorretrieverclub.com/',
           'https://www.ofa.org/breeds/labrador-retrievers',
           'https://www.pennhip.org/',
-          'American Kennel Club Labrador Retriever Breed Standard'
+          'American Kennel Club Labrador Retriever Breed Standard',
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
@@ -77,13 +78,13 @@ export class BreedsSeeder {
           housing: 'Adaptable to most living situations but needs space to exercise. Secure yard recommended.',
           grooming_details: 'Weekly brushing to manage shedding; daily during shedding season. Regular nail trims and ear cleaning.',
           social_needs: 'Highly social; needs significant human interaction and play.',
-          common_stressors: ['Isolation', 'Lack of exercise', 'Boredom']
+          common_stressors: ['Isolation', 'Lack of exercise', 'Boredom'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 60, max: 100 },
-          respiratory_rate_rpm: { min: 10, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 10, max: 30 },
+        },
       },
       {
         name: 'Golden Retriever',
@@ -96,7 +97,8 @@ export class BreedsSeeder {
         weight_min: 55,
         weight_max: 75,
         origin_country: 'Scotland',
-        origin_history: 'The Golden Retriever was developed in Scotland in the mid-19th century by Dudley Marjoribanks, 1st Baron Tweedmouth. He crossed a yellow-colored Retriever with the Tweed Water Spaniel, aiming to create a superior hunting companion. The breed was officially recognized in 1913 and quickly became popular for their gentle temperament and versatility. They excel as hunting dogs, service animals, and family companions.',
+        origin_history:
+          'The Golden Retriever was developed in Scotland in the mid-19th century by Dudley Marjoribanks, 1st Baron Tweedmouth. He crossed a yellow-colored Retriever with the Tweed Water Spaniel, aiming to create a superior hunting companion. The breed was officially recognized in 1913 and quickly became popular for their gentle temperament and versatility. They excel as hunting dogs, service animals, and family companions.',
         description: 'A large-sized gun dog that was bred to retrieve shot waterfowl',
         image_url: 'https://images.unsplash.com/photo-1633722715463-d30f4f325e27?auto=format&fit=crop&q=80',
         resources: [
@@ -104,7 +106,7 @@ export class BreedsSeeder {
           'https://www.grca.org/',
           'https://www.ofa.org/breeds/golden-retrievers',
           'https://www.goldenretrieverfoundation.org/',
-          'American Kennel Club Golden Retriever Breed Standard'
+          'American Kennel Club Golden Retriever Breed Standard',
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
@@ -113,13 +115,13 @@ export class BreedsSeeder {
           housing: 'Needs active family environment. Not suited for outdoor-only living.',
           grooming_details: 'Daily to weekly brushing. Attention to feathering on legs and tail.',
           social_needs: 'Extremely social; thrives on companionship.',
-          common_stressors: ['Separation anxiety', 'Loud noises']
+          common_stressors: ['Separation anxiety', 'Loud noises'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 60, max: 100 },
-          respiratory_rate_rpm: { min: 10, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 10, max: 30 },
+        },
       },
       {
         name: 'German Shepherd',
@@ -132,7 +134,8 @@ export class BreedsSeeder {
         weight_min: 50,
         weight_max: 90,
         origin_country: 'Germany',
-        origin_history: 'The German Shepherd Dog was developed in Germany in 1899 by Captain Max von Stephanitz and other breeders. They were originally bred from various German sheep herding dogs, with the goal of creating an intelligent working dog. The breed excelled in herding, police work, and military service. They became famous for their loyalty, intelligence, and versatility, serving as guide dogs, search and rescue dogs, and police K-9 units worldwide.',
+        origin_history:
+          'The German Shepherd Dog was developed in Germany in 1899 by Captain Max von Stephanitz and other breeders. They were originally bred from various German sheep herding dogs, with the goal of creating an intelligent working dog. The breed excelled in herding, police work, and military service. They became famous for their loyalty, intelligence, and versatility, serving as guide dogs, search and rescue dogs, and police K-9 units worldwide.',
         description: 'A medium to large-sized working dog that originated in Germany',
         image_url: 'https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&q=80',
         resources: [
@@ -140,7 +143,7 @@ export class BreedsSeeder {
           'https://www.gsdca.org/',
           'https://www.ofa.org/breeds/german-shepherd-dogs',
           'https://www.germanshepherddog.com/',
-          'American Kennel Club German Shepherd Dog Breed Standard'
+          'American Kennel Club German Shepherd Dog Breed Standard',
         ],
         grooming_needs: GroomingNeeds.MODERATE,
         exercise_needs: ExerciseNeeds.HIGH,
@@ -149,13 +152,13 @@ export class BreedsSeeder {
           housing: 'Large, secure yard essential. Mental stimulation needed indoors.',
           grooming_details: 'Frequent brushing, especially during shedding seasons (blows coat twice a year).',
           social_needs: 'Loyal to family; can be aloof with strangers. Needs socialization.',
-          common_stressors: ['Lack of purpose/job', 'Confinement', 'Strangers']
+          common_stressors: ['Lack of purpose/job', 'Confinement', 'Strangers'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 60, max: 100 },
-          respiratory_rate_rpm: { min: 10, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 10, max: 30 },
+        },
       },
       {
         name: 'French Bulldog',
@@ -168,7 +171,8 @@ export class BreedsSeeder {
         weight_min: 20,
         weight_max: 28,
         origin_country: 'France',
-        origin_history: 'The French Bulldog originated in England in the 19th century, bred from Bulldog and terrier crosses. They were brought to France by lace workers who immigrated from Nottingham, where the breed became popular among Parisian artisans and shopkeepers. Their compact size and friendly nature made them ideal companion dogs. The breed was officially recognized in France and gained worldwide popularity as a lap dog and show dog.',
+        origin_history:
+          'The French Bulldog originated in England in the 19th century, bred from Bulldog and terrier crosses. They were brought to France by lace workers who immigrated from Nottingham, where the breed became popular among Parisian artisans and shopkeepers. Their compact size and friendly nature made them ideal companion dogs. The breed was officially recognized in France and gained worldwide popularity as a lap dog and show dog.',
         description: 'A small domestic dog breed that originated in France',
         image_url: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80',
         resources: [
@@ -176,7 +180,7 @@ export class BreedsSeeder {
           'https://www.frenchbulldogclubofamerica.org/',
           'https://www.ofa.org/breeds/french-bulldogs',
           'https://www.frenchbulldogrescue.org/',
-          'American Kennel Club French Bulldog Breed Standard'
+          'American Kennel Club French Bulldog Breed Standard',
         ],
         grooming_needs: GroomingNeeds.LOW,
         exercise_needs: ExerciseNeeds.LOW,
@@ -185,13 +189,13 @@ export class BreedsSeeder {
           housing: 'Indoor only. Cannot tolerate extreme heat due to brachycephaly.',
           grooming_details: 'Regular cleaning of facial wrinkles to prevent infection.',
           social_needs: 'Craves human attention; lap dog.',
-          common_stressors: ['Heat', 'Overexertion', 'Isolation']
+          common_stressors: ['Heat', 'Overexertion', 'Isolation'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 70, max: 120 },
-          respiratory_rate_rpm: { min: 15, max: 35 }
-        }
+          respiratory_rate_rpm: { min: 15, max: 35 },
+        },
       },
       {
         name: 'Poodle',
@@ -204,16 +208,11 @@ export class BreedsSeeder {
         weight_min: 45,
         weight_max: 70,
         origin_country: 'Germany',
-        origin_history: 'The Poodle originated in Germany as a water retriever and hunting dog. The breed was developed from various European water dogs and was used for retrieving waterfowl. Their distinctive curly coat was originally practical for swimming, helping to insulate them in cold water. Poodles come in three sizes: Standard, Miniature, and Toy, each developed for different hunting purposes. They became popular as show dogs and companions due to their intelligence and trainability.',
+        origin_history:
+          'The Poodle originated in Germany as a water retriever and hunting dog. The breed was developed from various European water dogs and was used for retrieving waterfowl. Their distinctive curly coat was originally practical for swimming, helping to insulate them in cold water. Poodles come in three sizes: Standard, Miniature, and Toy, each developed for different hunting purposes. They became popular as show dogs and companions due to their intelligence and trainability.',
         description: 'A water dog breed that comes in three size varieties',
         image_url: 'https://images.unsplash.com/photo-1616149562385-1d84e79478bb?auto=format&fit=crop&q=80',
-        resources: [
-          'https://www.akc.org/dog-breeds/poodle/',
-          'https://www.poodleclubofamerica.org/',
-          'https://www.ofa.org/breeds/poodles',
-          'https://www.poodle-rescue.org/',
-          'American Kennel Club Poodle Breed Standard'
-        ],
+        resources: ['https://www.akc.org/dog-breeds/poodle/', 'https://www.poodleclubofamerica.org/', 'https://www.ofa.org/breeds/poodles', 'https://www.poodle-rescue.org/', 'American Kennel Club Poodle Breed Standard'],
         grooming_needs: GroomingNeeds.HIGH,
         exercise_needs: ExerciseNeeds.MODERATE,
         care_specifics: {
@@ -221,13 +220,13 @@ export class BreedsSeeder {
           housing: 'Versatile. Needs mental stimulation indoors.',
           grooming_details: 'Requires professional grooming every 4-6 weeks. Daily brushing to prevent mats.',
           social_needs: 'People-oriented; enjoys being part of family activities.',
-          common_stressors: ['Boredom', 'Harsh training methods']
+          common_stressors: ['Boredom', 'Harsh training methods'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 60, max: 100 },
-          respiratory_rate_rpm: { min: 10, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 10, max: 30 },
+        },
       },
       {
         name: 'Beagle',
@@ -249,13 +248,13 @@ export class BreedsSeeder {
           housing: 'Secure fencing required (scent hounds). Good apartment dogs if exercised.',
           grooming_details: 'Low maintenance; weekly brushing.',
           social_needs: 'Pack animal; loves company of other dogs and humans.',
-          common_stressors: ['Loneliness', 'Lack of scent stimulation']
+          common_stressors: ['Loneliness', 'Lack of scent stimulation'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 70, max: 120 },
-          respiratory_rate_rpm: { min: 15, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 15, max: 30 },
+        },
       },
       {
         name: 'Yorkshire Terrier',
@@ -277,13 +276,13 @@ export class BreedsSeeder {
           housing: 'Great apartment dogs. Sensitive to cold.',
           grooming_details: 'Daily brushing required if coat is long. Regular dental care essential.',
           social_needs: 'Attached to owner; can be feisty.',
-          common_stressors: ['Cold weather', 'Rough handling']
+          common_stressors: ['Cold weather', 'Rough handling'],
         },
         average_vitals: {
           temperature_f: { min: 100.0, max: 102.5 },
           heart_rate_bpm: { min: 100, max: 140 },
-          respiratory_rate_rpm: { min: 20, max: 40 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 40 },
+        },
       },
 
       // CATS
@@ -307,13 +306,13 @@ export class BreedsSeeder {
           housing: 'Indoor only. Calm environment preferred.',
           grooming_details: 'Daily brushing essential to prevent painful mats. Daily eye wiping.',
           social_needs: 'Affectionate but independent; likes sitting on laps.',
-          common_stressors: ['Chaos', 'Loud noises', 'Dirty litter box']
+          common_stressors: ['Chaos', 'Loud noises', 'Dirty litter box'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 140, max: 220 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
       {
         name: 'Maine Coon',
@@ -335,13 +334,13 @@ export class BreedsSeeder {
           housing: 'Needs space to climb and explore. Sturdy cat trees required.',
           grooming_details: 'Weekly brushing; more in shedding season.',
           social_needs: 'Very social; "dog-like" cat. Follows owners.',
-          common_stressors: ['Small spaces', 'Loneliness']
+          common_stressors: ['Small spaces', 'Loneliness'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 120, max: 200 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
       {
         name: 'British Shorthair',
@@ -363,13 +362,13 @@ export class BreedsSeeder {
           housing: 'Adaptable apartment cat. Enjoys looking out windows.',
           grooming_details: 'Weekly brushing for dense coat.',
           social_needs: 'Undemanding affection; prefers sitting near you than on you.',
-          common_stressors: ['Overhandling', 'Forced interaction']
+          common_stressors: ['Overhandling', 'Forced interaction'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 120, max: 220 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
       {
         name: 'Ragdoll',
@@ -391,13 +390,13 @@ export class BreedsSeeder {
           housing: 'Indoor only essential (too trusting for outdoors).',
           grooming_details: 'Regular brushing to prevent tangles in semi-long coat.',
           social_needs: 'Needs company; often follows owner around.',
-          common_stressors: ['Being left alone', 'Rough play']
+          common_stressors: ['Being left alone', 'Rough play'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 120, max: 200 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
       {
         name: 'Siamese',
@@ -419,13 +418,13 @@ export class BreedsSeeder {
           housing: 'Needs vertical space and enrichment. Very active.',
           grooming_details: 'Minimal; self-grooming usually sufficient.',
           social_needs: 'Extremely vocal and demanding of attention.',
-          common_stressors: ['Boredom', 'Isolation']
+          common_stressors: ['Boredom', 'Isolation'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 140, max: 220 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
       {
         name: 'Sphynx',
@@ -447,13 +446,13 @@ export class BreedsSeeder {
           housing: 'Strictly indoor; needs warmth (sweaters in winter).',
           grooming_details: 'Weekly baths essential to remove oils; ear cleaning.',
           social_needs: 'Velcro cat; wants to be on you for warmth and love.',
-          common_stressors: ['Cold', 'Sunburn (if near windows)', 'Loneliness']
+          common_stressors: ['Cold', 'Sunburn (if near windows)', 'Loneliness'],
         },
         average_vitals: {
           temperature_f: { min: 100.5, max: 102.5 },
           heart_rate_bpm: { min: 140, max: 220 },
-          respiratory_rate_rpm: { min: 20, max: 30 }
-        }
+          respiratory_rate_rpm: { min: 20, max: 30 },
+        },
       },
 
       // BIRDS
@@ -477,13 +476,13 @@ export class BreedsSeeder {
           housing: 'Horizontal cage space for flying. Away from drafts.',
           grooming_details: 'Nail trims; access to bath water.',
           social_needs: 'Can be solitary or in pairs; enjoys hearing people.',
-          common_stressors: ['Handling (hands-off pet)', 'Darkness', 'Drafts']
+          common_stressors: ['Handling (hands-off pet)', 'Darkness', 'Drafts'],
         },
         average_vitals: {
           temperature_f: { min: 106, max: 109 },
           heart_rate_bpm: { min: 274, max: 1000 }, // Very fast
-          respiratory_rate_rpm: { min: 60, max: 100 }
-        }
+          respiratory_rate_rpm: { min: 60, max: 100 },
+        },
       },
       {
         name: 'Cockatiel',
@@ -505,13 +504,13 @@ export class BreedsSeeder {
           housing: 'Large cage, time out of cage daily.',
           grooming_details: 'Mist baths, nail/wing trims (optional).',
           social_needs: 'Flock animal; needs daily interaction.',
-          common_stressors: ['Night frights', 'Isolation']
+          common_stressors: ['Night frights', 'Isolation'],
         },
         average_vitals: {
           temperature_f: { min: 106, max: 109 },
           heart_rate_bpm: { min: 200, max: 400 },
-          respiratory_rate_rpm: { min: 30, max: 50 }
-        }
+          respiratory_rate_rpm: { min: 30, max: 50 },
+        },
       },
       {
         name: 'African Grey',
@@ -533,13 +532,13 @@ export class BreedsSeeder {
           housing: 'Large heavy-duty cage. Foraging toys essential.',
           grooming_details: 'Beak and nail maintenance. Spray baths.',
           social_needs: 'High; bonds deeply with one person usually.',
-          common_stressors: ['Change in routine', 'Boredom', 'Neglect']
+          common_stressors: ['Change in routine', 'Boredom', 'Neglect'],
         },
         average_vitals: {
           temperature_f: { min: 104, max: 106 },
           heart_rate_bpm: { min: 140, max: 200 },
-          respiratory_rate_rpm: { min: 15, max: 40 }
-        }
+          respiratory_rate_rpm: { min: 15, max: 40 },
+        },
       },
 
       // RABBITS
@@ -563,13 +562,13 @@ export class BreedsSeeder {
           housing: 'Indoor hutch or free-roam. Bunny-proofing needed.',
           grooming_details: 'Regular ear checks (lops prone to infection). Nail trims.',
           social_needs: 'Social; better in pairs.',
-          common_stressors: ['Heat (>80F)', 'Loud noises', 'Predators']
+          common_stressors: ['Heat (>80F)', 'Loud noises', 'Predators'],
         },
         average_vitals: {
           temperature_f: { min: 101, max: 103 },
           heart_rate_bpm: { min: 180, max: 250 },
-          respiratory_rate_rpm: { min: 30, max: 60 }
-        }
+          respiratory_rate_rpm: { min: 30, max: 60 },
+        },
       },
       {
         name: 'Flemish Giant',
@@ -591,13 +590,13 @@ export class BreedsSeeder {
           housing: 'Dog crate or free roam; standard cages too small.',
           grooming_details: 'Brushing; soft bedding to prevent sore hocks.',
           social_needs: 'Very social; gentle giants.',
-          common_stressors: ['Small spaces', 'Heat', 'Rough handling']
+          common_stressors: ['Small spaces', 'Heat', 'Rough handling'],
         },
         average_vitals: {
           temperature_f: { min: 101, max: 103 },
           heart_rate_bpm: { min: 130, max: 200 }, // Slower than small rabbits
-          respiratory_rate_rpm: { min: 30, max: 60 }
-        }
+          respiratory_rate_rpm: { min: 30, max: 60 },
+        },
       },
 
       // HAMSTERS
@@ -621,13 +620,13 @@ export class BreedsSeeder {
           housing: 'Large cage with deep bedding for burrowing. Solid wheel.',
           grooming_details: 'Sand baths; never water baths.',
           social_needs: 'Strictly solitary. Must live alone.',
-          common_stressors: ['Waking them up', 'Small cages', 'Drafts']
+          common_stressors: ['Waking them up', 'Small cages', 'Drafts'],
         },
         average_vitals: {
           temperature_f: { min: 97, max: 99 }, // Approximate surface temp
           heart_rate_bpm: { min: 250, max: 500 },
-          respiratory_rate_rpm: { min: 35, max: 135 }
-        }
+          respiratory_rate_rpm: { min: 35, max: 135 },
+        },
       },
 
       // FISH
@@ -651,13 +650,13 @@ export class BreedsSeeder {
           housing: 'High filtration needed (high waste). 20+ gallons per fish.',
           grooming_details: 'Tank maintenance/water changes.',
           social_needs: 'Social; prefers groups of goldfish.',
-          common_stressors: ['Poor water quality', 'Small bowls', 'Rapid temp changes']
+          common_stressors: ['Poor water quality', 'Small bowls', 'Rapid temp changes'],
         },
         average_vitals: {
           temperature_f: { min: 65, max: 72 }, // Water temp
           heart_rate_bpm: { min: 0, max: 0 }, // N/A for user tracking usually
-          respiratory_rate_rpm: { min: 0, max: 0 } // Gill movement
-        }
+          respiratory_rate_rpm: { min: 0, max: 0 }, // Gill movement
+        },
       },
       {
         name: 'Betta',
@@ -679,13 +678,13 @@ export class BreedsSeeder {
           housing: '5+ gallons, low flow filter, heater essential (tropical).',
           grooming_details: 'Tank maintenance.',
           social_needs: 'Solitary (males). Can be community fish with right tankmates.',
-          common_stressors: ['Cold water', 'Strong currents', 'Mirrors']
+          common_stressors: ['Cold water', 'Strong currents', 'Mirrors'],
         },
         average_vitals: {
           temperature_f: { min: 76, max: 82 }, // Water temp
           heart_rate_bpm: { min: 0, max: 0 },
-          respiratory_rate_rpm: { min: 0, max: 0 }
-        }
+          respiratory_rate_rpm: { min: 0, max: 0 },
+        },
       },
 
       // REPTILES
@@ -709,13 +708,13 @@ export class BreedsSeeder {
           housing: '40+ gallon tank. UVB lighting and heat gradient essential.',
           grooming_details: 'Warm baths for shedding. Nail trims.',
           social_needs: 'Solitary but enjoys human handling.',
-          common_stressors: ['Cold', 'Co-habitation', 'No UVB']
+          common_stressors: ['Cold', 'Co-habitation', 'No UVB'],
         },
         average_vitals: {
           temperature_f: { min: 95, max: 110 }, // Basking spot temp
           heart_rate_bpm: { min: 0, max: 0 },
-          respiratory_rate_rpm: { min: 0, max: 0 }
-        }
+          respiratory_rate_rpm: { min: 0, max: 0 },
+        },
       },
       {
         name: 'Leopard Gecko',
@@ -737,18 +736,18 @@ export class BreedsSeeder {
           housing: '20 gallon long. Under-tank heat mat (belly heat). Hides.',
           grooming_details: 'Help with shedding on toes (humid hide).',
           social_needs: 'Solitary.',
-          common_stressors: ['Bright lights (nocturnal)', 'Cold']
+          common_stressors: ['Bright lights (nocturnal)', 'Cold'],
         },
         average_vitals: {
           temperature_f: { min: 88, max: 92 }, // Hot spot temp
           heart_rate_bpm: { min: 0, max: 0 },
-          respiratory_rate_rpm: { min: 0, max: 0 }
-        }
+          respiratory_rate_rpm: { min: 0, max: 0 },
+        },
       },
     ];
 
     let createdCount = 0;
-    let skippedCount = 0;
+    const skippedCount = 0;
 
     for (const breedData of breedsData) {
       const existingBreed = await this.breedRepository.findOne({
