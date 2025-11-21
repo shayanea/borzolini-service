@@ -70,6 +70,11 @@ export class CreateBreedDto {
   @IsString()
   description?: string;
 
+  @ApiProperty({ description: 'URL to an image of the breed', required: false, example: 'https://example.com/golden-retriever.jpg' })
+  @IsOptional()
+  @IsString()
+  image_url?: string;
+
   @ApiProperty({ description: 'Educational resources and references about the breed', type: [String], required: false, example: ['https://www.akc.org/dog-breeds/golden-retriever/', 'https://www.ofa.org/breeds/golden-retrievers'] })
   @IsOptional()
   @IsArray()

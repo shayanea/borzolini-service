@@ -20,7 +20,7 @@ echo "✅ Docker and Docker Compose are available"
 # Create .env.local if it doesn't exist
 if [ ! -f .env.local ]; then
     echo "📝 Creating .env.local file..."
-    cp config.env.local .env.local
+    cp .env.example .env.local
     echo "✅ .env.local created. Please edit it with your configuration."
 else
     echo "✅ .env.local already exists"

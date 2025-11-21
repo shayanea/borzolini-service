@@ -242,6 +242,9 @@ export class BreedsService {
     if (breed.description !== undefined) {
       dto.description = breed.description;
     }
+    if (breed.image_url !== undefined) {
+      dto.image_url = breed.image_url;
+    }
     if (breed.resources !== undefined) {
       dto.resources = breed.resources;
     }

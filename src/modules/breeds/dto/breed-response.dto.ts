@@ -41,6 +41,9 @@ export class BreedResponseDto {
   @ApiProperty({ description: 'Description of the breed', required: false })
   description?: string;
 
+  @ApiProperty({ description: 'URL to an image of the breed', required: false })
+  image_url?: string;
+
   @ApiProperty({ description: 'Educational resources and references about the breed', type: [String] })
   resources!: string[];
 

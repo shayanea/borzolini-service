@@ -748,7 +748,7 @@ export class BreedsSeeder {
     ];
 
     let createdCount = 0;
-    let skippedCount = 0;
+    const skippedCount = 0;
 
     for (const breedData of breedsData) {
       const existingBreed = await this.breedRepository.findOne({
